@@ -4,17 +4,26 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+## [1.1.0] - 2026-10-31
+
+Interfaccia rivista, con più cura per schermi larghi e telefoni.
+
 ### Aggiunto
 - Demo online su GitHub Pages con dominio dedicato (fatture-elettroniche-explorer.n1k.cloud), aggiornata a ogni release dal workflow `pages.yml`, solo dopo i controlli.
+- Logo nell'header e nome della propria azienda sempre visibile quando è selezionata (un clic apre i filtri per cambiarla).
+- Menu collassabile (hamburger) per schermi piccoli, con tutti i comandi dell'header.
+- Menu a tendina personalizzati con ricerca e sotto-titolo (P.IVA e numero di fatture), anche per cliente/fornitore, con suggerimenti e navigazione da tastiera.
 
 ### Modificato
-- Interfaccia rivista: elenco e filtri a tutta larghezza dello schermo, header più alto con logo e comandi a destra, menu collassabile su schermi piccoli, spaziature e altezze dei controlli uniformi.
-- Menu a tendina personalizzati (con ricerca e sotto-titolo) al posto di quelli del browser, anche per cliente/fornitore.
-- Icone vettoriali al posto delle emoji (allegato, cartelle, esporta CSV, aggiorna, tema).
-- Con una cartella aperta scorre solo l'elenco: header, ricerca, filtri e totali restano fissi in alto. I filtri si aprono come pannello sopra l'elenco e si chiudono con un clic fuori.
-- Filtri su più righe (azienda, cliente/fornitore, poi il resto) e menu a tendina larghi come il campo. Il tema si sceglie con un solo pulsante a menu.
-- La propria azienda resta visibile nell'header quando è selezionata.
-- Su telefono la colonna Direzione passa sotto il nome della controparte.
+- Elenco e filtri a tutta larghezza dello schermo; header più alto con i comandi a destra.
+- Con una cartella aperta scorre solo l'elenco: header, ricerca, anni, filtri attivi e totali restano fissi. I filtri si aprono come pannello sopra l'elenco e si chiudono con un clic fuori.
+- Filtri su più righe: azienda e cliente/fornitore ciascuno a tutta larghezza, poi periodo, date, tipo e importi che vanno a capo in base allo spazio.
+- Tema scelto con un solo pulsante a menu (automatico, chiaro, scuro).
+- Icone vettoriali al posto delle emoji (allegato, cartelle, esporta CSV, aggiorna, frecce e comandi del dettaglio).
+- Altezze e spaziature dei controlli uniformi; contatore dei filtri attivi più leggibile.
+- Dettaglio fattura: spazi verticali uniformi tra le card e testata allineata; su telefono pulsanti sulla prima riga e titolo a tutta larghezza.
+- Su telefono la colonna Direzione passa sotto il nome della controparte, il riepilogo del dettaglio è su più righe e i filtri hanno i campi brevi in coppia.
+- Scrollbar sottili nei colori del tema.
 
 ## [1.0.0] - 2026-10-31
 
@@ -47,5 +56,6 @@ Prima versione pubblica.
 - Firefox e Safari usano la modalità compatibile, senza cartelle recenti né installazione come app.
 - Il foglio di stile Assosoftware non è incluso per via della sua licenza.
 
-[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.0.0...HEAD
+[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/releases/tag/v1.0.0
