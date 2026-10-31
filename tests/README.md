@@ -11,6 +11,8 @@ Questa cartella contiene fatture elettroniche **fittizie** per provare Fatture E
 2. **Seleziona cartella…** e scegli `tests/fixtures`.
 3. Confronta quello che vedi con i risultati attesi qui sotto (e con `fixtures/ATTESO.json`, che elenca i valori attesi di ogni documento).
 
+Per provare il **PDF**: apri il dettaglio di una fattura, premi **PDF** e scegli *Salva come PDF*. Buoni candidati: la parcella con ritenuta e cassa (`…/2025/03/…_00003.xml`), quella con più aliquote e bollo (`…/2025/04/…_00004.xml`) e `casi-limite/contenuto-ostile-xss.xml` (HTML e script devono comparire come testo).
+
 Per provare la modalità **fattura singola**: **Apri fattura…** e scegli un file qualsiasi, per esempio `fixtures/ricevute/2025/03/IT05678901230_00003.xml` (ritenuta e cassa previdenziale) o `fixtures/ricevute/2025/06/IT03456789010_00006.xml` (allegato PDF).
 
 ## Risultati attesi (cartella `tests/fixtures` intera)

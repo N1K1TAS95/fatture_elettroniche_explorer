@@ -16,6 +16,7 @@ HTML, CSS e JavaScript puri, nessuna dipendenza, nessuna build, nessuna richiest
   - [Riepilogo: cosa cambiare](#riepilogo-cosa-cambiare)
 - [Installarla come app (PWA)](#installarla-come-app-pwa)
 - [Privacy e sicurezza](#privacy-e-sicurezza)
+- [Nota sul formato Assosoftware](#nota-sul-formato-assosoftware)
 - [Fatture di prova](#fatture-di-prova)
 - [Struttura del progetto](#struttura-del-progetto)
 - [Sviluppo](#sviluppo)
@@ -28,8 +29,9 @@ HTML, CSS e JavaScript puri, nessuna dipendenza, nessuna build, nessuna richiest
 - **La mia azienda**: la pagina riconosce la tua P.IVA e distingue fatture emesse (attive) e ricevute (passive). Le note di credito contano in negativo.
 - **Tre viste**: elenco fatture, riepilogo per cliente/fornitore, andamento mensile (grafico a barre). Totali di imponibile, IVA e importo per quanto filtrato.
 - **Dettaglio fattura** affiancato alla lista, o a tutta larghezza: anagrafiche, righe, riepilogo IVA, pagamento, ritenute, bollo, riferimenti (ordini, DDT, CIG/CUP), allegati (PDF apribili e scaricabili) e XML originale.
-- **Fattura singola**: apri un solo file `.xml`/`.p7m` (o trascinalo sulla pagina) e leggilo a tutta pagina, con stampa e salvataggio in PDF.
+- **Fattura singola**: apri un solo file `.xml`/`.p7m` (o trascinalo sulla pagina) e leggilo a tutta pagina.
 - **Recenti**: le ultime cartelle e fatture aperte si riaprono con un clic. Le fatture già lette sono tenute in cache, quindi la seconda apertura è molto più veloce, anche su NAS.
+- **PDF della fattura** (copia di cortesia): il pulsante **PDF** del dettaglio apre un layout fattura pronto per la stampa su A4; nel dialogo di stampa del browser scegli *Salva come PDF*. Il nome del file proposto è `Fattura_numero_data_cedente`. Non ha valore fiscale: l'originale resta l'XML.
 - **Esportazione CSV** di quanto filtrato (separatore `;`, decimali con la virgola, pronto per Excel).
 - **Tema** automatico, chiaro o scuro. Interfaccia adattata a telefono, tablet, laptop e monitor molto larghi.
 - Scorciatoie: `/` cerca, `←` `→` fattura precedente/successiva, `Esc` chiude.
@@ -214,6 +216,10 @@ Pubblicata su **HTTPS** (o su `localhost`), l'app è una *Progressive Web App*: 
 - Le fatture contengono dati personali: **non caricarle mai in questo repository** (il `.gitignore` esclude `.xml`, `.p7m`, `.csv` e `.pdf`; l'unica eccezione sono le fatture fittizie di `tests/fixtures/`).
 
 Il container è irrobustito (filesystem in sola lettura, `no-new-privileges`, capability ridotte, limiti di risorse, solo `GET`/`HEAD`, versione di nginx nascosta) e il server invia header di sicurezza e una CSP restrittiva. Dettagli, verifiche eseguite e come segnalare una vulnerabilità sono in [SECURITY.md](SECURITY.md).
+
+## Nota sul formato Assosoftware
+
+Assosoftware distribuisce un foglio di stile XSL gratuito per visualizzare le fatture, ma la sua [licenza](https://www.assosoftware.it/wp-content/uploads/2022/09/licenza_AssoInvoice_1.0.0.pdf) è proprietaria: consente di ridistribuirlo solo **senza modifiche** e vieta di riprodurlo o adattarlo. Per questo **non è incluso** in questo progetto (MIT) e il layout del PDF è stato scritto da zero. Chi lo desidera può usarlo per conto proprio scaricandolo da assosoftware.it.
 
 ## Fatture di prova
 

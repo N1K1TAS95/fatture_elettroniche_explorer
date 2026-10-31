@@ -433,6 +433,45 @@ function prettyXml(x){
   return out.join('\n');
 }
 
+/* ====================== Copia di cortesia (stampa / PDF) ====================== */
+// Layout fattura proprio (non deriva da fogli di stile di terzi). Nessuna libreria: il PDF lo salva il browser
+// dal dialogo di stampa. Tutti i valori del file passano da esc() (come nel dettaglio) e non c'è alcuno script.
+function courtesyDoc(d){
+  const cur=d.divisa,mm=v=>esc(money(v,cur));
+  const party=(t,p)=>`<div class="pd-box"><h3>${t}</h3><b>${esc(nm(p))}</b>${[p.ind,p.piva&&'P.IVA '+p.piva,p.cf&&'C.F. '+p.cf,p.rf&&'Regime fiscale '+p.rf+' · '+(RF[p.rf]||''),p.rea.trim()&&'REA '+p.rea.trim(),p.tel&&'Tel. '+p.tel,p.mail].filter(Boolean).map(x=>`<div>${esc(x)}</div>`).join('')}</div>`;
+  const righe=d.righe.map(r=>`<tr><td>${esc(r.n)}</td><td>${esc(r.d)}${r.cod?`<small>cod. ${esc(r.cod)}</small>`:''}${r.sc?`<small>sconto/magg. ${esc(r.sc)}</small>`:''}</td><td class="n">${r.q?esc(String(num(r.q)))+' '+esc(r.um):''}</td><td class="n">${r.pu?mm(num(r.pu)):''}</td><td class="n">${mm(num(r.pt))}</td><td class="n">${r.iva!==''?esc(String(num(r.iva)))+'%':''}${r.nat?' '+esc(r.nat):''}</td></tr>`).join('');
+  const riep=d.riep.map(r=>`<tr><td>${esc(String(num(r.aliq)))}%${r.nat?' · '+esc(r.nat+' '+(NAT[r.nat]||'')):''}${r.rif?`<small>${esc(r.rif)}</small>`:''}</td><td>${esc(ESI[r.esi]||r.esi)}</td><td class="n">${mm(r.imp)}</td><td class="n">${mm(r.iva)}</td></tr>`).join('');
+  const tot=[['Imponibile',mm(d.imp)],['IVA',mm(d.iva)]];
+  if(d.bollo)tot.push(['Bollo',mm(d.bollo)]);
+  d.cassa.forEach(r=>tot.push(['Cassa previdenziale '+esc(r.tipo),mm(r.imp)]));
+  d.rit.forEach(r=>tot.push(['Ritenuta '+esc(r.aliq)+'% '+esc(r.caus),'−'+mm(r.imp)]));
+  const pag=d.pag.map(p=>`<tr><td>${esc(MP[p.mod]||p.mod)}${p.cond?`<small>${esc(COND[p.cond]||p.cond)}</small>`:''}</td><td>${fdate(p.scad)}</td><td class="n">${mm(p.imp)}</td><td>${esc([p.iban,p.ist].filter(Boolean).join(' · '))}</td></tr>`).join('');
+  const note=[...d.caus.map(c=>['Causale',c]),...d.rif.map(r=>['Riferimento',r])];
+  if(d.art73)note.push(['Art. 73',d.art73]);
+  return`<article class="pd">
+    <div class="pd-head"><div><h1>${esc(TD[d.td]||d.td)}</h1><div>${esc(d.td)}</div></div><div class="pd-num"><b>N. ${esc(d.numero)}</b><div>del ${fdate(d.data)||'—'}</div></div></div>
+    <div class="pd-cols">${party('Cedente / prestatore',d.ced)}${party('Cessionario / committente',d.ces)}</div>
+    ${note.length?`<div class="pd-note">${note.map(n=>`<div><b>${n[0]}:</b> ${esc(n[1])}</div>`).join('')}</div>`:''}
+    <table class="pd-t"><thead><tr><th>#</th><th>Descrizione</th><th class="n">Q.tà</th><th class="n">Prezzo unit.</th><th class="n">Totale</th><th class="n">IVA</th></tr></thead><tbody>${righe}</tbody></table>
+    <table class="pd-t"><thead><tr><th>Aliquota IVA</th><th>Esigibilità</th><th class="n">Imponibile</th><th class="n">Imposta</th></tr></thead><tbody>${riep}</tbody></table>
+    <div class="pd-tot">${tot.map(t=>`<div><span>${t[0]}</span><span>${t[1]}</span></div>`).join('')}<div class="pd-grand"><span>Totale documento</span><span>${mm(d.tot)}</span></div></div>
+    ${pag?`<table class="pd-t"><thead><tr><th>Pagamento</th><th>Scadenza</th><th class="n">Importo</th><th>IBAN / Istituto</th></tr></thead><tbody>${pag}</tbody></table>`:''}
+    ${d.all.length?`<div class="pd-note"><b>Allegati:</b> ${d.all.map(a=>esc(a.nome)).join(', ')} (non inclusi in questa copia)</div>`:''}
+    <footer class="pd-foot">Copia di cortesia generata da Fatture Explorer a partire dal file «${esc(d.path.split('/').pop())}». Non ha valore fiscale: il documento originale è il file XML FatturaPA.</footer>
+  </article>`;
+}
+function printCourtesy(){
+  const d=view[drawerIdx];if(!d)return;
+  const host=$id('printDoc');host.innerHTML=courtesyDoc(d);
+  // il nome proposto da Chrome per il PDF viene dal titolo della pagina
+  const t=document.title;
+  document.title=safeName(`Fattura ${d.numero} ${d.data} ${nm(d.ced)}`).replace(/\s+/g,'_').slice(0,100);
+  document.body.classList.add('printing');
+  const done=()=>{removeEventListener('afterprint',done);document.body.classList.remove('printing');host.textContent='';document.title=t};
+  addEventListener('afterprint',done);
+  print();
+}
+
 /* ====================== CSV ====================== */
 function exportCsv(){
   const c=v=>{v=String(v??'');return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
@@ -604,7 +643,7 @@ $id('content').addEventListener('click',e=>{
   else if(tab==='cp'){const x=cpRows[+tr.dataset.i];$id('cp').value=nm(x.p)+(x.p.piva?' — '+x.p.piva:'');tab='fatt';readFilters();scrollTo({top:0})}
 });
 $id('dClose').onclick=()=>single?exitSingle():closeDrawer();
-$id('dPrint').onclick=()=>print();
+$id('dPrint').onclick=printCourtesy;
 $id('dFull').onclick=()=>{const f=$id('split').classList.toggle('full');if(f)$id('scrim').classList.remove('on');else if(innerWidth<=1250)$id('scrim').classList.add('on')};$id('scrim').onclick=closeDrawer;
 $id('dPrev').onclick=()=>stepDrawer(-1);
 $id('dNext').onclick=()=>stepDrawer(1);

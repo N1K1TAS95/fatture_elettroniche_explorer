@@ -17,6 +17,7 @@ L'app legge file XML che arrivano da terzi (i fornitori): **ogni campo di una fa
 | **Service worker (PWA)** | Mette in cache solo i file dell'app (HTML, CSS, JS, icone) dalla propria origine; non vede né salva le fatture e ignora le richieste verso altre origini. Ha una CSP dedicata (`default-src 'none'; connect-src 'self'`), diversa da quella della pagina, servita da un `location` apposito. Registrato solo su HTTP/HTTPS, non da `file://`. |
 | **Richieste di rete e dipendenze** | Nessuna: né `fetch`/XHR, né librerie, font o CDN esterni. Nessuna dipendenza npm, quindi nessuna catena di fornitura da controllare. |
 | **Allegati** | Aperti nel browser solo se i primi byte sono davvero `%PDF-`; altrimenti solo download. Nome file ripulito da percorsi e caratteri speciali; estensioni eseguibili (`.exe`, `.bat`, `.js`…) rinominate in `.bloccato`. Apertura con `noopener`. |
+| **PDF / copia di cortesia** | Non usa librerie, iframe, blob né script: il layout è HTML generato dall'app e stampato dal browser. Ogni valore del file passa da `esc()` ed è mostrato come testo (verificato con `contenuto-ostile-xss.xml`). La CSP resta invariata. Gli allegati non vengono inclusi. |
 | **CSV injection** | Le celle di testo che iniziano con `=`, `+`, `-`, `@` sono precedute da un apice, così Excel non le esegue come formule. |
 | **Accesso ai file** | Cartelle e file aperti in sola lettura (`mode: 'read'`). L'app non scrive nulla. |
 | **Parser XML** | Si usa il `DOMParser` del browser: non carica DTD o entità esterne. File oltre 80 MB scartati. |
