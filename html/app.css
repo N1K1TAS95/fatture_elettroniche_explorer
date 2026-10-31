@@ -2483,3 +2483,111 @@ td.c-att .badge {
 .tabs .tab:first-child {
     padding-left: var(--in)
 }
+
+
+/* schermata iniziale: l'isola occupa tutta l'altezza disponibile, come la dashboard con le fatture aperte */
+#content:has(>.hello) {
+    display: flex;
+    flex-direction: column
+}
+
+#content>.hello {
+    flex: 1;
+    max-width: none;
+    margin: 0;
+    padding: var(--sp);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center
+}
+
+/* la schermata iniziale è fatta di sezioni distinte, una sotto l'altra */
+#content>.hello {
+    gap: var(--sp)
+}
+
+#content>.hello>.hsec {
+    width: 100%;
+    max-width: 640px;
+    border: 1px solid var(--line);
+    border-radius: var(--rad);
+    background: var(--bg);
+    padding: var(--sp);
+    text-align: center
+}
+
+#content>.hello>.hsec[hidden], #content>.hello>.hsec:empty {
+    display: none
+}
+
+#content>.hello>.hsec>h3 {
+    margin: 0 0 4px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--mute);
+    font-weight: 600
+}
+
+#content>.hello>.hsec>p {
+    margin: 0 0 var(--sp)
+}
+
+#content>.hello .hbtns, #content>.hello .demo {
+    margin-top: 0
+}
+
+#content>.hello>#recentHello {
+    margin-top: 0;
+    text-align: left
+}
+
+#content>.hello>#recentHello>h3 {
+    margin: 0 0 var(--sp)
+}
+
+.demo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp)
+}
+
+.demo-n {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp);
+    color: var(--mute)
+}
+
+.demo-n .sel {
+    width: 130px
+}
+
+/* schermata iniziale: logo in cima e stessa distanza (--sp) tra tutti i blocchi */
+#content>.hello>.hlogo {
+    width: 56px;
+    max-width: 56px;
+    height: 56px;
+    border-radius: 14px
+}
+
+#content>.hello>h2, #content>.hello>p {
+    margin: 0
+}
+
+#content>.hello>#recentHello, #content>.hello>.hsec {
+    margin: 0
+}
+
+/* riga delle fatture di esempio: select e pulsante stessa altezza, allineati al centro */
+#content>.hello .demo {
+    align-items: center
+}
+
+#content>.hello .demo .btn, #content>.hello .demo .sel-btn {
+    height: var(--ctl);
+    margin: 0
+}

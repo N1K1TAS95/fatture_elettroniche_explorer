@@ -4,8 +4,17 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+## [1.2.0] - 2026-10-31
+
+Fatture di esempio integrate e schermata iniziale uniformata alla dashboard.
+
+### Aggiunto
+- Schermata iniziale: pulsante **Prova con fatture di esempio**, con scelta di quante fatture caricare (3, 6 o tutte). Sono le fatture fittizie di `tests/fixtures`, incorporate in `html/esempi.js` (generato da `tests/generate_fixtures.py`): nessuna richiesta di rete, funziona anche aprendo `index.html` da file.
+
 ### Modificato
-- Spaziatura unica (12 px, 8 px su telefono): margine esterno, spazio tra le card e distanza del testo dal bordo usano lo stesso valore, impostabile in cima a `app.css`, insieme a padding delle righe, raggio degli angoli e altezze di intestazione e controlli.
+- Schermata iniziale a tutta altezza, come la dashboard, con il logo in cima e tre sezioni distinte: apri le tue fatture, fatture di esempio, aperti di recente. Gli spazi tra i blocchi sono tutti uguali.
+- Spaziatura unica: margine esterno, spazio tra le card e distanza del testo dal bordo usano lo stesso valore (`--sp`), impostabile in cima a `app.css`, insieme a padding delle righe, raggio degli angoli e altezze di intestazione e controlli.
+- Margine inferiore dell'elenco uguale a quello laterale.
 
 ## [1.1.1] - 2026-10-31
 
@@ -68,7 +77,8 @@ Prima versione pubblica.
 - Firefox e Safari usano la modalità compatibile, senza cartelle recenti né installazione come app.
 - Il foglio di stile Assosoftware non è incluso per via della sua licenza.
 
-[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.1...HEAD
+[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/releases/tag/v1.0.0

@@ -486,8 +486,27 @@ function exportCsv(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='fatture.csv';a.click();
 }
 
+/* ====================== Fatture di esempio (html/esempi.js, solo dati fittizi) ====================== */
+// I dati sono testo inerte generato da tests/generate_fixtures.py: passano dallo stesso parser delle fatture vere.
+const DEMO=typeof ESEMPI==='object'&&ESEMPI&&Array.isArray(ESEMPI.f)?ESEMPI:null;
+if(DEMO&&DEMO.f.length){
+  const tot=DEMO.f.length,opts=[...new Set([3,6,tot].filter(n=>n<=tot))].sort((a,b)=>a-b);
+  const def=opts[Math.min(1,opts.length-1)];
+  $id('demoN').innerHTML=opts.map(n=>`<option value="${n}"${n===def?' selected':''}>${n===tot?'Tutte ('+n+')':n}</option>`).join('');
+  $id('demoBox').hidden=false;
+}
+async function loadDemo(){
+  const n=Number.parseInt(($id('demoN')||{}).value,10);
+  if(!DEMO||!Number.isInteger(n)||n<1||n>DEMO.f.length)return; // il valore del select non è fidato: solo interi nell'intervallo
+  dirHandle=null;curKey='demo';
+  const entries=DEMO.f.slice(0,n).map(e=>({path:e.p,getFile:async()=>new File([e.x],e.p.split('/').pop(),{type:'text/xml',lastModified:DEMO.v})}));
+  await loadEntries(entries,'Fatture di esempio','demo');
+}
+
 /* ====================== Recenti (cartelle e fatture) ====================== */
 const WELCOME=$id('content').innerHTML;
+// la schermata iniziale si ricrea da WELCOME: il select va rifatto ogni volta
+function showWelcome(){$id('content').innerHTML=WELCOME;enhanceSelect($id('demoN'))}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 let RECENTS=[],curKey='',single=false,snap=null;
 const recents={
@@ -546,7 +565,7 @@ function exitSingle(){
   if(!single)return;leaveSingle();
   if(snap){const s=snap;snap=null;ALL=s.ALL;ERR=s.ERR;rootName=s.rootName;entriesCur=s.entriesCur;dirHandle=s.dirHandle;myId=s.myId;setupAfterLoad(s.nFiles,0)}
   else{ALL=[];view=[];ERR=[];$id('toolbar').style.display='none';$id('tabs').style.display='none';$id('stats').style.display='none';
-    $id('content').innerHTML=WELCOME;$id('status').textContent='';$id('bRescan').disabled=true;renderRecents()}
+    showWelcome();$id('status').textContent='';$id('bRescan').disabled=true;renderRecents()}
 }
 async function openSingleFile(file,name){
   try{
@@ -623,7 +642,7 @@ $id('fFallback').onchange=async e=>{
 };
 recents.load();
 $id('errClose').onclick=()=>$id('errDlg').close();
-document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){$id(g.dataset.go).click();return}if(e.target.closest('[data-act="reset"]'))resetAll()});
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){$id(g.dataset.go).click();return}if(e.target.closest('[data-act="reset"]'))resetAll();if(e.target.closest('[data-act="demo"]'))loadDemo()});
 
 const onF=debounce(readFilters,150);
 ['q','cp','dal','al','min','max'].forEach(i=>$id(i).addEventListener('input',onF));
@@ -797,7 +816,7 @@ function enhanceCombo(inp,getList){
   pop.addEventListener('click',e=>{const o=e.target.closest('.opt');if(o){e.preventDefault();inp.value=o.dataset.v;close();openPop=null;inp.dispatchEvent(new Event('input',{bubbles:true}))}});
   pop.addEventListener('mousemove',e=>{const o=e.target.closest('.opt');if(o&&!o.classList.contains('act')){const a=pop.querySelector('.opt.act');if(a)a.classList.remove('act');o.classList.add('act')}});
 }
-['my','per','td'].forEach(i=>enhanceSelect($id(i)));
+['my','per','td','demoN'].forEach(i=>enhanceSelect($id(i)));
 enhanceCombo($id('cp'),()=>CP_OPTS);
 /* tema: un solo pulsante con menu */
 (()=>{

@@ -33,6 +33,7 @@ I risultati attesi dell'app sulle fatture di prova sono in `tests/README.md` e `
 
 **Dati**
 - **Mai fatture reali**, né dati personali, nomi, P.IVA, percorsi del computer di qualcuno, in nessun file né screenshot. Si prova solo con `tests/fixtures`, che è generata da `tests/generate_fixtures.py`: non modificare quei file a mano, cambia lo script e rigenera.
+- `html/esempi.js` è l'unico file di dati in `html/`: **generato** da `tests/generate_fixtures.py` con sole fatture fittizie (testo inerte, senza p7m né casi ostili). Non modificarlo a mano: `tests/check.py` lo confronta con `tests/fixtures`.
 - Il `.gitignore` esclude `.xml`, `.p7m`, `.csv` e `.pdf` salvo `tests/fixtures/`. Non aggirarlo.
 
 **Pubblicazione**

@@ -23,6 +23,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zlib
 from pathlib import Path
 
 DEST = Path(__file__).resolve().parent / "fixtures"  # cartella finale
@@ -253,7 +254,32 @@ def main():
         shutil.copytree(OUT, DEST)
     finally:
         shutil.rmtree(stage, ignore_errors=True)
+    scrivi_esempi()
     riepilogo_atteso()
+
+
+ESEMPI_JS = Path(__file__).resolve().parent.parent / "html" / "esempi.js"
+
+
+def scrivi_esempi():
+    """Scrive html/esempi.js: le fatture ricevute ed emesse di tests/fixtures come dati inerti (JSON) per il
+    pulsante «Prova con fatture di esempio». Niente p7m, casi limite né il file con contenuto ostile.
+    Le ricevute e le emesse si alternano, così anche poche fatture mostrano entrambe le direzioni."""
+    def elenco(sub):
+        return sorted(p for p in (DEST / sub).rglob("*.xml"))
+    a, b = elenco("ricevute"), elenco("emesse")
+    ordine = []
+    while a or b:
+        for lista in (a, b):
+            if lista:
+                ordine.append(lista.pop(0))
+    files = [{"p": f.relative_to(DEST).as_posix(), "x": f.read_text(encoding="utf-8")} for f in ordine]
+    v = zlib.crc32("".join(f["p"] + f["x"] for f in files).encode("utf-8"))
+    dati = json.dumps({"v": v, "f": files}, ensure_ascii=True, separators=(",", ":"))
+    ESEMPI_JS.write_text(
+        "/* GENERATO da tests/generate_fixtures.py: non modificare a mano. Solo fatture FITTIZIE (dati inerti). */\n"
+        f"const ESEMPI=Object.freeze({dati});\n", encoding="utf-8", newline="\n")
+    print(f"html/esempi.js: {len(files)} fatture di esempio")
 
 
 def genera_tutto():

@@ -38,7 +38,7 @@ HTML, CSS e JavaScript puri, nessuna dipendenza, nessuna build, nessuna richiest
 
 Puoi provare l'app senza installare nulla su **https://fatture-elettroniche-explorer.n1k.cloud**: è la cartella `html/` di questo repository, pubblicata con GitHub Pages in HTTPS. Come sempre, le fatture le scegli tu dal tuo computer e **non vengono mai caricate**: l'app non fa nessuna richiesta di rete.
 
-- Per provarla subito senza dati reali, scarica la cartella `tests/fixtures` (fatture fittizie) e aprila dall'app.
+- Per provarla subito senza dati reali, clicca **Prova con fatture di esempio** nella schermata iniziale e scegli quante fatture caricare: sono fatture fittizie incorporate nell'app (`html/esempi.js`). In alternativa, scarica la cartella `tests/fixtures` e aprila dall'app.
 - La demo si aggiorna **solo quando viene pubblicata una release**: parte il workflow `.github/workflows/pages.yml`, che prima esegue i controlli e poi pubblica `html/` così com'è nel tag. Le modifiche non ancora rilasciate non compaiono online.
 - GitHub Pages non permette di impostare header HTTP personalizzati: restano la Content-Security-Policy nel `<meta>` e l'assenza di richieste di rete, ma mancano gli header aggiuntivi di [nginx.conf](nginx.conf). Per un uso quotidiano con fatture vere conviene **la propria installazione** (vedi [Pubblicarla su un server](#pubblicarla-su-un-server)). Dettagli in [SECURITY.md](SECURITY.md).
 

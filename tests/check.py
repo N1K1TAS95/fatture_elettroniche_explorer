@@ -51,7 +51,7 @@ else:
 print("Nessuna risorsa esterna né codice inline in html/")
 for f in sorted(HTML.rglob("*")):
     if f.suffix in {".html", ".js", ".css", ".webmanifest", ".svg"}:
-        testo = re.sub(r'xmlns(:\w+)?="[^"]*"', "", leggi(f))  # gli URI dei namespace non sono richieste
+        testo = re.sub(r'xmlns(:\w+)?=\\?"[^"]*"', "", leggi(f))  # gli URI dei namespace non sono richieste
         for m in re.finditer(r"https?://[^\s\"'<>)]+", testo):
             ko(f"{f.relative_to(ROOT)}: riferimento esterno {m.group(0)}")
 
@@ -85,6 +85,22 @@ print("Nessun file di dati in html/")
 for f in HTML.rglob("*"):
     if f.is_file() and f.suffix.lower() in {".xml", ".p7m", ".csv", ".pdf"}:
         ko(f"{f.relative_to(ROOT)}: un file di dati non deve stare in html/")
+
+print("Fatture di esempio incorporate (html/esempi.js)")
+try:
+    m = re.fullmatch(r"/\*[^\n]*\*/\nconst ESEMPI=Object\.freeze\((\{.*\})\);\n", leggi(HTML / "esempi.js"), re.S)
+    esempi = json.loads(m.group(1))
+    if not esempi["f"] or not isinstance(esempi["v"], int):
+        ko("esempi.js: elenco vuoto o versione mancante")
+    for e in esempi["f"]:
+        if set(e) != {"p", "x"} or not re.fullmatch(r"(ricevute|emesse)/[\w./-]+\.xml", e["p"]):
+            ko(f"esempi.js: voce non ammessa {str(e.get('p'))[:60]}")
+        elif e["x"] != leggi(FIXTURES / e["p"]):
+            ko(f"esempi.js non allineato a tests/fixtures/{e['p']}: rigenera con generate_fixtures.py")
+        elif "FATTURA DI PROVA" not in e["x"] and "Azienda Test" not in e["x"]:
+            ko(f"esempi.js: {e['p']} non sembra una fattura di prova")
+except (OSError, ValueError, KeyError, AttributeError) as err:
+    ko(f"esempi.js mancante o in formato non valido: {err!r}")
 
 print("Manifest e service worker coerenti")
 try:

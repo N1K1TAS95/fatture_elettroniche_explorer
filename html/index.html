@@ -15,7 +15,7 @@
 <script src="theme.js"></script>
 <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="fixed">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
 <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
 <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
@@ -107,11 +107,20 @@
 
   <section class="card" id="content">
     <div class="hello">
-      <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg></div>
+      <img class="hlogo" src="icon.svg" alt="" width="56" height="56">
       <h2>Esplora le tue fatture elettroniche</h2>
-      <p class="mute">Scegli la cartella del PC o del NAS che contiene i file FatturaPA (<code>.xml</code> e <code>.xml.p7m</code>), sottocartelle comprese, oppure apri <b>una singola fattura</b>.<br>Puoi anche trascinare qui una cartella o dei file. Nulla esce dal tuo computer.</p>
-      <div class="hbtns"><button class="btn primary" data-go="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg>Seleziona cartella…</button><button class="btn" data-go="bFile"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Apri una fattura…</button></div>
-      <div id="recentHello"></div>
+      <p class="mute">Nulla esce dal tuo computer. Puoi anche trascinare qui una cartella o dei file.</p>
+      <section class="hsec" aria-labelledby="hApri">
+        <h3 id="hApri">Apri le tue fatture</h3>
+        <p class="mute">Cartella con i file <code>.xml</code> e <code>.xml.p7m</code>, sottocartelle comprese, oppure una singola fattura.</p>
+        <div class="hbtns"><button class="btn primary" data-go="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg>Seleziona cartella…</button><button class="btn" data-go="bFile"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Apri una fattura…</button></div>
+      </section>
+      <section class="hsec" id="demoBox" aria-labelledby="hProva" hidden>
+        <h3 id="hProva">Prova con fatture di esempio</h3>
+        <p class="mute">Non hai fatture sotto mano? Carica alcune fatture fittizie incorporate nell'app.</p>
+        <div class="demo"><label class="demo-n">Quante fatture<select id="demoN"></select></label><button class="btn" data-act="demo"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Carica fatture di esempio</button></div>
+      </section>
+      <section class="hsec" id="recentHello" aria-label="Aperti di recente"></section>
     </div>
   </section>
   </div>
@@ -140,6 +149,7 @@
 <dialog id="errDlg"><h3 style="margin-top:0">File non letti</h3><div id="errList" style="max-height:50vh;overflow:auto;font-size:13px"></div>
   <p style="text-align:right"><button class="btn" id="errClose">Chiudi</button></p></dialog>
 
+<script src="esempi.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
