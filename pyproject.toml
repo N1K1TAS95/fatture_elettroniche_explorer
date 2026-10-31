@@ -1,0 +1,18 @@
+[project]
+name = "fatture-explorer"
+version = "0.1.0"
+description = "Esploratore leggero di fatture elettroniche italiane (FatturaPA), servito in locale"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Nikita Sinko" }]
+keywords = ["fatturapa", "fattura-elettronica", "pwa"]
+
+# L'app è HTML/CSS/JS puro e il server locale (serve.py) usa solo la libreria standard:
+# nessuna dipendenza.
+dependencies = []
+
+[tool.uv]
+# Non è un pacchetto da installare: uv crea solo l'ambiente virtuale e lancia gli script.
+package = false

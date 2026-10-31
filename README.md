@@ -53,6 +53,24 @@ La *modalità compatibile* (pulsante che compare da solo) funziona in tutti i br
 
 Il browser chiede il permesso di leggere la cartella: l'accesso è in sola lettura. La cartella `html/` deve restare intera (`index.html` usa i file `app.css`, `app.js` e gli altri accanto a sé).
 
+### Con un piccolo server locale (uv / Python)
+
+Per avere **tutte** le funzioni (cartelle recenti garantite, installazione come app, stessi header di sicurezza della produzione) puoi servire l'app in locale con Python. Serve solo [uv](https://docs.astral.sh/uv/), che scarica da solo anche Python se manca:
+
+```bash
+uv run serve.py
+```
+
+Alla prima esecuzione uv crea l'ambiente virtuale (`.venv`) leggendo `pyproject.toml` (il progetto non ha dipendenze), avvia il server e apre il browser su `http://localhost:8000`. Per fermarlo: `Ctrl+C`.
+
+| Opzione | Significato |
+| --- | --- |
+| `--port 9000` | usa un'altra porta (predefinita: 8000) |
+| `--no-browser` | non apre il browser |
+| `--host 0.0.0.0` | ascolta su tutta la rete locale. Dagli altri computer l'indirizzo è in HTTP, quindi la selezione delle cartelle non funziona (vedi [Requisito: HTTPS](#requisito-https)) |
+
+Per creare solo l'ambiente, senza avviare nulla: `uv sync`. Senza uv basta qualsiasi Python 3.9 o superiore: `python serve.py`.
+
 Aperta da file locale l'app funziona, ma **non può essere installata come app** (la PWA richiede un server, vedi sotto) e la memoria delle cartelle recenti e della cache dipende dal browser: se non è disponibile, l'app funziona ugualmente, semplicemente le cartelle vanno scelte ogni volta.
 
 ## Pubblicarla su un server
@@ -212,6 +230,9 @@ Il container è irrobustito (filesystem in sola lettura, `no-new-privileges`, ca
 ├── docker-compose.yml           # con reverse proxy (Nginx Proxy Manager)
 ├── docker-compose.standalone.yml# senza proxy, con porta pubblicata
 ├── .env.example                 # parametri di Docker da copiare in .env
+├── pyproject.toml               # ambiente uv (nessuna dipendenza)
+├── serve.py                     # server locale: uv run serve.py
+├── uv.lock
 ├── nginx.conf                   # configurazione di nginx (commentata)
 ├── security-headers.conf        # header di sicurezza
 ├── SECURITY.md
@@ -221,14 +242,13 @@ Il container è irrobustito (filesystem in sola lettura, `no-new-privileges`, ca
 
 ## Sviluppo
 
-Non serve alcuna build. Per provarlo in locale con un server (così funziona anche la PWA):
+Non serve alcuna build. Per provarlo in locale (anche la PWA funziona, perché `localhost` conta come contesto sicuro):
 
 ```bash
-cd html
-python -m http.server 8000
+uv run serve.py
 ```
 
-poi apri `http://localhost:8000` (`localhost` conta come contesto sicuro).
+`serve.py` serve `html/` con gli stessi header di sicurezza di `nginx.conf`. Se modifichi la CSP o i file dell'app, tieni allineati `serve.py`, `nginx.conf` e il `<meta>` di `html/index.html`.
 
 Il formato letto è FatturaPA 1.2.x (`FatturaElettronica`). Le fatture semplificate (`FatturaElettronicaSemplificata`) non sono supportate.
 
