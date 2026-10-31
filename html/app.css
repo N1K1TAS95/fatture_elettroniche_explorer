@@ -79,7 +79,7 @@ thead th:first-child{border-top-left-radius:12px}thead th:last-child{border-top-
 th:hover{color:var(--ink)}
 th.on{color:var(--acc)}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
-td.wrapc{white-space:normal;min-width:200px;max-width:380px}
+td.wrapc{white-space:normal;min-width:170px;max-width:380px}
 td .sub{color:var(--mute);font-size:12px;font-variant-numeric:tabular-nums}
 tbody tr{cursor:pointer}
 tbody tr:hover td{background:var(--hover)}
