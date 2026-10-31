@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; object-src blob:; frame-src blob:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Esplora e consulta le fatture elettroniche italiane (FatturaPA) direttamente nel browser, senza caricare nulla online.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fatture Explorer</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header>
+  <h1>📄 <span class="lbl2">Fatture </span><span>Explorer</span></h1>
+  <button class="btn primary" id="bPick">📂 <span class="lbl">Seleziona cartella…</span></button>
+  <button class="btn" id="bFile" title="Apri una singola fattura (.xml / .p7m)">📄 <span class="lbl">Apri fattura…</span></button>
+  <button class="btn" id="bRecent" style="display:none" title="Cartelle e fatture aperte di recente">🕘 <span class="lbl">Recenti</span> ▾</button>
+  <input type="file" id="fFiles" accept=".xml,.p7m" multiple hidden>
+  <button class="btn ghost" id="bRescan" disabled title="Rilegge la cartella e importa i file nuovi">↻ <span class="lbl">Aggiorna</span></button>
+  <label class="btn" id="bFallback" style="display:none">Scegli cartella (modalità compatibile)
+    <input type="file" id="fFallback" webkitdirectory multiple hidden></label>
+  <span id="status"></span>
+  <div class="seg" id="themeSeg" role="group" aria-label="Tema"><button data-th="auto" title="Automatico (segue il sistema)">◐<span class="lbl"> Auto</span></button><button data-th="light" title="Tema chiaro">☀<span class="lbl"> Chiaro</span></button><button data-th="dark" title="Tema scuro">☾<span class="lbl"> Scuro</span></button></div>
+</header>
+<div id="recentMenu" class="menu"></div>
+
+<main>
+  <section id="toolbar">
+    <div class="row">
+      <label class="search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" autocomplete="off" placeholder="Cerca per numero, fornitore, P.IVA, descrizione, importo…" aria-label="Cerca">
+        <kbd>/</kbd>
+      </label>
+      <div class="seg" id="dirSeg" role="group" aria-label="Direzione">
+        <button data-dir="" class="on">Tutte</button><button data-dir="ricevuta">Ricevute</button><button data-dir="emessa">Emesse</button>
+      </div>
+      <button class="btn" id="fbtn">⚙ <span>Filtri</span> <span class="n" id="fcount" style="display:none"></span></button>
+    </div>
+    <div class="years" id="years"></div>
+    <div id="adv" class="card">
+      <label class="wide mine">La mia azienda <select id="my"></select><small>Serve a distinguere le fatture emesse (tu sei il cedente) da quelle ricevute (tu sei il cessionario).</small></label>
+      <label class="wide">Cliente / fornitore
+        <input id="cp" list="cpList" placeholder="nome o P.IVA"><datalist id="cpList"></datalist></label>
+      <label>Periodo
+        <select id="per"><option value="">Tutto l'anno</option>
+          <optgroup label="Trimestri"><option value="q1">1° trimestre</option><option value="q2">2° trimestre</option><option value="q3">3° trimestre</option><option value="q4">4° trimestre</option></optgroup>
+          <optgroup label="Mesi"><option value="m1">Gennaio</option><option value="m2">Febbraio</option><option value="m3">Marzo</option><option value="m4">Aprile</option><option value="m5">Maggio</option><option value="m6">Giugno</option>
+          <option value="m7">Luglio</option><option value="m8">Agosto</option><option value="m9">Settembre</option><option value="m10">Ottobre</option><option value="m11">Novembre</option><option value="m12">Dicembre</option></optgroup></select></label>
+      <label>Dal <input id="dal" type="date"></label>
+      <label>Al <input id="al" type="date"></label>
+      <label>Tipo documento <select id="td"></select></label>
+      <label>Importo minimo <input id="min" type="number" step="0.01" placeholder="€"></label>
+      <label>Importo massimo <input id="max" type="number" step="0.01" placeholder="€"></label>
+      <label class="chk"><input id="dup" type="checkbox" checked> Nascondi duplicati <span id="dupN" class="mute"></span></label>
+      <button class="btn" id="bReset">Azzera tutti i filtri</button>
+    </div>
+    <div id="chips"></div>
+  </section>
+
+  <section class="card" id="stats"></section>
+
+  <div id="split"><div id="left">
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-t="fatt">Fatture</button>
+    <button class="tab" data-t="cp">Clienti / fornitori</button>
+    <button class="tab" data-t="mesi">Andamento mensile</button>
+    <span class="sp"></span>
+    <button class="btn ghost" id="bErr" style="display:none"></button>
+    <button class="btn" id="bCsv">⬇ <span class="lbl">Esporta CSV</span></button>
+  </div>
+
+  <section class="card" id="content">
+    <div class="hello">
+      <div class="ico" style="font-size:46px">🗂️</div>
+      <h2>Esplora le tue fatture elettroniche</h2>
+      <p class="mute">Scegli la cartella del PC o del NAS che contiene i file FatturaPA (<code>.xml</code> e <code>.xml.p7m</code>), sottocartelle comprese, oppure apri <b>una singola fattura</b>.<br>Puoi anche trascinare qui una cartella o dei file. Nulla esce dal tuo computer.</p>
+      <div class="hbtns"><button class="btn primary" data-go="bPick">📂 Seleziona cartella…</button><button class="btn" data-go="bFile">📄 Apri una fattura…</button></div>
+      <div id="recentHello"></div>
+    </div>
+  </section>
+  </div>
+<aside id="drawer" aria-label="Dettaglio fattura">
+  <div id="dhead">
+    <button class="btn" id="dPrev" title="Precedente (←)">‹</button>
+    <button class="btn" id="dNext" title="Successiva (→)">›</button>
+    <div class="t"><h2 id="dTitle"></h2><small id="dSub"></small></div>
+    <div class="seg"><button id="dTabD" class="on">Dettaglio</button><button id="dTabX">XML</button></div>
+    <button class="btn ghost no-print" id="dPrint" title="Stampa / salva come PDF">🖨</button>
+    <button class="btn ghost no-print" id="dFull" title="A tutta larghezza / affianca alla lista">⤢</button>
+    <button class="btn ghost no-print" id="dClose" title="Chiudi (Esc)">✕</button>
+  </div>
+  <div id="dbody"></div>
+</aside>
+  </div>
+</main>
+
+<div id="overlay"><div class="box"><div id="ovText">Lettura…</div><div class="bar"><i id="ovBar"></i></div></div></div>
+<div id="scrim"></div>
+<div id="toast"></div>
+
+
+
+<dialog id="errDlg"><h3 style="margin-top:0">File non letti</h3><div id="errList" style="max-height:50vh;overflow:auto;font-size:13px"></div>
+  <p style="text-align:right"><button class="btn" id="errClose">Chiudi</button></p></dialog>
+
+<script src="app.js"></script>
+</body>
+</html>

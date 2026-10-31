@@ -1,0 +1,26 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+
+# Claude Code (impostazioni locali)
+.claude/settings.local.json
+
+# File temporanei
+*.log
+*.tmp
+
+# DATI PERSONALI: le fatture elettroniche non vanno mai versionate
+*.xml
+*.p7m
+*.xml.p7m
+*.csv
+*.pdf
+fatture/
+Ricezione/
+Emissione/
