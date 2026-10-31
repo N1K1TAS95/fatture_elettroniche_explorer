@@ -441,3 +441,7 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
 .sel-chev{position:absolute;right:1px;top:1px;width:36px;height:calc(var(--ctl) - 2px);display:grid;place-items:center;border:0;background:none;color:var(--mute);cursor:pointer;border-radius:0 9px 9px 0}
 .sel-chev svg{width:16px;height:16px;transition:transform .15s}
 .sel>input[aria-expanded=true]~.sel-chev svg{transform:rotate(180deg)}
+
+/* scrollbar sottili, nei colori del tema */
+:root{--sb:color-mix(in srgb,var(--mute) 45%,transparent)}
+*{scrollbar-width:thin;scrollbar-color:var(--sb) transparent}
