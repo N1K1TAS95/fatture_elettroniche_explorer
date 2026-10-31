@@ -45,6 +45,8 @@ Poi apri `tests/fixtures` dall'app e confronta con i risultati attesi in [tests/
 - **Lingua**: interfaccia, documentazione e messaggi di commit in italiano.
 - **Piccole e mirate**: una pull request, uno scopo. Le modifiche grandi vanno discusse prima in una issue.
 
+Se lavori con un **assistente di programmazione** (un agente), fagli leggere [AGENTS.md](AGENTS.md): contiene le stesse regole in forma sintetica.
+
 ## Aprire una pull request
 
 1. Fai un fork e crea un ramo dedicato.

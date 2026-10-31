@@ -339,6 +339,8 @@ In `tests/fixtures/` ci sono fatture elettroniche **fittizie** (anche firmate `.
 ├── nginx.conf                   # configurazione di nginx (commentata)
 ├── security-headers.conf        # header di sicurezza
 ├── .dockerignore                # esclude tests, ambiente Python e dati da eventuali build
+├── AGENTS.md                    # istruzioni per gli assistenti di programmazione
+├── CLAUDE.md                    # rimanda ad AGENTS.md
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── SECURITY.md
