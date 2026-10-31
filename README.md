@@ -82,6 +82,7 @@ Clicca **Seleziona cartella…**, scegli quella delle fatture e inizia a cercare
 - [Fatture di prova](#fatture-di-prova)
 - [Struttura del progetto](#struttura-del-progetto)
 - [Sviluppo](#sviluppo)
+- [Contribuire](#contribuire)
 
 ## Caratteristiche
 
@@ -307,6 +308,8 @@ In `tests/fixtures/` ci sono fatture elettroniche **fittizie** (anche firmate `.
 ├── .env.example                 # parametri di Docker da copiare in .env
 ├── .github/
 │   ├── workflows/ci.yml         # controlli automatici (GitHub Actions)
+│   ├── ISSUE_TEMPLATE/          # moduli guidati per segnalazioni e proposte
+│   ├── PULL_REQUEST_TEMPLATE.md
 │   └── dependabot.yml           # aggiornamento delle versioni delle Actions
 ├── docs/
 │   └── screenshots/             # immagini del README (fatture fittizie)
@@ -321,6 +324,7 @@ In `tests/fixtures/` ci sono fatture elettroniche **fittizie** (anche firmate `.
 ├── nginx.conf                   # configurazione di nginx (commentata)
 ├── security-headers.conf        # header di sicurezza
 ├── .dockerignore                # esclude tests, ambiente Python e dati da eventuali build
+├── CONTRIBUTING.md
 ├── SECURITY.md
 ├── LICENSE
 └── README.md
@@ -339,6 +343,10 @@ uv run serve.py
 Prima di committare puoi lanciare `uv run tests/check.py`: è lo stesso controllo che esegue la GitHub Action (CSP allineata, nessuna risorsa esterna, nessun dato in `html/`, PWA coerente). Dettagli in [tests/README.md](tests/README.md).
 
 Il formato letto è FatturaPA 1.2.x (`FatturaElettronica`). Le fatture semplificate (`FatturaElettronicaSemplificata`) non sono supportate.
+
+## Contribuire
+
+Segnalazioni, idee e pull request sono benvenute: leggi [CONTRIBUTING.md](CONTRIBUTING.md). Una regola vale sempre: **non pubblicare mai fatture reali** (né in issue, né in screenshot), perché contengono dati personali e il repository è pubblico. Per le vulnerabilità usa la segnalazione privata descritta in [SECURITY.md](SECURITY.md).
 
 ## Licenza
 

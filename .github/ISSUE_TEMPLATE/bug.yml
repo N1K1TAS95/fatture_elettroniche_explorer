@@ -1,0 +1,82 @@
+name: Segnala un problema
+description: Qualcosa non funziona o una fattura non viene letta correttamente
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Grazie per la segnalazione.
+
+        **Non allegare mai fatture reali, né screenshot o testo copiato da fatture vere.** Contengono dati personali e questo repository è pubblico: tutto ciò che scrivi qui lo vedono tutti.
+        Se il problema dipende da una fattura, **anonimizza** o **inventa** i dati (nomi, P.IVA, codici fiscali, IBAN, importi) mantenendo la struttura che causa l'errore. Per i problemi di sicurezza usa invece il [canale privato](https://github.com/N1K1TAS95/fatture_elettroniche_explorer/security/advisories/new).
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Dati personali
+      options:
+        - label: Ho controllato che quanto scrivo o allego non contenga dati reali (fatture, P.IVA, codici fiscali, nomi di persone o aziende).
+          required: true
+  - type: textarea
+    id: descrizione
+    attributes:
+      label: Cosa succede
+      description: Descrivi il problema e che cosa ti aspettavi.
+    validations:
+      required: true
+  - type: textarea
+    id: passi
+    attributes:
+      label: Come riprodurlo
+      description: I passaggi per ottenere l'errore. Se possibile, riproducilo con le fatture di prova di `tests/fixtures`.
+      placeholder: |
+        1. Apro l'app…
+        2. Scelgo la cartella…
+        3. Clicco su…
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome
+        - Edge
+        - Firefox
+        - Safari
+        - Altro
+    validations:
+      required: true
+  - type: dropdown
+    id: avvio
+    attributes:
+      label: Come hai aperto l'app
+      options:
+        - Aprendo html/index.html dal file
+        - Con uv run serve.py (localhost)
+        - Da un server con HTTPS
+        - Da un server in HTTP (non localhost)
+        - Con Docker
+        - Installata come app (PWA)
+    validations:
+      required: true
+  - type: input
+    id: sistema
+    attributes:
+      label: Sistema operativo e versione del browser
+      placeholder: Windows 11, Chrome 130
+  - type: dropdown
+    id: file
+    attributes:
+      label: Tipo di file coinvolto
+      options:
+        - Non dipende da un file
+        - .xml
+        - .xml.p7m (firmato)
+        - Lotto di più fatture nello stesso file
+        - Altro
+  - type: textarea
+    id: console
+    attributes:
+      label: Errori nella console del browser (facoltativo)
+      description: Apri gli strumenti di sviluppo con F12, scheda *Console*, e incolla gli errori. Controlla che non contengano dati reali.
+      render: text

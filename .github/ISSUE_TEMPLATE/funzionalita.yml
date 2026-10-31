@@ -1,0 +1,37 @@
+name: Proponi una funzionalità
+description: Un'idea per migliorare Fatture Explorer
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Prima di aprire la proposta controlla il [README](https://github.com/N1K1TAS95/fatture_elettroniche_explorer#readme) e le issue esistenti.
+
+        L'app è pensata per restare **semplice**: HTML, CSS e JavaScript puri, nessuna dipendenza e **nessuna richiesta di rete**. Le proposte che richiedono librerie esterne, servizi online o l'invio di dati fuori dal browser non sono compatibili con questi principi.
+
+        **Non allegare fatture reali** né dati personali: usa esempi inventati.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Dati personali
+      options:
+        - label: Ho controllato che quanto scrivo o allego non contenga dati reali.
+          required: true
+  - type: textarea
+    id: problema
+    attributes:
+      label: Che problema vuoi risolvere
+      description: Descrivi la situazione in cui oggi ti manca qualcosa.
+    validations:
+      required: true
+  - type: textarea
+    id: proposta
+    attributes:
+      label: Come lo immagini
+      description: Una descrizione della funzione. Se aiuta, indica come cambierebbe l'interfaccia.
+    validations:
+      required: true
+  - type: textarea
+    id: alternative
+    attributes:
+      label: Alternative considerate (facoltativo)

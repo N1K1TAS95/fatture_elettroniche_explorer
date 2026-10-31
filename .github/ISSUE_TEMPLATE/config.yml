@@ -1,0 +1,9 @@
+# Le segnalazioni passano dai moduli guidati. Le vulnerabilità vanno segnalate in privato.
+blank_issues_enabled: false
+contact_links:
+  - name: Segnala una vulnerabilità (in privato)
+    url: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/security/advisories/new
+    about: Non aprire una issue pubblica per problemi di sicurezza. Usa questo canale riservato.
+  - name: Domande sull'uso e sulla pubblicazione
+    url: https://github.com/N1K1TAS95/fatture_elettroniche_explorer#readme
+    about: Il README spiega come usarla in locale, pubblicarla su un server e installarla come app.
