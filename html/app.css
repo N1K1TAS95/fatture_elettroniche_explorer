@@ -442,7 +442,3 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
   .fgrid .f2{grid-column:span 2;max-width:none}
   .fgrid .f.rs{grid-column:1}
 }
-
-/* scrollbar sottili, nei colori del tema */
-:root{--sb:color-mix(in srgb,var(--mute) 45%,transparent)}
-*{scrollbar-width:thin;scrollbar-color:var(--sb) transparent}
