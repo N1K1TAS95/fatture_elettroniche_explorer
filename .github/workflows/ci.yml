@@ -24,7 +24,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Scarica il codice
-        uses: actions/checkout@v4
+        # Fissata all'hash del commit (un tag come v7 si può spostare, un hash no).
+        # Dependabot propone da solo gli aggiornamenti, aggiornando hash e commento.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
