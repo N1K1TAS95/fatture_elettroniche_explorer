@@ -4,6 +4,9 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+### Modificato
+- Spaziatura unica (12 px, 8 px su telefono): margine esterno, spazio tra le card e distanza del testo dal bordo usano lo stesso valore, impostabile in cima a `app.css`, insieme a padding delle righe, raggio degli angoli e altezze di intestazione e controlli.
+
 ## [1.1.1] - 2026-10-31
 
 Dettaglio fattura riordinato sul modello della copia di cortesia in PDF.
