@@ -29,7 +29,7 @@ const MESI=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','D
 const debounce=(f,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f(...a),ms)}};
 
 /* IndexedDB minimale (handle cartella + cache) */
-const idb=(()=>{let p;const open=()=>p||(p=new Promise((res,rej)=>{const r=indexedDB.open('fatture-explorer',1);r.onupgradeneeded=()=>{r.result.createObjectStore('kv');r.result.createObjectStore('cache')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}));
+const idb=(()=>{let p;const open=()=>p||(p=new Promise((res,rej)=>{const r=indexedDB.open('fatture-elettroniche-explorer',1);r.onupgradeneeded=()=>{r.result.createObjectStore('kv');r.result.createObjectStore('cache')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}));
   // Se IndexedDB non risponde (browser, impostazioni o modalità privata) l'app continua a funzionare senza cache né recenti.
   const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('IndexedDB non disponibile')),ms))]);
   const tx=(s,m,fn)=>withTimeout((async()=>{const db=await open();return new Promise((res,rej)=>{const t=db.transaction(s,m);const rq=fn(t.objectStore(s));t.oncomplete=()=>res(rq.result);t.onerror=()=>rej(t.error)})})(),4000);
@@ -457,7 +457,7 @@ function courtesyDoc(d){
     <div class="pd-tot">${tot.map(t=>`<div><span>${t[0]}</span><span>${t[1]}</span></div>`).join('')}<div class="pd-grand"><span>Totale documento</span><span>${mm(d.tot)}</span></div></div>
     ${pag?`<table class="pd-t"><thead><tr><th>Pagamento</th><th>Scadenza</th><th class="n">Importo</th><th>IBAN / Istituto</th></tr></thead><tbody>${pag}</tbody></table>`:''}
     ${d.all.length?`<div class="pd-note"><b>Allegati:</b> ${d.all.map(a=>esc(a.nome)).join(', ')} (non inclusi in questa copia)</div>`:''}
-    <footer class="pd-foot">Copia di cortesia generata da Fatture Explorer a partire dal file «${esc(d.path.split('/').pop())}». Non ha valore fiscale: il documento originale è il file XML FatturaPA.</footer>
+    <footer class="pd-foot">Copia di cortesia generata da Fatture Elettroniche Explorer a partire dal file «${esc(d.path.split('/').pop())}». Non ha valore fiscale: il documento originale è il file XML FatturaPA.</footer>
   </article>`;
 }
 function printCourtesy(){

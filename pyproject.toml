@@ -1,5 +1,5 @@
 [project]
-name = "fatture-explorer"
+name = "fatture-elettroniche-explorer"
 version = "0.1.0"
 description = "Esploratore leggero di fatture elettroniche italiane (FatturaPA), servito in locale"
 readme = "README.md"

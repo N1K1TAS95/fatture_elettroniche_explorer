@@ -3,6 +3,6 @@ revision = 5
 requires-python = ">=3.9"
 
 [[package]]
-name = "fatture-explorer"
+name = "fatture-elettroniche-explorer"
 version = "0.1.0"
 source = { virtual = "." }

@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="html/icons/icon-192.png" width="88" height="88" alt="Icona di Fatture Explorer">
+<img src="html/icons/icon-192.png" width="88" height="88" alt="Icona di Fatture Elettroniche Explorer">
 
-# Fatture Explorer
+# Fatture Elettroniche Explorer
 
 **Esplora le tue fatture elettroniche italiane direttamente nel browser.**<br>
 Cerca, filtra e leggi le fatture FatturaPA di una cartella del PC o del NAS: niente installazione, niente upload.
@@ -178,8 +178,8 @@ cp .env.example .env
 Modifica `.env` se serve (vedi la [tabella](#riepilogo-cosa-cambiare)):
 
 ```ini
-PROXY_NETWORK=nginx-proxy-manager   # nome della rete Docker di Nginx Proxy Manager
-CONTAINER_NAME=fatture_explorer     # nome del container (lo userai nel proxy)
+PROXY_NETWORK=nginx-proxy-manager            # nome della rete Docker di Nginx Proxy Manager
+CONTAINER_NAME=fatture_elettroniche_explorer   # nome del container (lo userai nel proxy)
 ```
 
 Il nome della rete lo trovi con:
@@ -200,7 +200,7 @@ docker compose up -d
 | --- | --- |
 | Domain Names | il tuo dominio, per esempio `fatture.miodominio.it` |
 | Scheme | `http` |
-| Forward Hostname / IP | il valore di `CONTAINER_NAME` (`fatture_explorer`) |
+| Forward Hostname / IP | il valore di `CONTAINER_NAME` (`fatture_elettroniche_explorer`) |
 | Forward Port | `80` |
 | Block Common Exploits | attivo |
 
@@ -238,7 +238,7 @@ Con Nginx Proxy Manager e i valori predefiniti **non devi cambiare nulla nei fil
 | Dove | Parametro | Predefinito | Quando cambiarlo |
 | --- | --- | --- | --- |
 | `.env` | `PROXY_NETWORK` | `nginx-proxy-manager` | Se la rete Docker del tuo proxy ha un altro nome (`docker network ls`). |
-| `.env` | `CONTAINER_NAME` | `fatture_explorer` | Se vuoi un altro nome, o se hai più istanze. È l'host da inserire nel proxy (*Forward Hostname*). |
+| `.env` | `CONTAINER_NAME` | `fatture_elettroniche_explorer` | Se vuoi un altro nome, o se hai più istanze. È l'host da inserire nel proxy (*Forward Hostname*). |
 | `.env` | `HOST_PORT` | `8080` | Solo con `docker-compose.standalone.yml`: porta già occupata. |
 | `.env` | `BIND_ADDRESS` | `127.0.0.1` | Solo con `docker-compose.standalone.yml`: `0.0.0.0` per aprirla alla rete locale. |
 | Nginx Proxy Manager | Domain Names | — | Sempre: il tuo dominio. |
@@ -247,8 +247,8 @@ Con Nginx Proxy Manager e i valori predefiniti **non devi cambiare nulla nei fil
 | `nginx.conf` | `set_real_ip_from` (commentato) | disattivo | Solo se vuoi gli IP reali dei client nei log: metti la subnet della rete del proxy (`docker network inspect <rete>`). |
 | `nginx.conf` | `Content-Security-Policy` | restrittiva | Solo se aggiungi risorse esterne (e allinea il `<meta>` di `index.html`). |
 | `docker-compose*.yml` | `mem_limit`, `pids_limit` | `128m`, `100` | Praticamente mai: per un sito statico bastano. |
-| `html/sw.js` | `VERSION` | `1` | Dopo aver modificato i file dell'app: aumentala per ripulire la cache dei client. |
-| `html/manifest.webmanifest` | `name`, `short_name`, colori | Fatture Explorer | Se vuoi un nome o un tema diversi per l'app installata. |
+| `html/sw.js` | `VERSION` | numero progressivo | Dopo aver modificato i file dell'app: aumentala per ripulire la cache dei client. |
+| `html/manifest.webmanifest` | `name`, `short_name`, colori | Fatture Elettroniche Explorer | Se vuoi un nome o un tema diversi per l'app installata. |
 
 Le istruzioni sono riportate anche nei commenti dei file di configurazione, che non vanno altrimenti modificati.
 
@@ -258,7 +258,7 @@ Pubblicata su **HTTPS** (o su `localhost`), l'app è una *Progressive Web App*: 
 
 **Per installarla:**
 
-- **Chrome / Edge (computer)**: clicca l'icona di installazione nella barra dell'indirizzo, oppure menu `⋮` → *Salva e condividi* → *Installa Fatture Explorer…* (in Edge: menu `…` → *App* → *Installa questo sito come app*).
+- **Chrome / Edge (computer)**: clicca l'icona di installazione nella barra dell'indirizzo, oppure menu `⋮` → *Salva e condividi* → *Installa Fatture Elettroniche Explorer…* (in Edge: menu `…` → *App* → *Installa questo sito come app*).
 - **Chrome (Android)**: menu `⋮` → *Installa app*.
 - **Safari (iPhone/iPad)**: *Condividi* → *Aggiungi alla schermata Home*. Safari non supporta però la selezione diretta delle cartelle.
 

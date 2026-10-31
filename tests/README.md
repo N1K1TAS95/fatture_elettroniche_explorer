@@ -1,6 +1,6 @@
 # Fatture di prova
 
-Questa cartella contiene fatture elettroniche **fittizie** per provare Fatture Explorer. Tutti i dati (aziende, persone, P.IVA, codici fiscali, IBAN) sono inventati: **non sono fatture valide e non vanno mai inviate allo SDI**. Le fatture reali non vanno mai messe qui né altrove nel repository.
+Questa cartella contiene fatture elettroniche **fittizie** per provare Fatture Elettroniche Explorer. Tutti i dati (aziende, persone, P.IVA, codici fiscali, IBAN) sono inventati: **non sono fatture valide e non vanno mai inviate allo SDI**. Le fatture reali non vanno mai messe qui né altrove nel repository.
 
 - Non fanno parte dell'applicazione: stanno fuori da `html/`, quindi **non finiscono nel container Docker** (il compose monta solo `html/`) né nella pubblicazione del sito. Il file `.dockerignore` le esclude anche da eventuali build future.
 - Il `.gitignore` esclude `.xml`, `.p7m`, `.csv` e `.pdf` in tutto il repository, **tranne** `tests/fixtures/`.

@@ -1,4 +1,4 @@
-# Contribuire a Fatture Explorer
+# Contribuire a Fatture Elettroniche Explorer
 
 Grazie per l'interesse! Le segnalazioni e le proposte sono benvenute. Questa guida spiega come proporre una modifica senza sorprese.
 

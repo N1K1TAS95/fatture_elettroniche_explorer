@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Server locale per Fatture Explorer.
+"""Server locale per Fatture Elettroniche Explorer.
 
 Serve la cartella ``html/`` con gli stessi header di sicurezza usati in produzione
 (vedi ``nginx.conf`` e ``security-headers.conf``). Usa solo la libreria standard di
@@ -79,7 +79,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Serve Fatture Explorer in locale.")
+    parser = argparse.ArgumentParser(description="Serve Fatture Elettroniche Explorer in locale.")
     parser.add_argument("-p", "--port", type=int, default=8000, help="porta (predefinita: 8000)")
     parser.add_argument(
         "--host",
@@ -99,7 +99,7 @@ def main():
 
     shown = "localhost" if args.host in ("127.0.0.1", "0.0.0.0", "::1") else args.host
     url = f"http://{shown}:{args.port}/"
-    print(f"Fatture Explorer: {url}   (Ctrl+C per fermare)")
+    print(f"Fatture Elettroniche Explorer: {url}   (Ctrl+C per fermare)")
     if args.host not in ("127.0.0.1", "localhost", "::1"):
         print(
             "ATTENZIONE: da altri computer questo indirizzo e' in HTTP, quindi il browser non abilita "

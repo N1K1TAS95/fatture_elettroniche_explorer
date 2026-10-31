@@ -1,5 +1,5 @@
 # ==============================================================================
-#  Fatture Explorer SENZA reverse proxy: il container pubblica una porta.
+#  Fatture Elettroniche Explorer SENZA reverse proxy: il container pubblica una porta.
 #
 #  Avvio:   docker compose -f docker-compose.standalone.yml up -d
 #
@@ -17,13 +17,13 @@
 # ==============================================================================
 
 services:
-  fatture_explorer:
+  fatture_elettroniche_explorer:
     image: nginx:stable-alpine
     volumes:
       - ./html:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./security-headers.conf:/etc/nginx/security-headers.conf:ro
-    container_name: ${CONTAINER_NAME:-fatture_explorer}
+    container_name: ${CONTAINER_NAME:-fatture_elettroniche_explorer}
     restart: unless-stopped
     ports:
       - "${BIND_ADDRESS:-127.0.0.1}:${HOST_PORT:-8080}:80"

@@ -1,4 +1,4 @@
-/* Service worker di Fatture Explorer.
+/* Service worker di Fatture Elettroniche Explorer.
  *
  * Serve solo a due cose: rendere l'app installabile (PWA) e farla aprire anche senza rete.
  * Mette in cache SOLTANTO i file dell'applicazione (HTML, CSS, JS, icone): le fatture non
@@ -9,8 +9,8 @@
  * Funziona solo su HTTPS (o su localhost): vedi il README.
  * Dopo aver modificato i file dell'app, aumenta VERSION per ripulire la cache dei client.
  */
-const VERSION = '2';
-const CACHE = 'fatture-explorer-v' + VERSION;
+const VERSION = '3';
+const CACHE = 'fatture-elettroniche-explorer-v' + VERSION;
 const ASSETS = [
   './',
   'index.html',
@@ -30,7 +30,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k.startsWith('fatture-explorer-') && k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith('fatture-elettroniche-explorer-') && k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

@@ -2,7 +2,7 @@
 """Genera le fatture elettroniche di PROVA in tests/fixtures/.
 
 Tutti i dati sono FITTIZI (aziende, persone, P.IVA, IBAN): servono solo a provare
-Fatture Explorer. Non sono fatture valide e non vanno mai inviate allo SDI.
+Fatture Elettroniche Explorer. Non sono fatture valide e non vanno mai inviate allo SDI.
 
     uv run tests/generate_fixtures.py
 

@@ -1,5 +1,5 @@
 # ==============================================================================
-#  Fatture Explorer dietro un reverse proxy (es. Nginx Proxy Manager) - CONSIGLIATO.
+#  Fatture Elettroniche Explorer dietro un reverse proxy (es. Nginx Proxy Manager) - CONSIGLIATO.
 #
 #  Il container non pubblica nessuna porta: è raggiungibile solo dal proxy, che si
 #  occupa di HTTPS e certificati. Serve una rete Docker condivisa con il proxy.
@@ -15,13 +15,13 @@
 # ==============================================================================
 
 services:
-  fatture_explorer:
+  fatture_elettroniche_explorer:
     image: nginx:stable-alpine
     volumes:
       - ./html:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./security-headers.conf:/etc/nginx/security-headers.conf:ro
-    container_name: ${CONTAINER_NAME:-fatture_explorer}
+    container_name: ${CONTAINER_NAME:-fatture_elettroniche_explorer}
     restart: unless-stopped
 
     # Irrobustimento: filesystem in sola lettura, solo le capability necessarie a nginx
