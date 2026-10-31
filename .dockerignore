@@ -4,6 +4,9 @@
 # Fatture di prova e script di test
 tests/
 
+# Immagini della documentazione
+docs/
+
 # Ambiente Python / uv e server locale
 .venv/
 __pycache__/

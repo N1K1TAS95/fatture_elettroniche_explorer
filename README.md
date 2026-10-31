@@ -1,11 +1,71 @@
+<div align="center">
+
+<img src="html/icons/icon-192.png" width="88" height="88" alt="Icona di Fatture Explorer">
+
 # Fatture Explorer
+
+**Esplora le tue fatture elettroniche italiane direttamente nel browser.**<br>
+Cerca, filtra e leggi le fatture FatturaPA di una cartella del PC o del NAS: niente installazione, niente upload.
+
+[![Licenza MIT](https://img.shields.io/badge/licenza-MIT-2563eb?style=flat-square)](LICENSE)
+![Dipendenze: nessuna](https://img.shields.io/badge/dipendenze-nessuna-16a34a?style=flat-square)
+![PWA installabile](https://img.shields.io/badge/PWA-installabile-7c3aed?style=flat-square)
+![Privacy: 100% locale](https://img.shields.io/badge/privacy-100%25_locale-0891b2?style=flat-square)
+![FatturaPA 1.2](https://img.shields.io/badge/FatturaPA-1.2.x-64748b?style=flat-square)
+
+[Avvio rapido](#avvio-rapido) · [Caratteristiche](#caratteristiche) · [Pubblicarla su un server](#pubblicarla-su-un-server) · [Sicurezza](SECURITY.md)
+
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/elenco-scuro.png">
+  <img src="docs/screenshots/elenco-chiaro.png" alt="Elenco delle fatture con filtri, totali e ricerca" width="100%">
+</picture>
+
+</div>
 
 Esploratore leggero di **fatture elettroniche italiane** (FatturaPA, formato `.xml` e `.xml.p7m`). È una pagina web statica: scegli una cartella del PC o del NAS e naviga, cerca e filtra le fatture, senza installare nulla e **senza che i dati lascino il tuo computer**.
 
 HTML, CSS e JavaScript puri, nessuna dipendenza, nessuna build, nessuna richiesta di rete. Può essere installata come **app (PWA)** e funziona anche offline.
 
+## Avvio rapido
+
+Scarica il repository e scegli un modo:
+
+```bash
+# 1. nessun server: apri html/index.html con Chrome o Edge
+# 2. con un piccolo server locale (uv scarica da solo Python)
+uv run serve.py        # poi apri http://localhost:8000
+```
+
+Clicca **Seleziona cartella…**, scegli quella delle fatture e inizia a cercare. Per provarla subito senza dati reali usa la cartella `tests/fixtures` (vedi [Fatture di prova](#fatture-di-prova)).
+
+## Anteprima
+
+<table>
+  <tr>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dettaglio-scuro.png">
+        <img src="docs/screenshots/dettaglio-chiaro.png" alt="Dettaglio di una fattura affiancato all'elenco">
+      </picture>
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/pdf.png" alt="Copia di cortesia in PDF">
+    </td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>Dettaglio</b> affiancato all'elenco, con tema chiaro, scuro o automatico</sub></td>
+    <td align="center"><sub><b>PDF</b> della fattura, pronto da salvare o stampare</sub></td>
+  </tr>
+</table>
+
+<sub>Schermate realizzate con le fatture fittizie di `tests/fixtures`.</sub>
+
 ## Indice
 
+- [Avvio rapido](#avvio-rapido)
+- [Anteprima](#anteprima)
 - [Caratteristiche](#caratteristiche)
 - [Usarla sul proprio computer](#usarla-sul-proprio-computer) (basta aprire `index.html`)
 - [Pubblicarla su un server](#pubblicarla-su-un-server)
@@ -80,11 +140,13 @@ Aperta da file locale l'app funziona, ma **non può essere installata come app**
 
 L'app è un sito statico: basta servire la cartella `html/`. Pubblicarla ha senso per averla sempre a disposizione da più computer, o per installarla come app.
 
+> [!NOTE]
 > Pubblicare l'app **non pubblica le fatture**: i file restano sul tuo computer o sul NAS e vengono letti dal browser di chi usa l'app. Il server consegna solo HTML, CSS e JavaScript.
 
 ### Requisito: HTTPS
 
-**Quando possibile, usa HTTPS.** Il browser abilita la selezione diretta di cartelle e file, la memoria delle cartelle recenti e l'installazione come app (PWA) soltanto in un *contesto sicuro*: **HTTPS** oppure `localhost`.
+> [!IMPORTANT]
+> **Quando possibile, usa HTTPS.** Il browser abilita la selezione diretta di cartelle e file, la memoria delle cartelle recenti e l'installazione come app (PWA) soltanto in un *contesto sicuro*: **HTTPS** oppure `localhost`.
 
 | Come raggiungi l'app | Selezione cartelle | Recenti | PWA |
 | --- | --- | --- | --- |
@@ -241,6 +303,8 @@ In `tests/fixtures/` ci sono fatture elettroniche **fittizie** (anche firmate `.
 ├── docker-compose.yml           # con reverse proxy (Nginx Proxy Manager)
 ├── docker-compose.standalone.yml# senza proxy, con porta pubblicata
 ├── .env.example                 # parametri di Docker da copiare in .env
+├── docs/
+│   └── screenshots/             # immagini del README (fatture fittizie)
 ├── tests/
 │   ├── fixtures/                # fatture di PROVA con dati fittizi
 │   ├── generate_fixtures.py     # le rigenera: uv run tests/generate_fixtures.py
