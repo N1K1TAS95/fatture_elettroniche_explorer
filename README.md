@@ -7,7 +7,9 @@
 **Esplora le tue fatture elettroniche italiane direttamente nel browser.**<br>
 Cerca, filtra e leggi le fatture FatturaPA di una cartella del PC o del NAS: niente installazione, niente upload.
 
-[![Licenza MIT](https://img.shields.io/badge/licenza-MIT-2563eb?style=flat-square)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/N1K1TAS95/fatture_elettroniche_explorer/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/N1K1TAS95/fatture_elettroniche_explorer/actions/workflows/ci.yml)
+[![Licenza](https://img.shields.io/github/license/N1K1TAS95/fatture_elettroniche_explorer?style=flat-square&label=licenza&color=2563eb)](LICENSE)
+[![Ultimo commit](https://img.shields.io/github/last-commit/N1K1TAS95/fatture_elettroniche_explorer?style=flat-square&label=ultimo%20commit)](https://github.com/N1K1TAS95/fatture_elettroniche_explorer/commits/main)
 ![Dipendenze: nessuna](https://img.shields.io/badge/dipendenze-nessuna-16a34a?style=flat-square)
 ![PWA installabile](https://img.shields.io/badge/PWA-installabile-7c3aed?style=flat-square)
 ![Privacy: 100% locale](https://img.shields.io/badge/privacy-100%25_locale-0891b2?style=flat-square)
