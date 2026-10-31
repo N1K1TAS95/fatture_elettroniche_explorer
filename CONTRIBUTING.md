@@ -54,4 +54,16 @@ Se lavori con un **assistente di programmazione** (un agente), fagli leggere [AG
 3. Apri la pull request e compila l'elenco dei controlli.
 4. La CI parte da sola. Per le prime contribuzioni un amministratore deve approvarne l'esecuzione.
 
+## Rilasciare una versione
+
+Riguarda chi gestisce il repository. La **demo online** si aggiorna solo con una release.
+
+1. Sposta le voci di *Non rilasciato* nel `CHANGELOG.md` sotto la nuova versione (`## [1.1.0] - AAAA-MM-GG`) e aggiorna i collegamenti in fondo.
+2. Se sono cambiati i file dell'app, aumenta `VERSION` in `html/sw.js`.
+3. Fai il commit su `main` e controlla che la CI e CodeQL siano verdi.
+4. Su GitHub: *Releases → Draft a new release*, tag `vX.Y.Z` (nuovo, su `main`), titolo e note dal changelog, e **Publish**. Le pre-release non pubblicano la demo.
+5. Il workflow *Pages* esegue i controlli e pubblica `html/` così com'è nel tag. Lo stato è nella scheda *Actions*.
+
+Per ripubblicare a mano una versione: *Actions → Pages → Run workflow* e scegli il **tag** in *Use workflow from*. Da un ramo la pubblicazione è bloccata.
+
 Inviando una modifica accetti che sia rilasciata con la [licenza MIT](LICENSE) del progetto.

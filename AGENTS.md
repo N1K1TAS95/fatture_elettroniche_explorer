@@ -37,6 +37,7 @@ I risultati attesi dell'app sulle fatture di prova sono in `tests/README.md` e `
 
 **Pubblicazione**
 - Un file in `html/` diventa **pubblico**: Docker monta solo `html/` e la demo su GitHub Pages pubblica solo `html/`.
+- La demo online si aggiorna **solo con una release** (tag `vX.Y.Z`), non con un push su `main`. Come si rilascia: vedi *Rilasciare una versione* in [CONTRIBUTING.md](CONTRIBUTING.md).
 - Se cambi i file dell'app, aumenta `VERSION` in `html/sw.js` e annota le novità visibili agli utenti in `CHANGELOG.md`, sotto *Non rilasciato*.
 - L'app deve funzionare anche aprendo `html/index.html` **da file**: percorsi relativi, e il service worker si registra solo su `http(s)`.
 - Non rinominare il database IndexedDB né il prefisso della cache del service worker: gli utenti perderebbero cartelle recenti e cache.

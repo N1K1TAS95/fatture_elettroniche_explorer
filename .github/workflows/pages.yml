@@ -1,18 +1,19 @@
-# Pubblica la cartella html/ su GitHub Pages (demo online, con dominio personalizzato).
+# Pubblica la cartella html/ su GitHub Pages (demo online, con dominio personalizzato)
+# SOLO quando si pubblica una release: un push su main non cambia il sito.
 # Prima di pubblicare esegue gli stessi controlli della CI. Pubblica solo il contenuto di html/:
 # test, documentazione e fatture di prova non vengono mai inclusi.
 #
-# Prerequisiti nel repository (una tantum): Settings → Pages → Source: "GitHub Actions".
+# Prerequisiti nel repository (una tantum):
+#   - Settings → Pages → Source: "GitHub Actions".
+#   - Settings → Environments → github-pages → Deployment branches and tags: regola per i TAG "v*"
+#     (e nessun ramo), così il sito si può pubblicare solo da una release.
 # Le impostazioni del dominio sono descritte nel README.
 name: Pages
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "html/**"
-      - ".github/workflows/pages.yml"
-  workflow_dispatch: # pubblicazione manuale dalla scheda Actions
+  release:
+    types: [released] # release pubblicata (le pre-release non pubblicano)
+  workflow_dispatch: # ripubblicazione a mano: scegli il TAG da "Use workflow from"
 
 # Permessi minimi a livello di workflow; il job di pubblicazione ne chiede solo due in più.
 permissions:
@@ -42,6 +43,8 @@ jobs:
   pubblica:
     name: Pubblica su GitHub Pages
     needs: controlli
+    # Si pubblica solo da un tag di versione (v1.2.3), mai da un ramo.
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
