@@ -1,3 +1,19 @@
+# ==============================================================================
+#  Fatture Explorer dietro un reverse proxy (es. Nginx Proxy Manager) - CONSIGLIATO.
+#
+#  Il container non pubblica nessuna porta: è raggiungibile solo dal proxy, che si
+#  occupa di HTTPS e certificati. Serve una rete Docker condivisa con il proxy.
+#
+#  Cosa cambiare (tutto opzionale, con i valori predefiniti funziona se il tuo proxy
+#  sta sulla rete "nginx-proxy-manager"). Non modificare questo file: copia
+#  .env.example in .env e cambia lì i valori.
+#
+#    PROXY_NETWORK   nome della rete Docker del proxy      (docker network ls)
+#    CONTAINER_NAME  nome del container; è anche l'host a cui punta il proxy
+#
+#  Senza reverse proxy usa invece docker-compose.standalone.yml.
+# ==============================================================================
+
 services:
   fatture_explorer:
     image: nginx:stable-alpine
@@ -5,7 +21,7 @@ services:
       - ./html:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./security-headers.conf:/etc/nginx/security-headers.conf:ro
-    container_name: fatture_explorer
+    container_name: ${CONTAINER_NAME:-fatture_explorer}
     restart: unless-stopped
 
     # Irrobustimento: filesystem in sola lettura, solo le capability necessarie a nginx
@@ -23,10 +39,11 @@ services:
       - SETGID
       - SETUID
       - NET_BIND_SERVICE
+    # Limiti di risorse: per un sito statico sono ampiamente sufficienti.
     mem_limit: 128m
     pids_limit: 100
 
 networks:
   default:
     external: true
-    name: nginx-proxy-manager
+    name: ${PROXY_NETWORK:-nginx-proxy-manager}

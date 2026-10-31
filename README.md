@@ -2,7 +2,22 @@
 
 Esploratore leggero di **fatture elettroniche italiane** (FatturaPA, formato `.xml` e `.xml.p7m`). È una pagina web statica: scegli una cartella del PC o del NAS e naviga, cerca e filtra le fatture, senza installare nulla e **senza che i dati lascino il tuo computer**.
 
-HTML, CSS e JavaScript puri, nessuna dipendenza, nessuna build, nessuna richiesta di rete.
+HTML, CSS e JavaScript puri, nessuna dipendenza, nessuna build, nessuna richiesta di rete. Può essere installata come **app (PWA)** e funziona anche offline.
+
+## Indice
+
+- [Caratteristiche](#caratteristiche)
+- [Usarla sul proprio computer](#usarla-sul-proprio-computer) (basta aprire `index.html`)
+- [Pubblicarla su un server](#pubblicarla-su-un-server)
+  - [Requisito: HTTPS](#requisito-https)
+  - [Con Docker e Nginx Proxy Manager](#con-docker-e-nginx-proxy-manager-consigliato)
+  - [Con Docker, senza proxy](#con-docker-senza-proxy)
+  - [Con un altro web server](#con-un-altro-web-server)
+  - [Riepilogo: cosa cambiare](#riepilogo-cosa-cambiare)
+- [Installarla come app (PWA)](#installarla-come-app-pwa)
+- [Privacy e sicurezza](#privacy-e-sicurezza)
+- [Struttura del progetto](#struttura-del-progetto)
+- [Sviluppo](#sviluppo)
 
 ## Caratteristiche
 
@@ -18,90 +33,202 @@ HTML, CSS e JavaScript puri, nessuna dipendenza, nessuna build, nessuna richiest
 - **Tema** automatico, chiaro o scuro. Interfaccia adattata a telefono, tablet, laptop e monitor molto larghi.
 - Scorciatoie: `/` cerca, `←` `→` fattura precedente/successiva, `Esc` chiude.
 
-## Come si usa
-
-### In locale
-
-Apri `html/index.html` con Chrome o Edge (doppio clic), poi **Seleziona cartella…** o **Apri fattura…**.
-
-### Da un web server
-
-È un sito statico: basta servire la cartella `html/` con qualunque web server. Con Docker e nginx vedi più sotto.
-
-> **Importante:** la selezione diretta di cartelle e file usa la *File System Access API*, che il browser abilita solo su **HTTPS** o su `localhost`. Se pubblichi la pagina in HTTP semplice (per esempio `http://nas:8080`), compare in automatico il pulsante **modalità compatibile**, che funziona ovunque ma non ricorda le cartelle recenti.
-
 ### Browser supportati
 
-| Browser | Selezione cartella | Recenti |
-| --- | --- | --- |
-| Chrome, Edge (e derivati) su HTTPS o localhost | sì | sì |
-| Firefox, Safari | modalità compatibile | no |
+| Browser | Selezione cartella e file | Recenti | Installazione come app |
+| --- | --- | --- | --- |
+| Chrome, Edge e derivati, da HTTPS o `localhost` | sì | sì | sì |
+| Chrome, Edge e derivati, aprendo `index.html` da file | sì | non garantiti (dipende dal browser) | no |
+| Firefox, Safari | modalità compatibile | no | no |
 
-## Privacy
+La *modalità compatibile* (pulsante che compare da solo) funziona in tutti i browser: si sceglie la cartella con il selettore standard, ma non vengono ricordate le cartelle recenti.
 
-- Le fatture sono lette **solo nel tuo browser**. L'app non effettua nessuna richiesta di rete: nessun server, nessuna telemetria, nessuna libreria o font esterno. La Content-Security-Policy lo impedisce anche a livello di browser.
-- Le cartelle vengono aperte **in sola lettura**: l'app non scrive né modifica nulla.
-- Per velocizzare le aperture successive, il browser conserva in locale (IndexedDB) i dati estratti dalle fatture (nomi, P.IVA, importi, descrizioni) e il riferimento alle cartelle recenti. Su un computer condiviso usa **Recenti → Svuota** o cancella i dati del sito dal browser.
-- Il browser non rivela i percorsi completi dei file: l'app ricorda il nome della cartella e il permesso di accesso. Alla riapertura Chrome può chiedere di confermarlo.
+## Usarla sul proprio computer
 
-Le fatture contengono dati personali: **non caricarle mai in questo repository** (il `.gitignore` esclude `.xml`, `.p7m`, `.csv` e `.pdf`).
+**Non serve nessun server né nessuna installazione.**
 
-## Distribuzione con Docker (nginx)
+1. Scarica o clona il repository.
+2. Apri il file **`html/index.html`** con **Chrome** o **Edge** (doppio clic, oppure trascinalo nella finestra del browser).
+3. Clicca **Seleziona cartella…** e scegli la cartella con le fatture (anche una cartella di rete del NAS), oppure **Apri fattura…** per una sola fattura.
 
-Il `docker-compose.yml` avvia un container `nginx:stable-alpine` che serve `html/` con `nginx.conf` e `security-headers.conf`. Non c'è nessuna build: i file sono montati in sola lettura, quindi una modifica a `html/` si vede subito.
+Il browser chiede il permesso di leggere la cartella: l'accesso è in sola lettura. La cartella `html/` deve restare intera (`index.html` usa i file `app.css`, `app.js` e gli altri accanto a sé).
+
+Aperta da file locale l'app funziona, ma **non può essere installata come app** (la PWA richiede un server, vedi sotto) e la memoria delle cartelle recenti e della cache dipende dal browser: se non è disponibile, l'app funziona ugualmente, semplicemente le cartelle vanno scelte ogni volta.
+
+## Pubblicarla su un server
+
+L'app è un sito statico: basta servire la cartella `html/`. Pubblicarla ha senso per averla sempre a disposizione da più computer, o per installarla come app.
+
+> Pubblicare l'app **non pubblica le fatture**: i file restano sul tuo computer o sul NAS e vengono letti dal browser di chi usa l'app. Il server consegna solo HTML, CSS e JavaScript.
+
+### Requisito: HTTPS
+
+**Quando possibile, usa HTTPS.** Il browser abilita la selezione diretta di cartelle e file, la memoria delle cartelle recenti e l'installazione come app (PWA) soltanto in un *contesto sicuro*: **HTTPS** oppure `localhost`.
+
+| Come raggiungi l'app | Selezione cartelle | Recenti | PWA |
+| --- | --- | --- | --- |
+| `https://fatture.miodominio.it` | sì | sì | sì |
+| `http://localhost:8080` | sì | sì | sì |
+| `http://192.168.1.10:8080` o `http://nas:8080` (HTTP, non localhost) | no, solo modalità compatibile | no | no |
+
+Come ottenere HTTPS:
+
+- **Nginx Proxy Manager** (consigliato, vedi sotto): certificato Let's Encrypt gratuito con un clic.
+- **Accesso solo da rete interna**: usa un dominio tuo con un nome tipo `fatture.miodominio.it` che punta all'IP interno del server e chiedi il certificato con la *DNS challenge* di Let's Encrypt (Nginx Proxy Manager la supporta con molti provider DNS). Nessuna porta va aperta su Internet.
+- In alternativa una CA locale (per esempio [mkcert](https://github.com/FiloSottile/mkcert)) con il certificato caricato nel proxy; i computer che usano l'app devono fidarsi della CA.
+
+Attiva anche **HSTS** e il reindirizzamento da HTTP a HTTPS nel proxy.
+
+### Con Docker e Nginx Proxy Manager (consigliato)
+
+Il `docker-compose.yml` avvia un container `nginx:stable-alpine` che serve `html/`. Non pubblica nessuna porta: lo raggiunge solo il proxy, tramite una rete Docker condivisa. Nessuna build: i file sono montati in sola lettura, quindi una modifica a `html/` si vede subito.
+
+**1. Prepara la configurazione** (opzionale se la tua rete si chiama `nginx-proxy-manager`):
+
+```bash
+cp .env.example .env
+```
+
+Modifica `.env` se serve (vedi la [tabella](#riepilogo-cosa-cambiare)):
+
+```ini
+PROXY_NETWORK=nginx-proxy-manager   # nome della rete Docker di Nginx Proxy Manager
+CONTAINER_NAME=fatture_explorer     # nome del container (lo userai nel proxy)
+```
+
+Il nome della rete lo trovi con:
+
+```bash
+docker network ls
+```
+
+**2. Avvia:**
 
 ```bash
 docker compose up -d
 ```
 
-Il servizio non pubblica porte: si collega alla rete Docker esterna `nginx-proxy-manager`, che deve già esistere.
+**3. Crea l'host in Nginx Proxy Manager** (*Hosts → Proxy Hosts → Add Proxy Host*):
+
+| Campo | Valore |
+| --- | --- |
+| Domain Names | il tuo dominio, per esempio `fatture.miodominio.it` |
+| Scheme | `http` |
+| Forward Hostname / IP | il valore di `CONTAINER_NAME` (`fatture_explorer`) |
+| Forward Port | `80` |
+| Block Common Exploits | attivo |
+
+Scheda **SSL**: scegli *Request a new SSL Certificate* (Let's Encrypt), attiva **Force SSL**, **HTTP/2 Support** e **HSTS Enabled**. Non servono *Custom Locations* né configurazioni avanzate: gli header di sicurezza li imposta già il container.
+
+Se vuoi limitare l'accesso (per esempio alla sola rete locale) puoi usare una *Access List* di Nginx Proxy Manager.
+
+**4. Apri** `https://fatture.miodominio.it`: l'app è pronta e, dal browser, installabile.
+
+### Con Docker, senza proxy
+
+Se non hai un reverse proxy, usa il file `docker-compose.standalone.yml`, che pubblica una porta:
 
 ```bash
-docker network ls | grep nginx-proxy-manager
+cp .env.example .env     # poi modifica HOST_PORT e BIND_ADDRESS se serve
+docker compose -f docker-compose.standalone.yml up -d
 ```
 
-Da Nginx Proxy Manager crea poi un host che punta a `fatture_explorer` sulla porta `80`, con certificato HTTPS (necessario, vedi sopra) e HSTS.
+L'app risponde su `http://localhost:8080`. Con `BIND_ADDRESS=127.0.0.1` (predefinito) è raggiungibile solo dal computer stesso e, essendo `localhost`, **tutte le funzioni sono disponibili**. Con `BIND_ADDRESS=0.0.0.0` è raggiungibile da tutta la rete, ma in HTTP semplice dagli altri computer non funzionano selezione diretta delle cartelle, recenti e PWA (vedi [Requisito: HTTPS](#requisito-https)): metti un proxy con HTTPS davanti.
 
-Se non usi Nginx Proxy Manager, rimuovi il blocco `networks` e aggiungi `ports: ["8080:80"]` al servizio. Ricorda che la selezione diretta delle cartelle richiede comunque HTTPS.
+### Con un altro web server
 
-In `nginx.conf`, `set_real_ip_from` deve corrispondere alla subnet della rete del proxy (`docker network inspect nginx-proxy-manager`); serve solo a leggere l'IP reale dei client.
+Va bene qualunque server per file statici (nginx, Apache, Caddy, IIS…): copia la cartella `html/` nella sua radice, anche in una sottocartella (`https://miosito.it/fatture/`). Verifica questi punti:
 
-### Irrobustimento
+- **HTTPS** attivo (vedi sopra).
+- Il file `manifest.webmanifest` va servito come `application/manifest+json`.
+- **`sw.js`** (il service worker) deve avere una Content-Security-Policy che consenta il `fetch` verso la propria origine, per esempio `default-src 'none'; connect-src 'self'`. Se riceve la stessa CSP restrittiva della pagina, il service worker non riesce a riempire la cache e l'app non è installabile.
+- Consigliati gli header di `security-headers.conf` e la CSP di `nginx.conf` (che trovi commentata riga per riga) e `Cache-Control: no-cache`.
+- Se aggiungi risorse da altre origini, aggiorna la CSP **sia** negli header **sia** nel `<meta http-equiv="Content-Security-Policy">` di `html/index.html`.
 
-- Container con filesystem in sola lettura, `no-new-privileges`, tutte le capability tolte tranne quelle necessarie a nginx, limiti di memoria (128 MB) e di processi.
-- Versione di nginx nascosta, solo metodi `GET`/`HEAD`, file nascosti non serviti.
-- Header di sicurezza in `security-headers.conf`: `Content-Security-Policy` restrittiva (niente script inline, nessuna origine esterna), `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, `Permissions-Policy`.
+### Riepilogo: cosa cambiare
 
-La CSP è in `security-headers.conf`: se aggiungi script o stili esterni, va aggiornata. In nginx un `location` con un proprio `add_header` perde quelli del `server`, quindi il file va incluso di nuovo.
+Con Nginx Proxy Manager e i valori predefiniti **non devi cambiare nulla nei file**: basta creare l'host nel proxy. Questi sono i parametri da adattare al tuo ambiente:
+
+| Dove | Parametro | Predefinito | Quando cambiarlo |
+| --- | --- | --- | --- |
+| `.env` | `PROXY_NETWORK` | `nginx-proxy-manager` | Se la rete Docker del tuo proxy ha un altro nome (`docker network ls`). |
+| `.env` | `CONTAINER_NAME` | `fatture_explorer` | Se vuoi un altro nome, o se hai più istanze. È l'host da inserire nel proxy (*Forward Hostname*). |
+| `.env` | `HOST_PORT` | `8080` | Solo con `docker-compose.standalone.yml`: porta già occupata. |
+| `.env` | `BIND_ADDRESS` | `127.0.0.1` | Solo con `docker-compose.standalone.yml`: `0.0.0.0` per aprirla alla rete locale. |
+| Nginx Proxy Manager | Domain Names | — | Sempre: il tuo dominio. |
+| Nginx Proxy Manager | Forward Hostname / Port | `CONTAINER_NAME` / `80` | Se hai cambiato il nome del container. |
+| Nginx Proxy Manager | SSL, Force SSL, HSTS | — | Sempre: attivali (vedi sopra). |
+| `nginx.conf` | `set_real_ip_from` (commentato) | disattivo | Solo se vuoi gli IP reali dei client nei log: metti la subnet della rete del proxy (`docker network inspect <rete>`). |
+| `nginx.conf` | `Content-Security-Policy` | restrittiva | Solo se aggiungi risorse esterne (e allinea il `<meta>` di `index.html`). |
+| `docker-compose*.yml` | `mem_limit`, `pids_limit` | `128m`, `100` | Praticamente mai: per un sito statico bastano. |
+| `html/sw.js` | `VERSION` | `1` | Dopo aver modificato i file dell'app: aumentala per ripulire la cache dei client. |
+| `html/manifest.webmanifest` | `name`, `short_name`, colori | Fatture Explorer | Se vuoi un nome o un tema diversi per l'app installata. |
+
+Le istruzioni sono riportate anche nei commenti dei file di configurazione, che non vanno altrimenti modificati.
+
+## Installarla come app (PWA)
+
+Pubblicata su **HTTPS** (o su `localhost`), l'app è una *Progressive Web App*: si può installare e si apre in una finestra propria, come un programma, anche **senza rete** (i file dell'applicazione vengono salvati dal browser; le fatture continuano a essere lette dalla tua cartella).
+
+**Per installarla:**
+
+- **Chrome / Edge (computer)**: clicca l'icona di installazione nella barra dell'indirizzo, oppure menu `⋮` → *Salva e condividi* → *Installa Fatture Explorer…* (in Edge: menu `…` → *App* → *Installa questo sito come app*).
+- **Chrome (Android)**: menu `⋮` → *Installa app*.
+- **Safari (iPhone/iPad)**: *Condividi* → *Aggiungi alla schermata Home*. Safari non supporta però la selezione diretta delle cartelle.
+
+**Come funziona e cosa non fa:**
+
+- Il service worker (`html/sw.js`) salva solo i file dell'app (HTML, CSS, JS, icone), con strategia *rete prima, cache se offline*: con la rete ricevi sempre la versione aggiornata.
+- **Non salva mai le fatture** e non fa richieste verso altri siti.
+- Da `file://` o da HTTP non-localhost il service worker non viene registrato: l'app funziona lo stesso, senza installazione.
+
+**Aggiornare:** sostituisci i file in `html/`. Per essere sicuro che i client ripuliscano la vecchia cache, aumenta `VERSION` in `html/sw.js`.
+
+**Rimuovere:** disinstalla l'app dal browser; per cancellare anche i dati salvati (cache delle fatture lette e recenti) usa *Impostazioni del sito → Cancella dati*.
+
+## Privacy e sicurezza
+
+- Le fatture sono lette **solo nel tuo browser**. L'app non effettua nessuna richiesta di rete: nessun server, nessuna telemetria, nessuna libreria o font esterno. La Content-Security-Policy lo impedisce anche a livello di browser.
+- Le cartelle vengono aperte **in sola lettura**: l'app non scrive né modifica nulla.
+- Per velocizzare le aperture successive, il browser conserva in locale (IndexedDB) i dati estratti dalle fatture (nomi, P.IVA, importi, descrizioni) e il riferimento alle cartelle recenti. Su un computer condiviso usa **Recenti → Svuota** o cancella i dati del sito dal browser.
+- Il browser non rivela i percorsi completi dei file: l'app ricorda il nome della cartella e il permesso di accesso. Alla riapertura Chrome può chiedere di confermarlo.
+- Le fatture contengono dati personali: **non caricarle mai in questo repository** (il `.gitignore` esclude `.xml`, `.p7m`, `.csv` e `.pdf`).
+
+Il container è irrobustito (filesystem in sola lettura, `no-new-privileges`, capability ridotte, limiti di risorse, solo `GET`/`HEAD`, versione di nginx nascosta) e il server invia header di sicurezza e una CSP restrittiva. Dettagli, verifiche eseguite e come segnalare una vulnerabilità sono in [SECURITY.md](SECURITY.md).
 
 ## Struttura del progetto
 
 ```
 .
-├── html/
-│   ├── index.html            # struttura della pagina
-│   ├── app.css               # stile (tema chiaro/scuro, layout responsive, stampa)
-│   ├── app.js                # lettura FatturaPA/P7M, filtri, viste, recenti
-│   ├── theme.js              # applica subito il tema scelto (evita il lampeggio)
-│   └── icon.svg
-├── nginx.conf                # configurazione di nginx per il container
-├── security-headers.conf     # header di sicurezza e CSP
-├── docker-compose.yml        # servizio Docker
-├── SECURITY.md               # note di sicurezza e segnalazione vulnerabilità
+├── html/                        # il sito: è tutto ciò che va pubblicato
+│   ├── index.html               # struttura della pagina
+│   ├── app.css                  # stile (tema chiaro/scuro, layout responsive, stampa)
+│   ├── app.js                   # lettura FatturaPA/P7M, filtri, viste, recenti
+│   ├── theme.js                 # applica subito il tema scelto (evita il lampeggio)
+│   ├── manifest.webmanifest     # manifest della PWA
+│   ├── sw.js                    # service worker (installazione e uso offline)
+│   ├── icon.svg
+│   └── icons/                   # icone PNG della PWA
+├── docker-compose.yml           # con reverse proxy (Nginx Proxy Manager)
+├── docker-compose.standalone.yml# senza proxy, con porta pubblicata
+├── .env.example                 # parametri di Docker da copiare in .env
+├── nginx.conf                   # configurazione di nginx (commentata)
+├── security-headers.conf        # header di sicurezza
+├── SECURITY.md
 ├── LICENSE
 └── README.md
 ```
 
 ## Sviluppo
 
-Non serve alcuna build. Per provarlo in locale con un server:
+Non serve alcuna build. Per provarlo in locale con un server (così funziona anche la PWA):
 
 ```bash
 cd html
 python -m http.server 8000
 ```
 
-poi apri `http://localhost:8000` (`localhost` conta come contesto sicuro per la selezione delle cartelle).
+poi apri `http://localhost:8000` (`localhost` conta come contesto sicuro).
 
 Il formato letto è FatturaPA 1.2.x (`FatturaElettronica`). Le fatture semplificate (`FatturaElettronicaSemplificata`) non sono supportate.
 

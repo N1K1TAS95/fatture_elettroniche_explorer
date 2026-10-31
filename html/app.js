@@ -30,7 +30,9 @@ const debounce=(f,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f(
 
 /* IndexedDB minimale (handle cartella + cache) */
 const idb=(()=>{let p;const open=()=>p||(p=new Promise((res,rej)=>{const r=indexedDB.open('fatture-explorer',1);r.onupgradeneeded=()=>{r.result.createObjectStore('kv');r.result.createObjectStore('cache')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}));
-  const tx=async(s,m,fn)=>{const db=await open();return new Promise((res,rej)=>{const t=db.transaction(s,m);const rq=fn(t.objectStore(s));t.oncomplete=()=>res(rq.result);t.onerror=()=>rej(t.error)})};
+  // Se IndexedDB non risponde (browser, impostazioni o modalità privata) l'app continua a funzionare senza cache né recenti.
+  const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('IndexedDB non disponibile')),ms))]);
+  const tx=(s,m,fn)=>withTimeout((async()=>{const db=await open();return new Promise((res,rej)=>{const t=db.transaction(s,m);const rq=fn(t.objectStore(s));t.oncomplete=()=>res(rq.result);t.onerror=()=>rej(t.error)})})(),4000);
   return{get:(s,k)=>tx(s,'readonly',o=>o.get(k)),set:(s,k,v)=>tx(s,'readwrite',o=>o.put(v,k)),del:(s,k)=>tx(s,'readwrite',o=>o.delete(k))}})();
 
 /* ====================== Lettura file (XML / P7M) ====================== */
@@ -614,3 +616,10 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){if(single)exitSingle();else if($id('split').classList.contains('full'))$id('dFull').click();else if($id('split').classList.contains('open'))closeDrawer();else if(typing)document.activeElement.blur();return}
   if($id('split').classList.contains('open')&&!typing){if(e.key==='ArrowLeft'||e.key==='k')stepDrawer(-1);else if(e.key==='ArrowRight'||e.key==='j')stepDrawer(1)}
 });
+
+/* ====================== PWA ====================== */
+// Il service worker rende l'app installabile e utilizzabile offline. Funziona solo su HTTPS
+// (o localhost): da file locale (file://) o in HTTP semplice viene semplicemente ignorato.
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
+  addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
+}

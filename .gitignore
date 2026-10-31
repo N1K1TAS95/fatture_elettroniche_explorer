@@ -11,6 +11,9 @@ desktop.ini
 # Claude Code (impostazioni locali)
 .claude/settings.local.json
 
+# Configurazione locale di Docker (copia da .env.example)
+.env
+
 # File temporanei
 *.log
 *.tmp
