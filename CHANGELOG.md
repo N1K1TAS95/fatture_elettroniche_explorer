@@ -4,6 +4,9 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Demo online su GitHub Pages con dominio dedicato (fatture-elettroniche-explorer.n1k.cloud), pubblicata dal workflow `pages.yml` solo dopo i controlli.
+
 ## [1.0.0] - 2026-10-31
 
 Prima versione pubblica.

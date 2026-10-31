@@ -23,6 +23,7 @@ L'app legge file XML che arrivano da terzi (i fornitori): **ogni campo di una fa
 | **Parser XML** | Si usa il `DOMParser` del browser: non carica DTD o entità esterne. File oltre 80 MB scartati. |
 | **Chiavi speciali** (`__proto__`, `constructor`…) nei dati | Le tabelle dei codici non hanno prototype. |
 | **Web server** | Container in sola lettura, `no-new-privileges`, capability ridotte, limiti di risorse; solo `GET`/`HEAD`; nessun file nascosto; versione nginx nascosta; header di sicurezza (vedi `security-headers.conf`). |
+| **Demo su GitHub Pages** | Pubblica solo `html/` (test, documenti e fatture di prova non escono), dopo i controlli di `tests/check.py`, con un workflow dai permessi minimi e action fissate a un hash. Ha un dominio dedicato (`fatture-elettroniche-explorer.n1k.cloud`), quindi un'origine propria: IndexedDB e cache non sono condivisi con altri siti. |
 | **Segreti nel repository** | Nessuna chiave, token o password. `.gitignore` esclude fatture (`.xml`, `.p7m`), CSV e PDF, con la sola eccezione delle fatture **fittizie** di `tests/fixtures/` (nessun dato reale; i file firmati usano un certificato di prova usa e getta la cui chiave non viene salvata). Una di quelle fatture contiene apposta HTML e script per verificare che vengano mostrati come testo. |
 
 ## Rischi residui e note
@@ -30,6 +31,7 @@ L'app legge file XML che arrivano da terzi (i fornitori): **ogni campo di una fa
 - **Dati in locale**: per la cache il browser salva (non cifrati) i dati estratti dalle fatture nel profilo dell'utente. Su un computer condiviso usare *Recenti → Svuota* o cancellare i dati del sito.
 - `style-src-attr 'unsafe-inline'` è consentito perché l'interfaccia genera attributi `style=""`; gli script restano bloccati. Il rischio è limitato (nessuna origine esterna raggiungibile).
 - I PDF aperti dal browser ereditano la CSP della pagina (`object-src blob:`). Se un visualizzatore PDF li bloccasse, resta il pulsante *Scarica*.
+- **Header sulla demo di GitHub Pages**: Pages non consente header HTTP personalizzati. Restano la CSP nel `<meta>` e l'assenza di richieste di rete, ma mancano `frame-ancestors`/`X-Frame-Options`, `Permissions-Policy` e gli header di isolamento di `security-headers.conf`. L'app non invia dati da nessuna parte, quindi un sito che la incorporasse non potrebbe leggere le fatture; chi ha esigenze più strette usi la propria installazione.
 - **HTTPS e HSTS** vanno gestiti dal proxy davanti a nginx: senza HTTPS la selezione diretta delle cartelle non è disponibile.
 - Un file XML molto grande o con molte entità annidate può rallentare il browser (limiti propri del parser); non c'è un rischio per i dati.
 - `nginx.conf` contiene la subnet privata della rete Docker del proxy (`set_real_ip_from`): non è un segreto, ma va adattata al tuo ambiente.

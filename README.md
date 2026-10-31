@@ -15,7 +15,7 @@ Cerca, filtra e leggi le fatture FatturaPA di una cartella del PC o del NAS: nie
 ![PWA installabile](https://img.shields.io/badge/PWA-installabile-7c3aed?style=flat-square)
 ![Privacy: 100% locale](https://img.shields.io/badge/privacy-100%25_locale-0891b2?style=flat-square)
 
-[Avvio rapido](#avvio-rapido) · [Caratteristiche](#caratteristiche) · [Pubblicarla su un server](#pubblicarla-su-un-server) · [Sicurezza](SECURITY.md)
+[**Provala online**](https://fatture-elettroniche-explorer.n1k.cloud) · [Avvio rapido](#avvio-rapido) · [Caratteristiche](#caratteristiche) · [Pubblicarla su un server](#pubblicarla-su-un-server) · [Sicurezza](SECURITY.md)
 
 <br>
 
@@ -29,6 +29,14 @@ Cerca, filtra e leggi le fatture FatturaPA di una cartella del PC o del NAS: nie
 Esploratore leggero di **fatture elettroniche italiane** (FatturaPA, formato `.xml` e `.xml.p7m`). È una pagina web statica: scegli una cartella del PC o del NAS e naviga, cerca e filtra le fatture, senza installare nulla e **senza che i dati lascino il tuo computer**.
 
 HTML, CSS e JavaScript puri, nessuna dipendenza, nessuna build, nessuna richiesta di rete. Può essere installata come **app (PWA)** e funziona anche offline.
+
+## Demo online
+
+Puoi provare l'app senza installare nulla su **https://fatture-elettroniche-explorer.n1k.cloud**: è la cartella `html/` di questo repository, pubblicata con GitHub Pages in HTTPS. Come sempre, le fatture le scegli tu dal tuo computer e **non vengono mai caricate**: l'app non fa nessuna richiesta di rete.
+
+- Per provarla subito senza dati reali, scarica la cartella `tests/fixtures` (fatture fittizie) e aprila dall'app.
+- La demo si aggiorna da sola a ogni modifica di `html/` su `main` (workflow `.github/workflows/pages.yml`, che prima esegue i controlli).
+- GitHub Pages non permette di impostare header HTTP personalizzati: restano la Content-Security-Policy nel `<meta>` e l'assenza di richieste di rete, ma mancano gli header aggiuntivi di [nginx.conf](nginx.conf). Per un uso quotidiano con fatture vere conviene **la propria installazione** (vedi [Pubblicarla su un server](#pubblicarla-su-un-server)). Dettagli in [SECURITY.md](SECURITY.md).
 
 ## Avvio rapido
 
@@ -66,6 +74,7 @@ Clicca **Seleziona cartella…**, scegli quella delle fatture e inizia a cercare
 
 ## Indice
 
+- [Demo online](#demo-online)
 - [Avvio rapido](#avvio-rapido)
 - [Anteprima](#anteprima)
 - [Caratteristiche](#caratteristiche)
@@ -308,6 +317,7 @@ In `tests/fixtures/` ci sono fatture elettroniche **fittizie** (anche firmate `.
 ├── .env.example                 # parametri di Docker da copiare in .env
 ├── .github/
 │   ├── workflows/ci.yml         # controlli automatici (GitHub Actions)
+│   ├── workflows/pages.yml      # pubblicazione della demo su GitHub Pages
 │   ├── ISSUE_TEMPLATE/          # moduli guidati per segnalazioni e proposte
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   └── dependabot.yml           # aggiornamento delle versioni delle Actions
