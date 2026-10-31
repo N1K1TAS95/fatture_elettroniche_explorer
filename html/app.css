@@ -392,7 +392,7 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
   body.fixed:not(.single) header{flex:none}
   body.fixed:not(.single) main{flex:1;min-height:0;padding-bottom:16px}
   body.fixed:not(.single) #split{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
-  body.fixed:not(.single) #split.open{grid-template-columns:minmax(0,1fr) minmax(640px,var(--dw,50%))}
+  body.fixed:not(.single) #split.open{grid-template-columns:minmax(0,1fr) minmax(640px,var(--dw,50%));align-items:stretch}
   body.fixed:not(.single) #split.full{display:block;overflow:auto}
   body.fixed:not(.single) #split.full #dhead{top:0}
   body.fixed:not(.single) #left{min-height:0}
