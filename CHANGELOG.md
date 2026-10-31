@@ -4,6 +4,15 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+## [1.1.1] - 2026-10-31
+
+Dettaglio fattura riordinato sul modello della copia di cortesia in PDF.
+
+### Modificato
+- Dettaglio fattura: cedente e cessionario affiancati in alto, sulla stessa riga, poi righe, riepilogo IVA, dati documento, pagamento e trasmissione in un'unica colonna.
+- A larghezza intera la fattura occupa tutto lo spazio disponibile, senza limite di larghezza né centratura.
+- Padding uniformi in tutte le card: il testo delle tabelle parte allineato al titolo e ai campi, e le distanze verticali tra i blocchi sono sempre di 12 px.
+
 ## [1.1.0] - 2026-10-31
 
 Interfaccia rivista, con più cura per schermi larghi e telefoni.
@@ -56,6 +65,7 @@ Prima versione pubblica.
 - Firefox e Safari usano la modalità compatibile, senza cartelle recenti né installazione come app.
 - Il foglio di stile Assosoftware non è incluso per via della sua licenza.
 
-[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.0...HEAD
+[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/releases/tag/v1.0.0
