@@ -291,7 +291,7 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
 /* filtri */
 #adv{display:none;padding:20px 22px}
 #adv.open{display:flex;flex-direction:column;gap:20px}
-.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px 20px;align-items:start}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px 20px;align-items:start}
 .f{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:550;color:var(--mute);min-width:0}
 .f2{grid-column:span 2}
 .f small{font-weight:400;font-size:12.5px;line-height:1.4}
@@ -375,7 +375,7 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
 #toolbar{position:relative}
 #adv{position:absolute;left:0;right:0;top:calc(100% + 8px);margin:0;z-index:35;box-shadow:0 20px 50px rgba(0,0,0,.4)}
 #adv.open{max-height:calc(100vh - var(--hh) - 40px);overflow:visible}
-.f2{grid-column:1/-1;max-width:640px}
+.f2{grid-column:1/-1}
 .pop{width:max(100%,260px);max-width:none}
 #themeMenu{width:230px;min-width:0}
 #themeMenu .opt>svg:first-child{color:var(--mute);width:18px;height:18px}
@@ -436,9 +436,8 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
 }
 #dhead .btn:has(>svg:only-child){width:36px;padding:0;justify-content:center}
 
-/* filtri su schermi larghi: azienda e cliente/fornitore affiancati, poi periodo e date, poi il resto */
-@media(min-width:1101px){
-  .fgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
-  .fgrid .f2{grid-column:span 2;max-width:none}
-  .fgrid .f.rs{grid-column:1}
-}
+/* campo con suggerimenti: freccia come negli altri menu */
+#adv .sel>input{padding-right:38px}
+.sel-chev{position:absolute;right:1px;top:1px;width:36px;height:calc(var(--ctl) - 2px);display:grid;place-items:center;border:0;background:none;color:var(--mute);cursor:pointer;border-radius:0 9px 9px 0}
+.sel-chev svg{width:16px;height:16px;transition:transform .15s}
+.sel>input[aria-expanded=true]~.sel-chev svg{transform:rotate(180deg)}

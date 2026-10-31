@@ -768,6 +768,7 @@ function enhanceSelect(sel){
 function enhanceCombo(inp,getList){
   const wrap=document.createElement('div');wrap.className='sel';
   inp.parentNode.insertBefore(wrap,inp);wrap.appendChild(inp);
+  const chev=document.createElement('button');chev.type='button';chev.className='sel-chev';chev.tabIndex=-1;chev.setAttribute('aria-label','Mostra elenco');chev.innerHTML=ICO('chev');wrap.appendChild(chev);
   const pop=document.createElement('div');pop.className='pop';pop.hidden=true;wrap.appendChild(pop);
   const close=()=>{pop.hidden=true;inp.setAttribute('aria-expanded','false')};
   const draw=()=>{
@@ -781,6 +782,8 @@ function enhanceCombo(inp,getList){
     const f=pop.querySelector('.opt');if(f)f.classList.add('act');
     if(pop.hidden){closePop();pop.hidden=false;inp.setAttribute('aria-expanded','true');openPop=close;popPlace(wrap,pop)}
   };
+  chev.addEventListener('mousedown',e=>e.preventDefault());
+  chev.addEventListener('click',()=>{if(!pop.hidden){close();openPop=null}else{inp.focus();draw()}});
   inp.addEventListener('input',draw);
   inp.addEventListener('focus',draw);
   inp.addEventListener('keydown',e=>{
