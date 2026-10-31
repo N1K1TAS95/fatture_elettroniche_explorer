@@ -7,6 +7,15 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 ### Aggiunto
 - Demo online su GitHub Pages con dominio dedicato (fatture-elettroniche-explorer.n1k.cloud), aggiornata a ogni release dal workflow `pages.yml`, solo dopo i controlli.
 
+### Modificato
+- Interfaccia rivista: elenco e filtri a tutta larghezza dello schermo, header più alto con logo e comandi a destra, menu collassabile su schermi piccoli, spaziature e altezze dei controlli uniformi.
+- Menu a tendina personalizzati (con ricerca e sotto-titolo) al posto di quelli del browser, anche per cliente/fornitore.
+- Icone vettoriali al posto delle emoji (allegato, cartelle, esporta CSV, aggiorna, tema).
+- Con una cartella aperta scorre solo l'elenco: header, ricerca, filtri e totali restano fissi in alto. I filtri si aprono come pannello sopra l'elenco e si chiudono con un clic fuori.
+- Filtri su più righe (azienda, cliente/fornitore, poi il resto) e menu a tendina larghi come il campo. Il tema si sceglie con un solo pulsante a menu.
+- La propria azienda resta visibile nell'header quando è selezionata.
+- Su telefono la colonna Direzione passa sotto il nome della controparte.
+
 ## [1.0.0] - 2026-10-31
 
 Prima versione pubblica.

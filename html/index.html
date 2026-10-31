@@ -16,17 +16,39 @@
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
-<header>
-  <h1>📄 <span class="lbl2">Fatture </span><span class="lbl3">Elettroniche </span><span>Explorer</span></h1>
-  <button class="btn primary" id="bPick">📂 <span class="lbl">Seleziona cartella…</span></button>
-  <button class="btn" id="bFile" title="Apri una singola fattura (.xml / .p7m)">📄 <span class="lbl">Apri fattura…</span></button>
-  <button class="btn" id="bRecent" style="display:none" title="Cartelle e fatture aperte di recente">🕘 <span class="lbl">Recenti</span> ▾</button>
-  <input type="file" id="fFiles" accept=".xml,.p7m" multiple hidden>
-  <button class="btn ghost" id="bRescan" disabled title="Rilegge la cartella e importa i file nuovi">↻ <span class="lbl">Aggiorna</span></button>
-  <label class="btn" id="bFallback" style="display:none">Scegli cartella (modalità compatibile)
-    <input type="file" id="fFallback" webkitdirectory multiple hidden></label>
-  <span id="status"></span>
-  <div class="seg" id="themeSeg" role="group" aria-label="Tema"><button data-th="auto" title="Automatico (segue il sistema)">◐<span class="lbl"> Auto</span></button><button data-th="light" title="Tema chiaro">☀<span class="lbl"> Chiaro</span></button><button data-th="dark" title="Tema scuro">☾<span class="lbl"> Scuro</span></button></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.9-3M4 5v4h4M4 13a8 8 0 0 0 14.9 3M20 19v-4h-4"/></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+<symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v17M15 9h4a1 1 0 0 1 1 1v11M3 21h18M8 7h3M8 11h3M8 15h3"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+<symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></symbol>
+</defs></svg>
+<header id="top">
+  <h1><img class="logo" src="icon.svg" alt="" width="34" height="34"><span class="lbl2">Fatture </span><span class="lbl3">Elettroniche </span><b>Explorer</b></h1>
+  <button type="button" class="co" id="myBadge" hidden title="La mia azienda: clicca per cambiarla"><svg class="i" aria-hidden="true"><use href="#i-building"/></svg><span id="myName"></span></button>
+  <button type="button" class="btn ghost icon" id="bMenu" aria-label="Menu" aria-expanded="false" aria-controls="hActions"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg></button>
+  <div id="hActions">
+    <span id="status"></span>
+    <button class="btn primary" id="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span class="lbl">Seleziona cartella…</span></button>
+    <button class="btn" id="bFile" title="Apri una singola fattura (.xml / .p7m)"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg><span class="lbl">Apri fattura…</span></button>
+    <button class="btn" id="bRecent" style="display:none" title="Cartelle e fatture aperte di recente"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span class="lbl">Recenti</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
+    <input type="file" id="fFiles" accept=".xml,.p7m" multiple hidden>
+    <button class="btn" id="bRescan" disabled title="Rilegge la cartella e importa i file nuovi"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span class="lbl">Aggiorna</span></button>
+    <label class="btn" id="bFallback" style="display:none">Scegli cartella (modalità compatibile)
+      <input type="file" id="fFallback" webkitdirectory multiple hidden></label>
+    <div class="sel" id="themeSeg"><button class="btn" id="bTheme" aria-haspopup="menu" aria-expanded="false" title="Tema"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="lbl" id="themeLbl">Automatico</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button><div class="pop r" id="themeMenu" role="menu" hidden><div class="opt" role="menuitemradio" data-th="auto"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="ot"><b>Automatico</b><small>Segue il sistema</small></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span class="ot"><b>Chiaro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg><span class="ot"><b>Scuro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div></div></div>
+  </div>
 </header>
 <div id="recentMenu" class="menu"></div>
 
@@ -34,32 +56,36 @@
   <section id="toolbar">
     <div class="row">
       <label class="search">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
         <input id="q" type="search" autocomplete="off" placeholder="Cerca per numero, fornitore, P.IVA, descrizione, importo…" aria-label="Cerca">
         <kbd>/</kbd>
       </label>
       <div class="seg" id="dirSeg" role="group" aria-label="Direzione">
         <button data-dir="" class="on">Tutte</button><button data-dir="ricevuta">Ricevute</button><button data-dir="emessa">Emesse</button>
       </div>
-      <button class="btn" id="fbtn">⚙ <span>Filtri</span> <span class="n" id="fcount" style="display:none"></span></button>
+      <button class="btn" id="fbtn"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg><span>Filtri</span> <span class="n" id="fcount" style="display:none"></span></button>
     </div>
     <div class="years" id="years"></div>
     <div id="adv" class="card">
-      <label class="wide mine">La mia azienda <select id="my"></select><small>Serve a distinguere le fatture emesse (tu sei il cedente) da quelle ricevute (tu sei il cessionario).</small></label>
-      <label class="wide">Cliente / fornitore
-        <input id="cp" list="cpList" placeholder="nome o P.IVA"><datalist id="cpList"></datalist></label>
-      <label>Periodo
-        <select id="per"><option value="">Tutto l'anno</option>
-          <optgroup label="Trimestri"><option value="q1">1° trimestre</option><option value="q2">2° trimestre</option><option value="q3">3° trimestre</option><option value="q4">4° trimestre</option></optgroup>
-          <optgroup label="Mesi"><option value="m1">Gennaio</option><option value="m2">Febbraio</option><option value="m3">Marzo</option><option value="m4">Aprile</option><option value="m5">Maggio</option><option value="m6">Giugno</option>
-          <option value="m7">Luglio</option><option value="m8">Agosto</option><option value="m9">Settembre</option><option value="m10">Ottobre</option><option value="m11">Novembre</option><option value="m12">Dicembre</option></optgroup></select></label>
-      <label>Dal <input id="dal" type="date"></label>
-      <label>Al <input id="al" type="date"></label>
-      <label>Tipo documento <select id="td"></select></label>
-      <label>Importo minimo <input id="min" type="number" step="0.01" placeholder="€"></label>
-      <label>Importo massimo <input id="max" type="number" step="0.01" placeholder="€"></label>
-      <label class="chk"><input id="dup" type="checkbox" checked> Nascondi duplicati <span id="dupN" class="mute"></span></label>
-      <button class="btn" id="bReset">Azzera tutti i filtri</button>
+      <div class="fgrid">
+        <label class="f f2">La mia azienda <select id="my"></select><small>Serve a distinguere le fatture emesse (tu sei il cedente) da quelle ricevute (tu sei il cessionario).</small></label>
+        <label class="f f2">Cliente / fornitore
+          <input id="cp" placeholder="nome o P.IVA" autocomplete="off" role="combobox" aria-expanded="false"></label>
+        <label class="f">Periodo
+          <select id="per"><option value="">Tutto l'anno</option>
+            <optgroup label="Trimestri"><option value="q1">1° trimestre</option><option value="q2">2° trimestre</option><option value="q3">3° trimestre</option><option value="q4">4° trimestre</option></optgroup>
+            <optgroup label="Mesi"><option value="m1">Gennaio</option><option value="m2">Febbraio</option><option value="m3">Marzo</option><option value="m4">Aprile</option><option value="m5">Maggio</option><option value="m6">Giugno</option>
+            <option value="m7">Luglio</option><option value="m8">Agosto</option><option value="m9">Settembre</option><option value="m10">Ottobre</option><option value="m11">Novembre</option><option value="m12">Dicembre</option></optgroup></select></label>
+        <label class="f">Dal <input id="dal" type="date"></label>
+        <label class="f">Al <input id="al" type="date"></label>
+        <label class="f">Tipo documento <select id="td"></select></label>
+        <label class="f">Importo minimo <input id="min" type="number" step="0.01" placeholder="€"></label>
+        <label class="f">Importo massimo <input id="max" type="number" step="0.01" placeholder="€"></label>
+      </div>
+      <div class="ffoot">
+        <label class="chk"><input id="dup" type="checkbox" checked> Nascondi duplicati <span id="dupN" class="mute"></span></label>
+        <button class="btn" id="bReset">Azzera tutti i filtri</button>
+      </div>
     </div>
     <div id="chips"></div>
   </section>
@@ -73,15 +99,15 @@
     <button class="tab" data-t="mesi">Andamento mensile</button>
     <span class="sp"></span>
     <button class="btn ghost" id="bErr" style="display:none"></button>
-    <button class="btn" id="bCsv">⬇ <span class="lbl">Esporta CSV</span></button>
+    <button class="btn" id="bCsv"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span class="lbl">Esporta CSV</span></button>
   </div>
 
   <section class="card" id="content">
     <div class="hello">
-      <div class="ico" style="font-size:46px">🗂️</div>
+      <div class="ico"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg></div>
       <h2>Esplora le tue fatture elettroniche</h2>
       <p class="mute">Scegli la cartella del PC o del NAS che contiene i file FatturaPA (<code>.xml</code> e <code>.xml.p7m</code>), sottocartelle comprese, oppure apri <b>una singola fattura</b>.<br>Puoi anche trascinare qui una cartella o dei file. Nulla esce dal tuo computer.</p>
-      <div class="hbtns"><button class="btn primary" data-go="bPick">📂 Seleziona cartella…</button><button class="btn" data-go="bFile">📄 Apri una fattura…</button></div>
+      <div class="hbtns"><button class="btn primary" data-go="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg>Seleziona cartella…</button><button class="btn" data-go="bFile"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Apri una fattura…</button></div>
       <div id="recentHello"></div>
     </div>
   </section>
