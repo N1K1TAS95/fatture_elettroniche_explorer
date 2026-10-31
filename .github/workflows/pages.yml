@@ -1,0 +1,67 @@
+# Pubblica la cartella html/ su GitHub Pages (demo online, con dominio personalizzato).
+# Prima di pubblicare esegue gli stessi controlli della CI. Pubblica solo il contenuto di html/:
+# test, documentazione e fatture di prova non vengono mai inclusi.
+#
+# Prerequisiti nel repository (una tantum): Settings → Pages → Source: "GitHub Actions".
+# Le impostazioni del dominio sono descritte nel README.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "html/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch: # pubblicazione manuale dalla scheda Actions
+
+# Permessi minimi a livello di workflow; il job di pubblicazione ne chiede solo due in più.
+permissions:
+  contents: read
+
+# Una sola pubblicazione alla volta; quella in corso non viene interrotta.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  controlli:
+    name: Controlli prima della pubblicazione
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Scarica il codice
+        # Le action sono fissate all'hash del commit (il tag tra parentesi serve solo come promemoria).
+        # Dependabot propone gli aggiornamenti.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Controlli del repository
+        run: python3 tests/check.py
+
+  pubblica:
+    name: Pubblica su GitHub Pages
+    needs: controlli
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write # per pubblicare il sito
+      id-token: write # per dimostrare a Pages che la pubblicazione arriva da questo workflow
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Scarica il codice
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Prepara il contenuto (solo html/)
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: html
+
+      - name: Pubblica
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
