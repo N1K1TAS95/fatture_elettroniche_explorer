@@ -418,7 +418,7 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
 /* filtri su telefono: campi brevi in coppia, pannello con scroll interno */
 @media(max-width:760px){
   .fgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px}
-  .fgrid .f2,.fgrid .f:nth-child(5),.fgrid .f:nth-child(6){grid-column:1/-1}
+  .fgrid .f2,.fgrid .f:nth-child(3),.fgrid .f:nth-child(6){grid-column:1/-1}
   #adv.open{max-height:calc(100vh - var(--hh) - 24px);max-height:calc(100dvh - var(--hh) - 24px);overflow:auto}
 }
 @media(max-width:360px){.fgrid{grid-template-columns:minmax(0,1fr)}}
@@ -436,7 +436,7 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
 }
 #dhead .btn:has(>svg:only-child){width:36px;padding:0;justify-content:center}
 
-/* filtri su schermi larghi: azienda e cliente/fornitore affiancati, date da sole, poi il resto */
+/* filtri su schermi larghi: azienda e cliente/fornitore affiancati, poi periodo e date, poi il resto */
 @media(min-width:1101px){
   .fgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .fgrid .f2{grid-column:span 2;max-width:none}
