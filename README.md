@@ -19,10 +19,14 @@ Cerca, filtra e leggi le fatture FatturaPA di una cartella del PC o del NAS: nie
 
 <br>
 
+[![Provala online](https://img.shields.io/badge/%E2%96%B6%20Provala%20online-2563eb?style=for-the-badge)](https://fatture-elettroniche-explorer.n1k.cloud)
+
+<a href="https://fatture-elettroniche-explorer.n1k.cloud">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/elenco-scuro.png">
-  <img src="docs/screenshots/elenco-chiaro.png" alt="Elenco delle fatture con filtri, totali e ricerca" width="100%">
+  <img src="docs/screenshots/elenco-chiaro.png" alt="Elenco delle fatture con filtri, totali e ricerca: clicca per provare l'app online" width="100%">
 </picture>
+</a>
 
 </div>
 
