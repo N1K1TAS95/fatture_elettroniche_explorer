@@ -434,3 +434,4 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
   .summary .stat.big:nth-child(n){flex:1 1 100%;border:0}
   .summary .stat.big+.stat:nth-child(n){border-left:0}
 }
+#dhead .btn:has(>svg:only-child){width:36px;padding:0;justify-content:center}

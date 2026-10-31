@@ -26,6 +26,9 @@
 <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
 <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v17M15 9h4a1 1 0 0 1 1 1v11M3 21h18M8 7h3M8 11h3M8 15h3"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+<symbol id="i-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+<symbol id="i-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+<symbol id="i-expand" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
 <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
@@ -114,13 +117,13 @@
   </div>
 <aside id="drawer" aria-label="Dettaglio fattura">
   <div id="dhead">
-    <button class="btn" id="dPrev" title="Precedente (←)">‹</button>
-    <button class="btn" id="dNext" title="Successiva (→)">›</button>
+    <button class="btn" id="dPrev" title="Precedente (←)" aria-label="Precedente"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg></button>
+    <button class="btn" id="dNext" title="Successiva (→)" aria-label="Successiva"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></button>
     <div class="t"><h2 id="dTitle"></h2><small id="dSub"></small></div>
     <div class="seg"><button id="dTabD" class="on">Dettaglio</button><button id="dTabX">XML</button></div>
     <button class="btn ghost no-print" id="dPrint" title="Esporta in PDF o stampa la copia di cortesia">PDF</button>
-    <button class="btn ghost no-print" id="dFull" title="A tutta larghezza / affianca alla lista">⤢</button>
-    <button class="btn ghost no-print" id="dClose" title="Chiudi (Esc)">✕</button>
+    <button class="btn ghost no-print" id="dFull" title="A tutta larghezza / affianca alla lista" aria-label="A tutta larghezza"><svg class="i" aria-hidden="true"><use href="#i-expand"/></svg></button>
+    <button class="btn ghost no-print" id="dClose" title="Chiudi (Esc)" aria-label="Chiudi"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
   </div>
   <div id="dbody"></div>
 </aside>
