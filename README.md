@@ -8,12 +8,12 @@
 Cerca, filtra e leggi le fatture FatturaPA di una cartella del PC o del NAS: niente installazione, niente upload.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/N1K1TAS95/fatture_elettroniche_explorer/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/N1K1TAS95/fatture_elettroniche_explorer/actions/workflows/ci.yml)
+[![Versione](https://img.shields.io/github/v/release/N1K1TAS95/fatture_elettroniche_explorer?style=flat-square&label=versione&color=2563eb)](https://github.com/N1K1TAS95/fatture_elettroniche_explorer/releases/latest)
 [![Licenza](https://img.shields.io/github/license/N1K1TAS95/fatture_elettroniche_explorer?style=flat-square&label=licenza&color=2563eb)](LICENSE)
 [![Ultimo commit](https://img.shields.io/github/last-commit/N1K1TAS95/fatture_elettroniche_explorer?style=flat-square&label=ultimo%20commit)](https://github.com/N1K1TAS95/fatture_elettroniche_explorer/commits/main)
 ![Dipendenze: nessuna](https://img.shields.io/badge/dipendenze-nessuna-16a34a?style=flat-square)
 ![PWA installabile](https://img.shields.io/badge/PWA-installabile-7c3aed?style=flat-square)
 ![Privacy: 100% locale](https://img.shields.io/badge/privacy-100%25_locale-0891b2?style=flat-square)
-![FatturaPA 1.2](https://img.shields.io/badge/FatturaPA-1.2.x-64748b?style=flat-square)
 
 [Avvio rapido](#avvio-rapido) · [Caratteristiche](#caratteristiche) · [Pubblicarla su un server](#pubblicarla-su-un-server) · [Sicurezza](SECURITY.md)
 
