@@ -1,0 +1,27 @@
+# Il container serve solo html/ (montato come volume, senza build).
+# Questo file protegge eventuali build future: tutto ciò che non è l'app resta fuori dall'immagine.
+
+# Fatture di prova e script di test
+tests/
+
+# Ambiente Python / uv e server locale
+.venv/
+__pycache__/
+pyproject.toml
+uv.lock
+serve.py
+
+# Repository, configurazione locale e documentazione
+.git/
+.gitignore
+.env
+.env.example
+.idea/
+.vscode/
+*.md
+
+# Dati personali: non devono mai finire in un'immagine
+*.xml
+*.p7m
+*.csv
+*.pdf

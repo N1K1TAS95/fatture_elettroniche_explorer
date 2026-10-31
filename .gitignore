@@ -31,3 +31,7 @@ __pycache__/
 fatture/
 Ricezione/
 Emissione/
+
+# ...tranne le fatture di PROVA (dati fittizi) in tests/fixtures
+!/tests/fixtures/
+!/tests/fixtures/**

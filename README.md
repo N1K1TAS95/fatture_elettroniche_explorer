@@ -16,6 +16,7 @@ HTML, CSS e JavaScript puri, nessuna dipendenza, nessuna build, nessuna richiest
   - [Riepilogo: cosa cambiare](#riepilogo-cosa-cambiare)
 - [Installarla come app (PWA)](#installarla-come-app-pwa)
 - [Privacy e sicurezza](#privacy-e-sicurezza)
+- [Fatture di prova](#fatture-di-prova)
 - [Struttura del progetto](#struttura-del-progetto)
 - [Sviluppo](#sviluppo)
 
@@ -210,9 +211,13 @@ Pubblicata su **HTTPS** (o su `localhost`), l'app è una *Progressive Web App*: 
 - Le cartelle vengono aperte **in sola lettura**: l'app non scrive né modifica nulla.
 - Per velocizzare le aperture successive, il browser conserva in locale (IndexedDB) i dati estratti dalle fatture (nomi, P.IVA, importi, descrizioni) e il riferimento alle cartelle recenti. Su un computer condiviso usa **Recenti → Svuota** o cancella i dati del sito dal browser.
 - Il browser non rivela i percorsi completi dei file: l'app ricorda il nome della cartella e il permesso di accesso. Alla riapertura Chrome può chiedere di confermarlo.
-- Le fatture contengono dati personali: **non caricarle mai in questo repository** (il `.gitignore` esclude `.xml`, `.p7m`, `.csv` e `.pdf`).
+- Le fatture contengono dati personali: **non caricarle mai in questo repository** (il `.gitignore` esclude `.xml`, `.p7m`, `.csv` e `.pdf`; l'unica eccezione sono le fatture fittizie di `tests/fixtures/`).
 
 Il container è irrobustito (filesystem in sola lettura, `no-new-privileges`, capability ridotte, limiti di risorse, solo `GET`/`HEAD`, versione di nginx nascosta) e il server invia header di sicurezza e una CSP restrittiva. Dettagli, verifiche eseguite e come segnalare una vulnerabilità sono in [SECURITY.md](SECURITY.md).
+
+## Fatture di prova
+
+In `tests/fixtures/` ci sono fatture elettroniche **fittizie** (anche firmate `.p7m`, con allegato, lotti, note di credito, casi limite e un file con contenuto ostile per la sicurezza) per provare l'app senza usare dati reali. Scegli quella cartella con **Seleziona cartella…**; `tests/README.md` elenca cosa verifica ogni file e i risultati attesi. Non fanno parte del sito e non finiscono nel container Docker.
 
 ## Struttura del progetto
 
@@ -230,11 +235,16 @@ Il container è irrobustito (filesystem in sola lettura, `no-new-privileges`, ca
 ├── docker-compose.yml           # con reverse proxy (Nginx Proxy Manager)
 ├── docker-compose.standalone.yml# senza proxy, con porta pubblicata
 ├── .env.example                 # parametri di Docker da copiare in .env
+├── tests/
+│   ├── fixtures/                # fatture di PROVA con dati fittizi
+│   ├── generate_fixtures.py     # le rigenera: uv run tests/generate_fixtures.py
+│   └── README.md                # cosa verifica ogni file, risultati attesi
 ├── pyproject.toml               # ambiente uv (nessuna dipendenza)
 ├── serve.py                     # server locale: uv run serve.py
 ├── uv.lock
 ├── nginx.conf                   # configurazione di nginx (commentata)
 ├── security-headers.conf        # header di sicurezza
+├── .dockerignore                # esclude tests, ambiente Python e dati da eventuali build
 ├── SECURITY.md
 ├── LICENSE
 └── README.md

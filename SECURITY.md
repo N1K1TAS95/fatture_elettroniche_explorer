@@ -22,7 +22,7 @@ L'app legge file XML che arrivano da terzi (i fornitori): **ogni campo di una fa
 | **Parser XML** | Si usa il `DOMParser` del browser: non carica DTD o entità esterne. File oltre 80 MB scartati. |
 | **Chiavi speciali** (`__proto__`, `constructor`…) nei dati | Le tabelle dei codici non hanno prototype. |
 | **Web server** | Container in sola lettura, `no-new-privileges`, capability ridotte, limiti di risorse; solo `GET`/`HEAD`; nessun file nascosto; versione nginx nascosta; header di sicurezza (vedi `security-headers.conf`). |
-| **Segreti nel repository** | Nessuna chiave, token o password. `.gitignore` esclude fatture (`.xml`, `.p7m`), CSV e PDF. |
+| **Segreti nel repository** | Nessuna chiave, token o password. `.gitignore` esclude fatture (`.xml`, `.p7m`), CSV e PDF, con la sola eccezione delle fatture **fittizie** di `tests/fixtures/` (nessun dato reale; i file firmati usano un certificato di prova usa e getta la cui chiave non viene salvata). Una di quelle fatture contiene apposta HTML e script per verificare che vengano mostrati come testo. |
 
 ## Rischi residui e note
 
