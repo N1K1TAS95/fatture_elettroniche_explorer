@@ -8,6 +8,7 @@ import json
 import re
 import sys
 import xml.dom.minidom
+from html.parser import HTMLParser
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")  # accenti corretti anche nella console di Windows
@@ -53,10 +54,31 @@ for f in sorted(HTML.rglob("*")):
         testo = re.sub(r'xmlns(:\w+)?="[^"]*"', "", leggi(f))  # gli URI dei namespace non sono richieste
         for m in re.finditer(r"https?://[^\s\"'<>)]+", testo):
             ko(f"{f.relative_to(ROOT)}: riferimento esterno {m.group(0)}")
-index = leggi(HTML / "index.html")
-if any("src=" not in m.group(1) for m in re.finditer(r"<script\b([^>]*)>", index)):
+
+
+class CodiceInline(HTMLParser):
+    """Cerca script inline, gestori di eventi (onclick=…) e URL javascript: con un vero parser HTML
+    (maiuscole, a capo e attributi in ordine diverso non lo ingannano come farebbe una regex)."""
+
+    def __init__(self):
+        super().__init__()
+        self.script_inline = self.gestore = self.url_js = False
+
+    def handle_starttag(self, tag, attrs):
+        a = {k.lower(): (v or "") for k, v in attrs}
+        if tag == "script" and "src" not in a:
+            self.script_inline = True
+        if any(re.fullmatch(r"on[a-z]+", k) for k in a):
+            self.gestore = True
+        if any(v.strip().lower().startswith("javascript:") for v in a.values()):
+            self.url_js = True
+
+
+parser = CodiceInline()
+parser.feed(leggi(HTML / "index.html"))
+if parser.script_inline:
     ko("index.html contiene uno <script> inline")
-if re.search(r"\son[a-z]+\s*=\s*[\"']", index) or re.search(r"javascript:", index, re.I):
+if parser.gestore or parser.url_js:
     ko("index.html contiene gestori di eventi inline o URL javascript:")
 
 print("Nessun file di dati in html/")
