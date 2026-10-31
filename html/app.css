@@ -407,7 +407,7 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
 
 /* dettaglio su telefono: pulsanti sulla prima riga, titolo a tutta larghezza sulla seconda */
 @media(max-width:760px){
-  #dhead{flex-wrap:wrap;gap:8px;padding:10px 12px}
+  #dhead{flex-wrap:wrap;gap:8px}
   #dhead .t{order:10;flex:1 1 100%}
   #dhead h2{white-space:normal;font-size:15px}
   #dhead .t small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -422,3 +422,15 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
   #adv.open{max-height:calc(100vh - var(--hh) - 24px);max-height:calc(100dvh - var(--hh) - 24px);overflow:auto}
 }
 @media(max-width:360px){.fgrid{grid-template-columns:minmax(0,1fr)}}
+
+/* dettaglio: allineamento con le card e spazi verticali uniformi (12px) */
+#dhead{padding:10px 16px}
+.parties{margin-bottom:12px}
+.parties .box2{margin-bottom:0}
+.summary{margin-bottom:12px}
+@media(max-width:760px){
+  .summary{display:flex;flex-wrap:wrap}
+  .summary .stat:nth-child(n){flex:1 1 0;min-width:0;padding:12px 16px;border:0;border-left:1px solid var(--line);border-top:1px solid var(--line)}
+  .summary .stat.big:nth-child(n){flex:1 1 100%;border:0}
+  .summary .stat.big+.stat:nth-child(n){border-left:0}
+}
