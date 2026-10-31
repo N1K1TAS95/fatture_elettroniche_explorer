@@ -303,11 +303,15 @@ In `tests/fixtures/` ci sono fatture elettroniche **fittizie** (anche firmate `.
 ├── docker-compose.yml           # con reverse proxy (Nginx Proxy Manager)
 ├── docker-compose.standalone.yml# senza proxy, con porta pubblicata
 ├── .env.example                 # parametri di Docker da copiare in .env
+├── .github/
+│   ├── workflows/ci.yml         # controlli automatici (GitHub Actions)
+│   └── dependabot.yml           # aggiornamento delle versioni delle Actions
 ├── docs/
 │   └── screenshots/             # immagini del README (fatture fittizie)
 ├── tests/
 │   ├── fixtures/                # fatture di PROVA con dati fittizi
 │   ├── generate_fixtures.py     # le rigenera: uv run tests/generate_fixtures.py
+│   ├── check.py                 # controlli del repository: uv run tests/check.py
 │   └── README.md                # cosa verifica ogni file, risultati attesi
 ├── pyproject.toml               # ambiente uv (nessuna dipendenza)
 ├── serve.py                     # server locale: uv run serve.py
@@ -329,6 +333,8 @@ uv run serve.py
 ```
 
 `serve.py` serve `html/` con gli stessi header di sicurezza di `nginx.conf`. Se modifichi la CSP o i file dell'app, tieni allineati `serve.py`, `nginx.conf` e il `<meta>` di `html/index.html`.
+
+Prima di committare puoi lanciare `uv run tests/check.py`: è lo stesso controllo che esegue la GitHub Action (CSP allineata, nessuna risorsa esterna, nessun dato in `html/`, PWA coerente). Dettagli in [tests/README.md](tests/README.md).
 
 Il formato letto è FatturaPA 1.2.x (`FatturaElettronica`). Le fatture semplificate (`FatturaElettronicaSemplificata`) non sono supportate.
 

@@ -1,0 +1,8 @@
+# Aggiorna automaticamente le versioni delle GitHub Actions usate in .github/workflows/.
+# Dependabot apre una pull request quando ne esce una nuova: nessun altro aggiornamento automatico.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

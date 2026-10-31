@@ -7,8 +7,9 @@ Fatture Explorer. Non sono fatture valide e non vanno mai inviate allo SDI.
     uv run tests/generate_fixtures.py
 
 Usa solo la libreria standard. Per i file firmati (.xml.p7m) serve ``openssl`` nel PATH
-(oppure la variabile d'ambiente OPENSSL con il percorso dell'eseguibile): senza, quei file
-vengono saltati. La firma è fatta con un certificato di prova usa e getta, creato in una
+(oppure la variabile d'ambiente OPENSSL con il percorso dell'eseguibile): senza, lo script
+si ferma con un errore. Le fatture vengono scritte in una cartella temporanea e sostituiscono
+quelle esistenti solo a lavoro finito: se qualcosa va storto, tests/fixtures resta intatta. La firma è fatta con un certificato di prova usa e getta, creato in una
 cartella temporanea e cancellato subito: la chiave non viene mai salvata.
 
 I file .p7m non sono riproducibili byte per byte (contengono la data della firma): se li
@@ -24,7 +25,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-OUT = Path(__file__).resolve().parent / "fixtures"
+DEST = Path(__file__).resolve().parent / "fixtures"  # cartella finale
+OUT = DEST  # durante la generazione punta a una cartella temporanea (vedi main)
 NS = "http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2"
 FATTURA_DI_PROVA = "FATTURA DI PROVA - dati fittizi"
 
@@ -240,8 +242,21 @@ def pag(mod="MP05", scad="2025-12-31"):
 
 
 def main():
-    if OUT.exists():
-        shutil.rmtree(OUT)
+    """Genera in una cartella temporanea e sostituisce tests/fixtures solo se tutto è andato a buon fine."""
+    global OUT
+    stage = Path(tempfile.mkdtemp(prefix="fe-stage-"))
+    OUT = stage / "fixtures"
+    try:
+        genera_tutto()
+        if DEST.exists():
+            shutil.rmtree(DEST)
+        shutil.copytree(OUT, DEST)
+    finally:
+        shutil.rmtree(stage, ignore_errors=True)
+    riepilogo_atteso()
+
+
+def genera_tutto():
     OUT.mkdir(parents=True)
 
     # ===== fatture ricevute (cedente = fornitore, cessionario = Azienda Test) =====
@@ -305,8 +320,8 @@ def main():
     # ===== casi limite =====
     casi_limite()
 
-    (OUT / "ATTESO.json").write_text(json.dumps(ATTESO, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    riepilogo_atteso()
+    testo = json.dumps(ATTESO, indent=2, ensure_ascii=False) + "\n"
+    (OUT / "ATTESO.json").write_bytes(testo.encode("utf-8"))  # sempre LF, anche su Windows
 
 
 def firmate(ced, ces):
@@ -321,11 +336,13 @@ def firmate(ced, ces):
     ]
     exe = os.environ.get("OPENSSL") or shutil.which("openssl")
     if not exe:
-        print("ATTENZIONE: openssl non trovato, i file .p7m non sono stati generati.", file=sys.stderr)
-        return
+        sys.exit("ERRORE: openssl non trovato (serve per i file .p7m). Installalo o imposta la variabile OPENSSL.")
     tmp = Path(tempfile.mkdtemp(prefix="fe-fixtures-"))
     try:
-        env = os.environ
+        env = dict(os.environ)
+        conf = env.get("OPENSSL_CONF")
+        if conf and not Path(conf).is_file():
+            env.pop("OPENSSL_CONF")  # configurazione di openssl inesistente (capita con alcuni programmi installati): la ignoriamo
         key, crt = tmp / "k.pem", tmp / "c.pem"
         subprocess.run([exe, "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(key), "-out", str(crt),
                         "-subj", "/CN=Certificato di prova - non valido", "-days", "2"], check=True, capture_output=True, env=env)
@@ -411,7 +428,7 @@ def casi_limite():
 
 def riepilogo_atteso():
     vis = [a for a in ATTESO if a.get("esito") == "visibile"]
-    print(f"\nFile generati in {OUT}")
+    print(f"\nFile generati in {DEST}")
     print(f"Fatture visibili: {len(vis)}  | duplicati: {sum(a.get('esito') == 'duplicato' for a in ATTESO)}"
           f"  | ignorati: {sum(a.get('esito') == 'ignorato' for a in ATTESO)}  | errori: {sum(a.get('esito') == 'errore' for a in ATTESO)}")
     print("Imponibile:", m(sum(a["imponibile"] for a in vis)), " IVA:", m(sum(a["iva"] for a in vis)), " Totale:", m(sum(a["totale"] for a in vis)))

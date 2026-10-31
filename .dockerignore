@@ -16,6 +16,7 @@ serve.py
 
 # Repository, configurazione locale e documentazione
 .git/
+.github/
 .gitignore
 .env
 .env.example

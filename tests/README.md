@@ -67,6 +67,22 @@ I file sono prodotti da uno script, così restano coerenti tra loro:
 uv run tests/generate_fixtures.py
 ```
 
-Usa solo la libreria standard di Python. Per i file `.p7m` serve `openssl` nel `PATH` (o la variabile `OPENSSL` con il percorso dell'eseguibile); senza, quei tre file vengono saltati. La firma usa un certificato di prova usa e getta, creato in una cartella temporanea e cancellato subito: **la chiave non viene mai salvata**. Le firme contengono la data di creazione, quindi i `.p7m` rigenerati risultano modificati per git; i `.xml` restano identici.
+Usa solo la libreria standard di Python. Per i file `.p7m` serve `openssl` nel `PATH` (o la variabile `OPENSSL` con il percorso dell'eseguibile); senza, lo script si ferma con un errore. Le fatture vengono scritte in una cartella temporanea e sostituiscono quelle esistenti solo a lavoro finito, quindi un errore non lascia `fixtures/` a metà. La firma usa un certificato di prova usa e getta, creato in una cartella temporanea e cancellato subito: **la chiave non viene mai salvata**. Le firme contengono la data di creazione, quindi i `.p7m` rigenerati risultano modificati per git; i `.xml` restano identici.
 
 Lo script riscrive anche `fixtures/ATTESO.json` e stampa il riepilogo dei totali: se aggiungi o cambi una fattura, aggiorna di conseguenza la tabella qui sopra.
+
+## Controlli automatici
+
+`check.py` verifica il repository senza browser e solo con la libreria standard di Python:
+
+```bash
+uv run tests/check.py
+```
+
+- la Content-Security-Policy è identica in `html/index.html`, `nginx.conf` e `serve.py`, senza `unsafe-eval` né `unsafe-inline` (salvo `style-src-attr`);
+- l'app non contiene riferimenti a altre origini, script inline o gestori di eventi inline;
+- in `html/` non ci sono fatture né altri file di dati;
+- manifest e service worker sono coerenti con i file presenti;
+- le fatture di prova sono XML ben formato, tranne i due file rotti apposta.
+
+Gli stessi controlli, più la verifica che le fatture di prova coincidano con il generatore e che i file di Docker Compose siano validi, girano a ogni push con la GitHub Action `.github/workflows/ci.yml`. Non serve nessun segreto e la Action può solo leggere il codice. Non verifica i risultati attesi dentro l'app (quelli si controllano a mano, vedi sopra): serve un browser.

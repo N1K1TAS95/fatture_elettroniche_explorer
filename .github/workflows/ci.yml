@@ -1,0 +1,59 @@
+# Controlli automatici a ogni push e pull request. Nessun segreto, nessuna pubblicazione:
+# la Action si limita a verificare il repository. Si possono eseguire gli stessi controlli
+# in locale con `uv run tests/check.py` (vedi tests/README.md).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Permessi minimi: la Action può solo leggere il codice.
+permissions:
+  contents: read
+
+# Se arriva un nuovo push sullo stesso ramo, annulla l'esecuzione precedente.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  controlli:
+    name: Controlli
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Scarica il codice
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Sintassi JavaScript
+        run: |
+          for f in html/*.js; do
+            echo "node --check $f"
+            node --check "$f"
+          done
+
+      - name: Sintassi Python
+        run: python3 -m py_compile serve.py tests/check.py tests/generate_fixtures.py
+
+      - name: Controlli del repository (CSP, risorse esterne, PWA, fatture di prova)
+        run: python3 tests/check.py
+
+      - name: Le fatture di prova corrispondono al generatore
+        # Rigenera le fatture e confronta con quelle nel repository. I file .p7m sono esclusi
+        # perché contengono la data della firma e cambiano a ogni generazione.
+        run: |
+          python3 tests/generate_fixtures.py
+          modifiche="$(git status --porcelain -- tests/fixtures | grep -v '\.p7m$' || true)"
+          if [ -n "$modifiche" ]; then
+            echo "Le fatture di prova non coincidono con il generatore. Esegui 'uv run tests/generate_fixtures.py' e committa:"
+            echo "$modifiche"
+            exit 1
+          fi
+
+      - name: Configurazione Docker Compose valida
+        run: |
+          docker compose --env-file .env.example config -q
+          docker compose --env-file .env.example -f docker-compose.standalone.yml config -q
