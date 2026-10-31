@@ -247,7 +247,6 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 main{max-width:none;margin:0;padding:var(--sp) 28px 80px;display:flex;flex-direction:column;gap:var(--sp)}
 #toolbar{margin:0}
 #toolbar>*+*{margin-top:12px}
-#chips{margin:0}
 #chips:empty{display:none}
 #stats{margin:0}
 #left{display:flex;flex-direction:column;gap:12px}
@@ -445,3 +444,8 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
 /* scrollbar sottili, nei colori del tema */
 :root{--sb:color-mix(in srgb,var(--mute) 45%,transparent)}
 *{scrollbar-width:thin;scrollbar-color:var(--sb) transparent}
+
+/* filtri attivi: distanza dalla riga degli anni e contatore */
+#toolbar>#chips{margin-top:12px;gap:8px}
+.chip{height:30px;padding:0 6px 0 12px;line-height:1}
+#fbtn .n{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;font-size:12px;line-height:1;font-variant-numeric:tabular-nums}
