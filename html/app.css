@@ -404,3 +404,21 @@ td.c-att .badge{margin-left:6px;vertical-align:middle}
   body.fixed:not(.single) #split.open #drawer{position:static;height:auto;min-height:0}
 }
 @media print{body.fixed{height:auto!important;overflow:visible!important;display:block!important}#content{overflow:visible!important}}
+
+/* dettaglio su telefono: pulsanti sulla prima riga, titolo a tutta larghezza sulla seconda */
+@media(max-width:760px){
+  #dhead{flex-wrap:wrap;gap:8px;padding:10px 12px}
+  #dhead .t{order:10;flex:1 1 100%}
+  #dhead h2{white-space:normal;font-size:15px}
+  #dhead .t small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #dhead .seg{margin-left:auto}
+  #dhead #dFull{display:none}
+}
+
+/* filtri su telefono: campi brevi in coppia, pannello con scroll interno */
+@media(max-width:760px){
+  .fgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px}
+  .fgrid .f2,.fgrid .f:nth-child(3),.fgrid .f:nth-child(6){grid-column:1/-1}
+  #adv.open{max-height:calc(100vh - var(--hh) - 24px);max-height:calc(100dvh - var(--hh) - 24px);overflow:auto}
+}
+@media(max-width:360px){.fgrid{grid-template-columns:minmax(0,1fr)}}
