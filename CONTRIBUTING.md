@@ -39,6 +39,7 @@ Poi apri `tests/fixtures` dall'app e confronta con i risultati attesi in [tests/
 ## Regole pratiche
 
 - **CSP**: se la modifichi, tieni allineati `html/index.html` (il `<meta>`), `nginx.conf` e `serve.py`; `tests/check.py` lo verifica.
+- **Changelog**: annota le modifiche visibili agli utenti in [CHANGELOG.md](CHANGELOG.md), sotto *Non rilasciato*.
 - **Cache dell'app**: se cambi i file in `html/`, aumenta `VERSION` in `html/sw.js`.
 - **Fatture di prova**: sono generate da `tests/generate_fixtures.py`. Non modificare a mano i file in `tests/fixtures`: cambia lo script e rigenera.
 - **Lingua**: interfaccia, documentazione e messaggi di commit in italiano.

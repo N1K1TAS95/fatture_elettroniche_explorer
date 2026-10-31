@@ -312,7 +312,8 @@ In `tests/fixtures/` ci sono fatture elettroniche **fittizie** (anche firmate `.
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   └── dependabot.yml           # aggiornamento delle versioni delle Actions
 ├── docs/
-│   └── screenshots/             # immagini del README (fatture fittizie)
+│   ├── screenshots/             # immagini del README (fatture fittizie)
+│   └── social-preview.png       # anteprima del link (da caricare nelle impostazioni del repository)
 ├── tests/
 │   ├── fixtures/                # fatture di PROVA con dati fittizi
 │   ├── generate_fixtures.py     # le rigenera: uv run tests/generate_fixtures.py
@@ -324,6 +325,7 @@ In `tests/fixtures/` ci sono fatture elettroniche **fittizie** (anche firmate `.
 ├── nginx.conf                   # configurazione di nginx (commentata)
 ├── security-headers.conf        # header di sicurezza
 ├── .dockerignore                # esclude tests, ambiente Python e dati da eventuali build
+├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── SECURITY.md
 ├── LICENSE
