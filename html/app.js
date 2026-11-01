@@ -532,12 +532,12 @@ function drawRifChart(){
   box.innerHTML=svg+'</svg>';box.scrollLeft=box.scrollWidth;
 }
 // Soglie dei controlli (per tutti i veicoli, "*", o per una targa): restano solo in questo browser. Di un veicolo si salvano solo i valori diversi dai generali.
-const SG_DEF={litri:80,ore:6,orari:true};
+const SG_DEF={litri:80,ore:6,orari:true,onLitri:true,onOre:true,onCarb:true,onCarta:true};
 const SOGLIE=Object.create(null);
 const sgNorm=o=>{const r={};if(o&&typeof o==='object'){
   if(Number.isFinite(o.litri)&&o.litri>=1&&o.litri<=2000)r.litri=o.litri;
-  if(Number.isFinite(o.ore)&&o.ore>=0&&o.ore<=168)r.ore=o.ore;
-  if(typeof o.orari==='boolean')r.orari=o.orari}return r};
+  if(Number.isFinite(o.ore)&&o.ore>=1&&o.ore<=168)r.ore=o.ore;
+  for(const k of['orari','onLitri','onOre','onCarb','onCarta'])if(typeof o[k]==='boolean')r[k]=o[k]}return r};
 try{const v=JSON.parse(localStorage.getItem('fe_soglie')||'{}');if(v&&typeof v==='object'&&!Array.isArray(v))for(const[k,o]of Object.entries(v).slice(0,500))
   if(k==='*'||/^[A-Z0-9]{1,20}$/.test(k)){const n=sgNorm(o);if(Object.keys(n).length)SOGLIE[k]=n}}catch{}
 const sgGet=t=>Object.assign({},SG_DEF,SOGLIE['*'],t?SOGLIE[t]:null);
@@ -552,7 +552,7 @@ function controlli(rows){
     if(r.targa){const a=perT.get(r.targa);if(a)a.push(r);else perT.set(r.targa,[r])}
     if(r.carta&&r.targa){const m=perC.get(r.carta)||perC.set(r.carta,new Map()).get(r.carta);m.set(r.targa,(m.get(r.targa)||0)+1)}
     const c=sgGet(r.targa);
-    if(r.vol>c.litri)add(r,`${LIT.format(r.vol)} l: oltre la soglia di ${KMF.format(c.litri)} l`);
+    if(c.onLitri&&r.vol>c.litri)add(r,`${LIT.format(r.vol)} l: oltre la soglia di ${KMF.format(c.litri)} l`);
     if(c.orari){
       const o=oraMin(r);if(o!==null&&(o>=1320||o<360))add(r,`Di notte (${r.ora})`);
       if(new Date(giornoMin(r)*6e4).getUTCDay()===0)add(r,'Di domenica');
@@ -561,12 +561,12 @@ function controlli(rows){
   for(const[t,a]of perT){
     a.sort((x,y)=>x.data+x.ora<y.data+y.ora?-1:1);
     const c=sgGet(t);
-    if(c.ore>0)for(let i=1;i<a.length;i++){
+    if(c.onOre&&c.ore>0)for(let i=1;i<a.length;i++){
       const p=a[i-1],q=a[i],op=oraMin(p),oq=oraMin(q);
       if(op!==null&&oq!==null){const h=(giornoMin(q)+oq-giornoMin(p)-op)/60;if(h<c.ore)add(q,`A ${h<1?Math.round(h*60)+' min':KML.format(h)+' h'} dal rifornimento precedente (minimo ${c.ore} h)`)}
       else if(p.data===q.data)add(q,'Stesso giorno del rifornimento precedente (orario mancante)');
     }
-    if(a.length>=4){ // solo con abbastanza storico e un carburante nettamente prevalente
+    if(c.onCarb&&a.length>=4){ // solo con abbastanza storico e un carburante nettamente prevalente
       const m=new Map();for(const r of a){const k=tipoCarb(r.prod);m.set(k,(m.get(k)||0)+1)}
       const top=[...m.entries()].sort((x,y)=>y[1]-x[1])[0];
       if(top[1]/a.length>=.75)for(const r of a)if(tipoCarb(r.prod)!==top[0])add(r,`${carb(r.prod)} su un veicolo che di solito fa ${top[0]}`);
@@ -574,7 +574,7 @@ function controlli(rows){
   }
   for(const[carta,m]of perC)if(m.size>1){
     const top=[...m.entries()].sort((x,y)=>y[1]-x[1])[0][0];
-    for(const r of rows)if(r.carta===carta&&r.targa&&r.targa!==top)add(r,`Carta ${carta} usata di solito su ${top}`);
+    for(const r of rows)if(r.carta===carta&&r.targa&&r.targa!==top&&sgGet(r.targa).onCarta)add(r,`Carta ${carta} usata di solito su ${top}`);
   }
   return fl;
 }
@@ -692,13 +692,15 @@ function renderRif(){
     h+=`<section class="card box2"><h3>Quando si fa rifornimento</h3><p class="mute rf-note">Nel fine settimana: <b>${we}</b> rifornimenti su ${nt} (${pc(we,nt)}), ${EUR.format(weI)}.${con?` Di notte (22–06): <b>${notte}</b> su ${con} con orario (${pc(notte,con)}).`:''}${senza?` ${senza} rifornimenti non riportano l'orario e non sono nelle fasce.`:''} Dato indicativo: serve a notare abitudini insolite, non prova un uso improprio.</p>`+
       tb(cols('Giorno'),dd.map((x,i)=>riga(GG[i],x,ni)).join('')+(con?`<tr class="rf-subh"><td>Fascia oraria</td><td class="n c-xs">Rifornimenti</td><td class="n c-xs">Litri</td><td class="n">Spesa</td><td class="rf-q">Quota della spesa</td></tr>`+ff.map((x,i)=>riga(FASCE[i],x,ff.reduce((a,y)=>a+y.imp,0))).join(''):''))+'</section>';}
   // rifornimenti segnalati dai controlli
-  {const MAXC=100,propri=Object.keys(SOGLIE).filter(k=>k!=='*').length,g=sgGet('');
+  {const MAXC=100,propri=Object.keys(SOGLIE).filter(k=>k!=='*').length,g=sgGet(''),
+    attivi=[g.onLitri&&`più di ${KMF.format(g.litri)} l per rifornimento`,g.onOre&&`meno di ${g.ore} ore tra due rifornimenti`,g.onCarb&&'carburante insolito (con almeno 4 rifornimenti)',g.onCarta&&'carta su targhe diverse',g.orari&&'notte e domenica'].filter(Boolean),
+    nessuno=!attivi.length&&!propri;
     const lista=rfSort(segn.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),'ctrl',{data:r=>r.data+r.ora,tg:r=>vlab(r.targa),vol:r=>r.vol,imp:r=>r.importo});
-    h+=`<section class="card box2" id="rfCtrl"><div class="rf-head"><h3>Da controllare</h3><button class="btn" data-sogl="1">Soglie…</button></div><p class="mute rf-note">Indizi, non prove: un rifornimento segnalato può avere una spiegazione normale (un pieno più grande del solito, un viaggio, un mezzo in prestito). Soglie generali: massimo ${KMF.format(g.litri)} l per rifornimento, almeno ${g.ore} ore tra due rifornimenti${g.orari?', notte e domenica segnalate':''}${propri?`; ${propri} ${propri===1?'veicolo ha':'veicoli hanno'} soglie proprie`:''}. Si controllano anche il carburante insolito per il veicolo (con almeno 4 rifornimenti) e le carte usate su targhe diverse.</p>`+
+    h+=`<section class="card box2" id="rfCtrl"><div class="rf-head"><h3>Da controllare</h3><button class="btn" data-sogl="1">Soglie…</button></div><p class="mute rf-note">Indizi, non prove: un rifornimento segnalato può avere una spiegazione normale (un pieno più grande del solito, un viaggio, un mezzo in prestito). ${attivi.length?`Controlli generali attivi: ${attivi.join('; ')}.`:'Tutti i controlli generali sono disattivati.'}${propri?` ${propri} ${propri===1?'veicolo ha':'veicoli hanno'} impostazioni proprie.`:''} Si cambiano da <i>Soglie…</i>.</p>`+
       (lista.length?tb([['Data','','data'],['Veicolo','','tg'],['Motivo'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['Fattura','c-num']],
         lista.slice(0,MAXC).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}</td><td class="rf-w">${r.targa?vhtml(r.targa):'—'}</td><td><div class="rf-why">${rfFl.get(r).map(t=>`<span class="badge ri">${esc(t)}</span>`).join('')}</div></td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'ctrl')+
         (lista.length>MAXC?`<div class="more">Mostrati ${MAXC} di ${lista.length} rifornimenti segnalati, nell'ordine scelto: tutti sono nel CSV esportato (colonna <i>Da controllare</i>).</div>`:'')
-      :`<p class="rf-note">Nessun rifornimento da controllare con le soglie attuali.</p>`)+'</section>';}
+      :`<p class="rf-note">${nessuno?'Nessun controllo attivo: attivali da Soglie…':'Nessun rifornimento da controllare con le impostazioni attuali.'}</p>`)+'</section>';}
   const lst=rfSort(rows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),'elenco',{data:r=>r.data+r.ora,tg:r=>vlab(r.targa),prod:r=>carb(r.prod),vol:r=>r.vol,imp:r=>r.importo,ppl:r=>r.vol>0?r.importo/r.vol:null,staz:r=>stazione(r),fn:r=>r.fn}),MAXL=300;
   h+=`<section class="card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data','','data'],['Veicolo','','tg'],['Carburante','c-tipo','prod'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l','n','ppl'],['Stazione','c-ces','staz'],['Fattura','c-num','fn']],
     lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm rf-w">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td class="rf-w">${r.targa?(ALIAS[r.targa]?`${esc(ALIAS[r.targa])}<div class="sub">${esc(r.targa)}</div>`:esc(r.targa)):'—'}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="n">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="wrapc c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'elenco')+
@@ -1063,9 +1065,14 @@ $id('aliasForm').onsubmit=()=>{
 // Dialogo delle soglie: «Tutti i veicoli» o un veicolo. Salva nel browser e ridisegna la scheda senza spostare lo scorrimento.
 const sgSalva=()=>{try{localStorage.setItem('fe_soglie',JSON.stringify(SOGLIE))}catch{toast('Impossibile salvare le soglie in questo browser',4000)}};
 const sgRender=()=>{const c=$id('content'),y=c.scrollTop;render();c.scrollTop=y};
+// i campi numerici si usano solo se il controllo è attivo
+const sgAbilita=()=>{$id('sgLitri').disabled=!$id('sgOnLitri').checked;$id('sgOre').disabled=!$id('sgOnOre').checked};
+$id('sgOnLitri').onchange=$id('sgOnOre').onchange=sgAbilita;
 function sgCarica(t){
   const c=sgGet(t==='*'?'':t);
-  $id('sgLitri').value=c.litri;$id('sgOre').value=c.ore;$id('sgOrari').checked=c.orari;
+  $id('sgLitri').value=c.litri;$id('sgOre').value=c.ore;
+  for(const[i,k]of[['sgOnLitri','onLitri'],['sgOnOre','onOre'],['sgOnCarb','onCarb'],['sgOnCarta','onCarta'],['sgOrari','orari']])$id(i).checked=c[k];
+  sgAbilita();
   $id('sgHint').textContent=t==='*'?'Valgono per i veicoli senza soglie proprie.':SOGLIE[t]?'Questo veicolo ha soglie proprie.':'Usa le soglie di «Tutti i veicoli» finché non le cambi.';
 }
 function apriSoglie(){
@@ -1076,7 +1083,7 @@ $id('sgVei').addEventListener('change',()=>sgCarica($id('sgVei').value));
 $id('sgNo').onclick=()=>$id('sogliaDlg').close();
 $id('sgReset').onclick=()=>{delete SOGLIE[$id('sgVei').value];sgSalva();$id('sogliaDlg').close();sgRender()};
 $id('sogliaForm').onsubmit=()=>{
-  const t=$id('sgVei').value,v={litri:+$id('sgLitri').value,ore:+$id('sgOre').value,orari:$id('sgOrari').checked};
+  const t=$id('sgVei').value,v={litri:+$id('sgLitri').value,ore:+$id('sgOre').value,orari:$id('sgOrari').checked,onLitri:$id('sgOnLitri').checked,onOre:$id('sgOnOre').checked,onCarb:$id('sgOnCarb').checked,onCarta:$id('sgOnCarta').checked};
   if(t==='*')SOGLIE['*']=sgNorm(v);
   else{const b=sgGet(''),o={};for(const k of Object.keys(v))if(v[k]!==b[k])o[k]=v[k];if(Object.keys(sgNorm(o)).length)SOGLIE[t]=sgNorm(o);else delete SOGLIE[t]}
   sgSalva();sgRender();

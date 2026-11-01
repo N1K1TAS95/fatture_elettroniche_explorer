@@ -1003,10 +1003,36 @@ dialog {
     overflow: visible
 }
 
-#sogliaDlg .dlg-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+#sogliaDlg .sg-list {
+    display: flex;
+    flex-direction: column;
     gap: 14px
+}
+
+#sogliaDlg .sg-row {
+    display: grid;
+    grid-template-columns: 1fr 92px 52px;
+    align-items: center;
+    gap: 10px;
+    min-height: var(--ctl)
+}
+
+#sogliaDlg .sg-row .chk {
+    grid-column: 1
+}
+
+#sogliaDlg .sg-row .chk:only-child {
+    grid-column: 1/-1
+}
+
+#sogliaDlg .sg-u {
+    font-size: 12.5px;
+    color: var(--mute)
+}
+
+#sogliaDlg input:disabled {
+    opacity: .45;
+    cursor: not-allowed
 }
 
 #sogliaDlg .dlg-foot .sp {

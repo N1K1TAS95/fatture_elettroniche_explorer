@@ -166,14 +166,13 @@
   <label class="f" for="sgVei">Veicolo
     <select id="sgVei"></select>
     <small id="sgHint"></small></label>
-  <div class="dlg-2">
-    <label class="f" for="sgLitri">Litri massimi per rifornimento
-      <input id="sgLitri" type="number" min="1" max="2000" step="1" inputmode="numeric" required></label>
-    <label class="f" for="sgOre">Ore minime tra due rifornimenti
-      <input id="sgOre" type="number" min="0" max="168" step="1" inputmode="numeric" required>
-      <small>0 per non controllarle.</small></label>
+  <div class="sg-list" role="group" aria-label="Controlli">
+    <div class="sg-row"><label class="chk"><input id="sgOnLitri" type="checkbox"> Litri sopra la soglia</label><input id="sgLitri" type="number" min="1" max="2000" step="1" inputmode="numeric" required aria-label="Litri massimi per rifornimento"><span class="sg-u">l max</span></div>
+    <div class="sg-row"><label class="chk"><input id="sgOnOre" type="checkbox"> Rifornimenti ravvicinati</label><input id="sgOre" type="number" min="1" max="168" step="1" inputmode="numeric" required aria-label="Ore minime tra due rifornimenti"><span class="sg-u">ore min</span></div>
+    <div class="sg-row"><label class="chk"><input id="sgOnCarb" type="checkbox"> Carburante insolito per il veicolo</label></div>
+    <div class="sg-row"><label class="chk"><input id="sgOnCarta" type="checkbox"> Carta usata su targhe diverse</label></div>
+    <div class="sg-row"><label class="chk"><input id="sgOrari" type="checkbox"> Di notte (22–06) e di domenica</label></div>
   </div>
-  <label class="chk"><input id="sgOrari" type="checkbox"> Segnala i rifornimenti di notte (22–06) e di domenica</label>
   <div class="dlg-foot"><button class="btn" type="button" id="sgReset">Ripristina</button><span class="sp"></span><button class="btn" type="button" id="sgNo">Annulla</button><button class="btn primary" type="submit">Salva</button></div>
 </form></dialog>
 
