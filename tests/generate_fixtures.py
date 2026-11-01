@@ -434,13 +434,14 @@ def zip_di(nome, testo):
 
 def allegati_q8(base, righe, fee=0.0):
     """Ritorna (allegati, righe-fattura) per una fattura Q8 di prova.
-    righe: (carta, ticket, gg/mm/aa, hhmmss, prodotto, targa, stazione, importo, litri)."""
+    righe: (carta, ticket, gg/mm/aa, hhmmss, prodotto, targa, stazione, importo, litri[, km del contachilometri])."""
     trs = [Q8_TRS]
     per_prod = {}
-    for carta, tk, data, ora, prod, targa, stz, imp, vol in righe:
+    for carta, tk, data, ora, prod, targa, stz, imp, vol, *resto in righe:
+        km = resto[0] if resto else 0
         prezzo = imp / vol
         via, citta = STAZIONI[stz]
-        trs.append(f"{carta};{tk};{data};{ora};{prod};0000;{targa};00000000;{stz};{via};{citta};{virgola(imp)};{virgola(vol)};"
+        trs.append(f"{carta};{tk};{data};{ora};{prod};0000;{targa};{km:08d};{stz};{via};{citta};{virgola(imp)};{virgola(vol)};"
                    f"{virgola(prezzo, 3)};0,000000;{virgola(prezzo, 6)};{virgola(imp)};")
         x = per_prod.setdefault(prod, [0.0, 0.0])
         x[0] += vol
@@ -477,13 +478,13 @@ def carburante():
     gen = [
         # (file, data fattura, numero, base allegati, righe, spese carta)
         ("IT00000000001_00001.xml", "2025-01-31", "PJ0000001", "PROVA_Cards_2025_PJ0000001", [
-            ("7000000000000000001", "00001", "08/01/25", "071710", "GLS", "AB123CD", "0001", 80.00, 50.00),
-            ("7000000000000000001", "00002", "15/01/25", "183015", "GLS", "AB 123 CD", "0002", 73.50, 45.00),
+            ("7000000000000000001", "00001", "08/01/25", "071710", "GLS", "AB123CD", "0001", 80.00, 50.00, 10000),
+            ("7000000000000000001", "00002", "15/01/25", "183015", "GLS", "AB 123 CD", "0002", 73.50, 45.00, 10700),
             ("7000000000000000002", "00001", "20/01/25", "090000", "SSP", "EF456GH", "0001", 50.01, 30.00),
             ("7000000000000000003", "00001", "27/01/25", "120500", "HBZ", "FURGONE", "0002", 60.00, 31.00),
         ], 9.76),
         ("IT00000000001_00002.xml", "2025-02-28", "PJ0000002", "PROVA_Cards_2025_PJ0000002.zip", [
-            ("7000000000000000001", "00003", "05/02/25", "081000", "GLS", "ab123cd", "0001", 90.00, 55.00),
+            ("7000000000000000001", "00003", "05/02/25", "081000", "GLS", "ab123cd", "0001", 90.00, 55.00, 11500),
             ("7000000000000000002", "00002", "12/02/25", "164500", "SSP", "EF-456-GH", "0002", 45.00, 27.50),
             ("7000000000000000003", "00002", "19/02/25", "101010", "HBZ", "FURGONE", "0001", 62.20, 32.00),
         ], 0.0),
