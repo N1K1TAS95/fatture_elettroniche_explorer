@@ -169,6 +169,12 @@ async function unzip(u){
 const csvNum=s=>{s=String(s||'').trim();if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n};
 function csvText(b){try{return new TextDecoder('utf-8',{fatal:true}).decode(b)}catch{return new TextDecoder('windows-1252').decode(b)}}
 const normTarga=t=>String(t||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+// Alias dei veicoli (targa normalizzata -> nome scelto dall'utente): restano solo in questo browser (localStorage) e si mostrano sempre con esc().
+const ALIAS=Object.create(null);
+try{const v=JSON.parse(localStorage.getItem('fe_alias')||'{}');if(v&&typeof v==='object'&&!Array.isArray(v))for(const[k,a]of Object.entries(v).slice(0,500))
+  if(/^[A-Z0-9]{1,20}$/.test(k)&&typeof a==='string'&&a.trim())ALIAS[k]=a.trim().slice(0,40)}catch{}
+const vlab=t=>ALIAS[t]||t||'(senza targa)';
+const vhtml=t=>ALIAS[t]?`<b>${esc(ALIAS[t])}</b><div class="sub">${esc(t)}</div>`:`<b>${esc(t||'(senza targa)')}</b>`;
 // Lettore Q8: ogni fattura ha tre CSV, riconosciuti dall'intestazione: ACC (riepilogo per prodotto), TRS (un rifornimento per riga), FEE (spese delle carte).
 async function parseQ8(body){
   const res={rows:[],fee:0,accL:null,accI:null,err:''};
@@ -461,7 +467,7 @@ function rifData(){
     if(inPer(d.data||''))fee+=d.car.fee;
     for(const r of d.car.rows){
       if(!inPer(r.data))continue;
-      if(toks.length){const h=[r.targa,r.targaRaw,carb(r.prod),r.prod,r.ind,r.citta,r.carta,r.ticket,d.numero].join(' ').toLowerCase();if(!toks.every(t=>h.includes(t)))continue}
+      if(toks.length){const h=[r.targa,ALIAS[r.targa]||'',r.targaRaw,carb(r.prod),r.prod,r.ind,r.citta,r.carta,r.ticket,d.numero].join(' ').toLowerCase();if(!toks.every(t=>h.includes(t)))continue}
       rows.push(Object.assign({fn:d.numero,fd:d.data},r));
     }
   }
@@ -564,7 +570,7 @@ function renderRif(){
   const ds=rows.map(r=>r.data).sort(),na=[F.dir&&'direzione',F.cp&&'cliente/fornitore',F.td&&'tipo documento',(F.min!==''||F.max!=='')&&'importo'].filter(Boolean);
   const fn=[...new Map(ALL.filter(d=>d.car&&!(F.dup&&d.dup)).map(d=>[d.ced.id,nm(d.ced)])).values()];
   const per=`Fornitore: ${fn.slice(0,3).map(esc).join(', ')}${fn.length>3?` e altri ${fn.length-3}`:''} (elenco in fondo). Rifornimenti dal ${fdate(ds[0])} al ${fdate(ds[ds.length-1])}. Si applicano anno, periodo, date e ricerca${na.length?`; non si applicano: ${na.join(', ')}`:''}.`;
-  if(RF_T!==null)hi+=`<div class="card rf-bar">Veicolo: <b>${esc(RF_T||'(senza targa)')}</b> <button class="btn" data-rfclr="1">Mostra tutti i veicoli</button></div>`;
+  if(RF_T!==null)hi+=`<div class="card rf-bar">Veicolo: <b>${esc(vlab(RF_T))}</b>${ALIAS[RF_T]?` <span class="mute">${esc(RF_T)}</span>`:''} <button class="btn" data-rfclr="1">Mostra tutti i veicoli</button></div>`;
   if(D.err||D.diff)hi+=`<div class="card rf-bar rf-warn">${D.err?`${D.err} fatture con allegati non leggibili. `:''}${D.diff?`${D.diff} fatture in cui il totale dei rifornimenti non coincide con il riepilogo del fornitore.`:''}</div>`;
   // andamento mensile della spesa (disegnato dopo, sulla larghezza disponibile)
   rfMm=aggRif(rows,r=>r.data.slice(0,7)).sort((a,b)=>a.k<b.k?-1:1);
@@ -575,16 +581,16 @@ function renderRif(){
     return`<th class="${x[1]||''}${on?' on':''}" data-rs="${tbl}:${x[2]}" tabindex="0" title="Ordina per ${esc(x[0].toLowerCase())}"${on?` aria-sort="${RF_S[tbl].d>0?'ascending':'descending'}"`:''}>${x[0]}${on?(RF_S[tbl].d>0?' ▲':' ▼'):''}</th>`}).join('')}</tr></thead><tbody>${body}</tbody></table>`;
   const nums=x=>`<td class="n c-xs">${x.n}</td><td class="n c-xs">${LIT.format(x.vol)}</td><td class="n"><b>${EUR.format(x.imp)}</b></td><td class="n">${PRZ.format(ppl(x))}</td>`;
   // per veicolo: sempre tutti, per poterne scegliere un altro
-  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti. «Litri al mese» si calcola sui mesi dal primo all'ultimo rifornimento. Il consumo in km/l si calcola dai chilometri del contachilometri indicati nei rifornimenti, presumendo il pieno a ogni rifornimento: compare solo per i veicoli che li hanno.</p>`+tb([['Targa','','t'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl'],['Litri al mese','n c-xs','lm'],['Consumo','n c-xs','cons'],['Carburante prevalente','c-tipo','pv'],['Ultimo','c-tipo','last']],
-    rfSort(tutte.sort((a,b)=>b.imp-a.imp).map(x=>{x.pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];x.rt=ritmo(x.ds,x.vol);return x}),'veic',{t:x=>x.k,n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl,lm:x=>x.rt.lm,cons:x=>cons.has(x.k)?kml(cons.get(x.k)):null,pv:x=>carb(x.pv&&x.pv[0]),last:x=>x.last}).map(x=>{const pv=x.pv;return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w"><b>${esc(x.k||'(senza targa)')}</b></td>${nums(x)}<td class="n c-xs">${(rt=>`${LIT.format(rt.lm)}${rt.gg!=null?`<div class="sub">un pieno ogni ${Math.round(rt.gg)} giorni</div>`:''}`)(x.rt)}</td><td class="n c-xs">${cons.has(x.k)?`<b title="${KMF.format(cons.get(x.k).km)} km su ${LIT.format(cons.get(x.k).vol)} l · ${PRZ.format(cons.get(x.k).imp/cons.get(x.k).km*100)} € ogni 100 km">${KML.format(kml(cons.get(x.k)))} km/l</b><div class="sub">${KML.format(100/kml(cons.get(x.k)))} l/100 km</div>`:'<span class="mute">—</span>'}</td><td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td></tr>`}).join(''),1,'veic')+'</section>';
+  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti. «Litri al mese» si calcola sui mesi dal primo all'ultimo rifornimento. Il consumo in km/l si calcola dai chilometri del contachilometri indicati nei rifornimenti, presumendo il pieno a ogni rifornimento: compare solo per i veicoli che li hanno.</p>`+tb([['Veicolo','','t'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl'],['Litri al mese','n c-xs','lm'],['Consumo','n c-xs','cons'],['Carburante prevalente','c-tipo','pv'],['Ultimo','c-tipo','last'],['','rf-act']],
+    rfSort(tutte.sort((a,b)=>b.imp-a.imp).map(x=>{x.pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];x.rt=ritmo(x.ds,x.vol);return x}),'veic',{t:x=>vlab(x.k),n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl,lm:x=>x.rt.lm,cons:x=>cons.has(x.k)?kml(cons.get(x.k)):null,pv:x=>carb(x.pv&&x.pv[0]),last:x=>x.last}).map(x=>{const pv=x.pv;return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w">${vhtml(x.k)}</td>${nums(x)}<td class="n c-xs">${(rt=>`${LIT.format(rt.lm)}${rt.gg!=null?`<div class="sub">un pieno ogni ${Math.round(rt.gg)} giorni</div>`:''}`)(x.rt)}</td><td class="n c-xs">${cons.has(x.k)?`<b title="${KMF.format(cons.get(x.k).km)} km su ${LIT.format(cons.get(x.k).vol)} l · ${PRZ.format(cons.get(x.k).imp/cons.get(x.k).km*100)} € ogni 100 km">${KML.format(kml(cons.get(x.k)))} km/l</b><div class="sub">${KML.format(100/kml(cons.get(x.k)))} l/100 km</div>`:'<span class="mute">—</span>'}</td><td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td><td class="rf-act">${x.k?`<button class="btn ghost ibtn" data-alias="${esc(x.k)}" title="${ALIAS[x.k]?'Cambia o togli l\'alias':'Imposta un alias'} per ${esc(x.k)}" aria-label="Alias per ${esc(x.k)}"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></button>`:''}</td></tr>`}).join(''),1,'veic')+'</section>';
   h+=`<section class="card box2"><h3>Per carburante</h3>`+tb([['Carburante','','prod'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl']],
     rfSort(aggRif(rows,r=>r.prod).sort((a,b)=>b.imp-a.imp),'carb',{prod:x=>carb(x.k),n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl}).map(x=>`<tr><td>${esc(carb(x.k))}</td>${nums(x)}</tr>`).join(''),0,'carb')+'</section>';
   const stz=aggRif(rows,stazione).sort((a,b)=>b.imp-a.imp);
   h+=`<section class="card box2"><h3>Per stazione${stz.length>10?' (le 10 principali)':''}</h3>`+tb([['Stazione','','staz'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl']],
     rfSort(stz.slice(0,10),'staz',{staz:x=>x.k,n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl}).map(x=>`<tr><td class="wrapc">${esc(x.k)}</td>${nums(x)}</tr>`).join(''),0,'staz')+'</section>';
-  const lst=rfSort(rows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),'elenco',{data:r=>r.data+r.ora,tg:r=>r.targa,prod:r=>carb(r.prod),vol:r=>r.vol,imp:r=>r.importo,ppl:r=>r.vol>0?r.importo/r.vol:null,staz:r=>stazione(r),fn:r=>r.fn}),MAXL=300;
-  h+=`<section class="card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data','','data'],['Targa','','tg'],['Carburante','c-tipo','prod'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l','n','ppl'],['Stazione','c-ces','staz'],['Fattura','c-num','fn']],
-    lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm rf-w">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td class="rf-w">${esc(r.targa||'—')}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="n">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="wrapc c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'elenco')+
+  const lst=rfSort(rows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),'elenco',{data:r=>r.data+r.ora,tg:r=>vlab(r.targa),prod:r=>carb(r.prod),vol:r=>r.vol,imp:r=>r.importo,ppl:r=>r.vol>0?r.importo/r.vol:null,staz:r=>stazione(r),fn:r=>r.fn}),MAXL=300;
+  h+=`<section class="card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data','','data'],['Veicolo','','tg'],['Carburante','c-tipo','prod'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l','n','ppl'],['Stazione','c-ces','staz'],['Fattura','c-num','fn']],
+    lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm rf-w">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td class="rf-w">${r.targa?(ALIAS[r.targa]?`${esc(ALIAS[r.targa])}<div class="sub">${esc(r.targa)}</div>`:esc(r.targa)):'—'}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="n">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="wrapc c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'elenco')+
     (lst.length>MAXL?`<div class="more">Mostrati i primi ${MAXL} di ${lst.length.toLocaleString('it-IT')} rifornimenti, nell'ordine scelto: tutti sono nel CSV esportato.</div>`:'')+'</section>';
   const forn=new Map();
   for(const d of ALL)if(d.car&&!(F.dup&&d.dup)){const x=forn.get(d.ced.piva)||{p:d.ced,n:0,r:0};x.n++;x.r+=d.car.rows.length;forn.set(d.ced.piva,x)}
@@ -628,8 +634,8 @@ function exportRifCsv(){
   const c=v=>{v=String(v??'');return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   const n=v=>String(v).replace('.',',');
   const T=v=>{v=String(v==null?'':v);return/^[=+\-@\t\r]/.test(v)?"'"+v:v}; // evita l'esecuzione di formule in Excel
-  const out=[['Data','Ora','Targa','Carburante','Litri','Importo','Prezzo al litro','Codice stazione','Indirizzo','Città','Carta','Ticket','Fattura','Data fattura','Km']];
-  for(const r of rfRows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?-1:1))out.push([T(r.data.split('-').reverse().join('/')),T(r.ora),T(r.targa),T(carb(r.prod)),n(r.vol),n(r.importo),r.vol>0?n((r.importo/r.vol).toFixed(3)):'',T(r.staz),T(r.ind),T(r.citta),T(r.carta),T(r.ticket),T(r.fn),T(r.fd.split('-').reverse().join('/')),r.km>0?String(Math.round(r.km)):'']);
+  const out=[['Data','Ora','Targa','Carburante','Litri','Importo','Prezzo al litro','Codice stazione','Indirizzo','Città','Carta','Ticket','Fattura','Data fattura','Km','Alias veicolo']];
+  for(const r of rfRows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?-1:1))out.push([T(r.data.split('-').reverse().join('/')),T(r.ora),T(r.targa),T(carb(r.prod)),n(r.vol),n(r.importo),r.vol>0?n((r.importo/r.vol).toFixed(3)):'',T(r.staz),T(r.ind),T(r.citta),T(r.carta),T(r.ticket),T(r.fn),T(r.fd.split('-').reverse().join('/')),r.km>0?String(Math.round(r.km)):'',T(ALIAS[r.targa]||'')]);
   const blob=new Blob(['﻿'+out.map(r=>r.map(c).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rifornimenti.csv';a.click();
 }
@@ -933,6 +939,16 @@ $id('fFallback').onchange=async e=>{
   await loadEntries(files.map(f=>({path:f.webkitRelativePath||f.name,getFile:async()=>f})),root);
 };
 recents.load();
+// Dialogo dell'alias: salva nel browser e ridisegna la scheda senza spostare lo scorrimento.
+let aliasT='';
+function apriAlias(t){aliasT=normTarga(t);if(!aliasT)return;$id('aliasTarga').textContent=aliasT;$id('aliasIn').value=ALIAS[aliasT]||'';$id('aliasDlg').showModal();$id('aliasIn').select()}
+$id('aliasNo').onclick=()=>$id('aliasDlg').close();
+$id('aliasForm').onsubmit=()=>{
+  const v=$id('aliasIn').value.trim().replace(/\s+/g,' ').slice(0,40);
+  if(v)ALIAS[aliasT]=v;else delete ALIAS[aliasT];
+  try{localStorage.setItem('fe_alias',JSON.stringify(ALIAS))}catch{toast('Impossibile salvare l\'alias in questo browser',4000)}
+  const c=$id('content'),y=c.scrollTop;render();c.scrollTop=y;
+};
 $id('errClose').onclick=()=>$id('errDlg').close();
 document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){$id(g.dataset.go).click();return}if(e.target.closest('[data-act="reset"]'))resetAll();if(e.target.closest('[data-act="demo"]'))loadDemo()});
 
@@ -953,6 +969,7 @@ $id('content').addEventListener('click',e=>{
   if(tab==='rif'){
     const bar=e.target.closest('[data-rm]');if(bar){const k=bar.dataset.rm,last=new Date(+k.slice(0,4),+k.slice(5),0).getDate();F.anno='';$id('per').value='';$id('dal').value=`${k}-01`;$id('al').value=`${k}-${String(last).padStart(2,'0')}`;readFilters();return}
     if(e.target.closest('[data-rfclr]')){RF_T=null;render();return}
+    const al=e.target.closest('[data-alias]');if(al){apriAlias(al.dataset.alias);return}
     const rs=e.target.closest('th[data-rs]');
     if(rs){const[t,k]=rs.dataset.rs.split(':'),st=RF_S[t];if(st){if(st.k===k)st.d*=-1;else{st.k=k;st.d=RF_TXT.has(k)?1:-1}const c=$id('content'),y=c.scrollTop;render();c.scrollTop=y;const nh=document.querySelector(`th[data-rs="${t}:${k}"]`);if(nh)nh.focus({preventScroll:true})}return}
     const on=e.target.closest('[data-carbon]');if(on){applicaCarb(on.dataset.carbon,true);return}

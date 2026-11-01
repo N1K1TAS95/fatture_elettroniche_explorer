@@ -11,6 +11,8 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 - Scheda Rifornimenti: tutte le tabelle (*Per veicolo*, *Per carburante*, *Per stazione*, *Elenco rifornimenti*) si ordinano cliccando l'intestazione di una colonna (di nuovo per invertire), anche da tastiera. I valori mancanti, come il consumo senza km, restano in fondo. Nell'elenco, oltre i 300 rifornimenti, si vedono i primi 300 nell'ordine scelto.
 
+- Scheda Rifornimenti: **alias dei veicoli**. Il pulsante con la matita accanto a una targa, nella tabella *Per veicolo*, permette di darle un nome (per esempio «Furgone di Mario»), mostrato al posto della targa in tabelle, filtro e ordinamento, con la targa sotto. L'alias si cerca come testo, finisce nel CSV esportato (colonna *Alias veicolo*) e resta salvato nel browser. Lasciandolo vuoto si toglie.
+
 ### Modificato
 - Scheda Rifornimenti: il fornitore di carburante **non è più predefinito**. La scheda è sempre presente e, finché non ne scegli uno, mostra «Fornitore non selezionato» con le istruzioni e l'elenco dei fornitori che allegano file CSV o ZIP. La scelta resta salvata nel browser; per chi usava Q8 senza averlo scelto, va rifatta una volta.
 - Cambia di nuovo il formato della cache delle cartelle recenti: al primo uso le fatture vengono rilette una volta.
