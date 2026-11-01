@@ -406,11 +406,13 @@ def firmate(ced, ces):
 PIVA_Q8 = "00891951006"
 Q8 = {"nome": "Carburanti Esempio S.p.A. (fornitore Q8 di prova)", "piva": PIVA_Q8, "cf": PIVA_Q8, "via": "Via del Rifornimento",
       "civ": "1", "cap": "00100", "comune": "Roma", "prov": "RM", "naz": "IT", "paese": "IT", "dest": "0000000", "regime": "RF01"}
-Q8_PRODOTTI = {"GLS": "GASOLIO", "SSP": "SUPER SENZA PB", "HBZ": "Q8HI PERFORM - 100 OTTANI"}
+Q8_PRODOTTI = {"GLS": "GASOLIO", "SSP": "SUPER SENZA PB", "HBZ": "Q8HI PERFORM - 100 OTTANI", "constructor": "PRODOTTO IGNOTO"}
 Q8_TRS = "Carta;Num Ticket;Data;Ora;Cod Prod;Veicolo;Targa/Nome;KM;Cod;Indirizzo;Citta';Imp;Vol;Prezzo E/L;Sconto E/L;Prezzo Scontato;Imp Tot;"
 Q8_ACC = "Prodotto;Quantita' Litri;Importo;IVA;Imponibile;Importo Accisa;Base imponib al netto di IVA e Accisa;IVA su imponibile al netto di Accisa;Tot Fattura"
 Q8_FEE = "Cod. Main; Cod.Sub;Servizio Cartissima Web;Cartissima Web Plus;Invio Documentazione Cartacea;Spese mensili per carta;Spese riemissione carta;Insoluti;Incentive B2B;"
-STAZIONI = {"0001": ("VIA DELLE PROVE 1", "ROMA"), "0002": ("CORSO ESEMPIO 22", "MILANO")}
+STAZIONI = {"0001": ("VIA DELLE PROVE 1", "ROMA"), "0002": ("CORSO ESEMPIO 22", "MILANO"),
+            # contenuto ostile (fattura PJ4): deve comparire come testo, senza eseguire nulla
+            "0666": ("<script>window.__xss=2</script> VIA", "\"><svg onload=window.__xss=3>")}
 
 
 def virgola(x, dec=2):
@@ -481,12 +483,17 @@ def carburante():
         ], 0.0),
         # solo spese della carta, nessun rifornimento (succede davvero nei mesi senza movimenti)
         ("IT00000000001_00003.xml", "2025-03-31", "PJ0000003", "PROVA_Cards_2025_PJ0000003", [], 9.76),
+        # CSV ostile: HTML, script, formule Excel e un codice prodotto che è anche una proprietà di Object
+        ("IT00000000001_00004.xml", "2025-04-30", 'PJ4" onmouseover="window.__xss=4', "PROVA_Cards_2025_PJ0000004", [
+            ("=cmd|' /C calc'!A0", "@SUM(1+1)", "03/04/25", "101500", "GLS", "<img src=x onerror=window.__xss=1>", "0666", 40.00, 25.00),
+            ("+1+1", "-2+3", "04/04/25", "111500", "constructor", '"><svg onload=window.__xss=5>', "0666", 30.00, 20.00),
+        ], 0.0),
     ]
-    for f, data, numero, base, righe, fee in gen:
+    for n, (f, data, numero, base, righe, fee) in enumerate(gen, 1):
         allegati, voci = allegati_q8(base, righe, fee)
         voci = voci or [("Spese carta", 1, "NR", round(fee / 1.22, 2), 22.0, None)]
         genera(L + f, Q8, AZ, [dict(tipo="TD01", data=data, numero=numero, righe=voci, allegati=allegati,
-                                    pagamento=pag(scad=data))], numero[-5:],
+                                    pagamento=pag(scad=data))], f"{n:05d}",
                note="carta carburante Q8: scheda Rifornimenti" + (f" ({len(righe)} rifornimenti)" if righe else " (solo spese della carta)"))
         ATTESO[-1]["rifornimenti"] = len(righe)
 

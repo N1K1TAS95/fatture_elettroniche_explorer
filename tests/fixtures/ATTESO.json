@@ -255,6 +255,21 @@
     "rifornimenti": 0
   },
   {
+    "file": "carburante/IT00000000001_00004.xml",
+    "numero": "PJ4\" onmouseover=\"window.__xss=4",
+    "data": "2025-04-30",
+    "tipo": "TD01",
+    "cedente": "Carburanti Esempio S.p.A. (fornitore Q8 di prova)",
+    "cessionario": "Azienda Test S.r.l.",
+    "imponibile": 57.38,
+    "iva": 12.62,
+    "totale": 70.0,
+    "direzione": "ricevuta",
+    "esito": "visibile",
+    "note": "carta carburante Q8: scheda Rifornimenti (2 rifornimenti)",
+    "rifornimenti": 2
+  },
+  {
     "file": "casi-limite/namespace-senza-prefisso.xml",
     "numero": "NS/1",
     "data": "2025-07-01",
