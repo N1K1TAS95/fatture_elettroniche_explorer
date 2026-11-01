@@ -4,6 +4,16 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+## [1.3.0] - 2026-11-01
+
+Esportazione dell'XML dal dettaglio fattura.
+
+### Aggiunto
+- Dettaglio fattura: pulsante di download (icona) per scaricare il file XML della fattura aperta. Da un file `.p7m` si scarica l'XML estratto dalla firma.
+
+### Sicurezza
+- `SECURITY.md`: verifica dell'esportazione XML e nota sui rischi di aprire nel browser un XML scaricato.
+
 ## [1.2.0] - 2026-10-31
 
 Fatture di esempio integrate e schermata iniziale uniformata alla dashboard.
@@ -77,7 +87,8 @@ Prima versione pubblica.
 - Firefox e Safari usano la modalità compatibile, senza cartelle recenti né installazione come app.
 - Il foglio di stile Assosoftware non è incluso per via della sua licenza.
 
-[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.2.0...HEAD
+[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.0.0...v1.1.0

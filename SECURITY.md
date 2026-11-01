@@ -18,6 +18,7 @@ L'app legge file XML che arrivano da terzi (i fornitori): **ogni campo di una fa
 | **Richieste di rete e dipendenze** | Nessuna: né `fetch`/XHR, né librerie, font o CDN esterni. Nessuna dipendenza npm, quindi nessuna catena di fornitura da controllare. |
 | **Allegati** | Aperti nel browser solo se i primi byte sono davvero `%PDF-`; altrimenti solo download. Nome file ripulito da percorsi e caratteri speciali; estensioni eseguibili (`.exe`, `.bat`, `.js`…) rinominate in `.bloccato`. Apertura con `noopener`. |
 | **PDF / copia di cortesia** | Non usa librerie, iframe, blob né script: il layout è HTML generato dall'app e stampato dal browser. Ogni valore del file passa da `esc()` ed è mostrato come testo (verificato con `contenuto-ostile-xss.xml`). La CSP resta invariata. Gli allegati non vengono inclusi. |
+| **Esportazione XML** | Il pulsante di download nel dettaglio rilegge il file già aperto e lo salva con un `Blob` locale (URL `blob:` revocato dopo 60 secondi): nessuna richiesta di rete, nessun `innerHTML`, CSP invariata. Il nome proposto passa da `safeName()` (nessun percorso, estensioni eseguibili bloccate) e da un `.p7m` si ottiene sempre `.xml`. Il nome compare nel messaggio di conferma solo come testo (`textContent`). |
 | **CSV injection** | Le celle di testo che iniziano con `=`, `+`, `-`, `@` sono precedute da un apice, così Excel non le esegue come formule. |
 | **Accesso ai file** | Cartelle e file aperti in sola lettura (`mode: 'read'`). L'app non scrive nulla. |
 | **Parser XML** | Si usa il `DOMParser` del browser: non carica DTD o entità esterne. File oltre 80 MB scartati. |
@@ -29,6 +30,7 @@ L'app legge file XML che arrivano da terzi (i fornitori): **ogni campo di una fa
 ## Rischi residui e note
 
 - **Dati in locale**: per la cache il browser salva (non cifrati) i dati estratti dalle fatture nel profilo dell'utente. Su un computer condiviso usare *Recenti → Svuota* o cancellare i dati del sito.
+- **XML scaricato**: l'esportazione salva il file byte per byte, senza pulirlo, e da un `.p7m` estrae l'XML dalla firma (che non viene verificata). Un XML ostile può contenere un'istruzione `<?xml-stylesheet?>` e, aperto direttamente in un browser, applicare un foglio di stile. Apri gli XML scaricati con un editor di testo o con il tuo gestionale, non trascinandoli in una finestra del browser.
 - `style-src-attr 'unsafe-inline'` è consentito perché l'interfaccia genera attributi `style=""`; gli script restano bloccati. Il rischio è limitato (nessuna origine esterna raggiungibile).
 - I PDF aperti dal browser ereditano la CSP della pagina (`object-src blob:`). Se un visualizzatore PDF li bloccasse, resta il pulsante *Scarica*.
 - **Header sulla demo di GitHub Pages**: Pages non consente header HTTP personalizzati. Restano la CSP nel `<meta>` e l'assenza di richieste di rete, ma mancano `frame-ancestors`/`X-Frame-Options`, `Permissions-Policy` e gli header di isolamento di `security-headers.conf`. L'app non invia dati da nessuna parte, quindi un sito che la incorporasse non potrebbe leggere le fatture; chi ha esigenze più strette usi la propria installazione.

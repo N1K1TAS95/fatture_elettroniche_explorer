@@ -85,7 +85,7 @@ async function readXml(file){
     dom=parse(fixed);
   }
   if(!dom)throw new Error('XML non valido');
-  return{text,dom};
+  return{text,dom,bytes:b};
 }
 
 /* ====================== Parsing FatturaPA ====================== */
@@ -436,6 +436,19 @@ function prettyXml(x){
   return out.join('\n');
 }
 
+// Scarica l'XML della fattura aperta, byte per byte come nel file originale; da un .p7m si esporta l'XML estratto
+async function exportXml(){
+  const d=view[drawerIdx];if(!d)return;
+  let bytes;
+  try{bytes=(await readXml(await d.e.getFile())).bytes}catch(e){toast('Impossibile leggere il file: '+(e.message||e));return}
+  let n=safeName(d.path.split('/').pop()).replace(/\.p7m$/i,'');
+  if(!/\.xml$/i.test(n))n+='.xml';
+  const url=URL.createObjectURL(new Blob([bytes],{type:'application/xml'}));
+  const l=document.createElement('a');l.href=url;l.download=n;l.click();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  toast('XML scaricato: '+n);
+}
+
 /* ====================== Copia di cortesia (stampa / PDF) ====================== */
 // Layout fattura proprio (non deriva da fogli di stile di terzi). Nessuna libreria: il PDF lo salva il browser
 // dal dialogo di stampa. Tutti i valori del file passano da esc() (come nel dettaglio) e non c'è alcuno script.
@@ -666,6 +679,7 @@ $id('content').addEventListener('click',e=>{
 });
 $id('dClose').onclick=()=>single?exitSingle():closeDrawer();
 $id('dPrint').onclick=printCourtesy;
+$id('dXml').onclick=exportXml;
 $id('dFull').onclick=()=>{const f=$id('split').classList.toggle('full');if(f)$id('scrim').classList.remove('on');else if(innerWidth<=1250)$id('scrim').classList.add('on')};$id('scrim').onclick=closeDrawer;
 $id('dPrev').onclick=()=>stepDrawer(-1);
 $id('dNext').onclick=()=>stepDrawer(1);
