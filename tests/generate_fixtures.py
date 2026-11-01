@@ -16,15 +16,14 @@ I file .p7m non sono riproducibili byte per byte (contengono la data della firma
 rigeneri, git li mostrerà come modificati. I .xml invece sono sempre identici.
 """
 import base64
-import io
 import json
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
-import zipfile
 import zlib
 from pathlib import Path
 
@@ -420,10 +419,17 @@ def virgola(x, dec=2):
 
 
 def zip_di(nome, testo):
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w") as z:
-        z.writestr(zipfile.ZipInfo(nome, date_time=(2025, 1, 1, 0, 0, 0)), testo.encode("utf-8"), compress_type=zipfile.ZIP_DEFLATED)
-    return buf.getvalue()
+    """ZIP con un solo file, byte per byte uguale su ogni sistema (zlib non lo garantisce: la CI rigenera le fixture su Linux).
+    Il file è dichiarato "deflate" ma il flusso è un solo blocco non compresso: è deflate valido e passa dalla stessa
+    decompressione nativa del browser di un archivio vero."""
+    dati = testo.encode("utf-8")
+    assert len(dati) < 0xFFFF
+    raw = b"" + struct.pack("<HH", len(dati), len(dati) ^ 0xFFFF) + dati
+    crc, n, ora, data = zlib.crc32(dati), nome.encode("utf-8"), 0, 0x21  # 1980-01-01 00:00
+    locale = struct.pack("<IHHHHHIIIHH", 0x04034B50, 20, 0, 8, ora, data, crc, len(raw), len(dati), len(n), 0) + n + raw
+    centrale = struct.pack("<IHHHHHHIIIHHHHHII", 0x02014B50, 20, 20, 0, 8, ora, data, crc, len(raw), len(dati), len(n), 0, 0, 0, 0, 0, 0) + n
+    fine = struct.pack("<IHHHHIIH", 0x06054B50, 0, 0, 1, 1, len(centrale), len(locale), 0)
+    return locale + centrale + fine
 
 
 def allegati_q8(base, righe, fee=0.0):
