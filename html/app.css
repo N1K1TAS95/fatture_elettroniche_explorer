@@ -921,6 +921,84 @@ dialog {
     max-width: 700px
 }
 
+/* dialogo dell'alias: stessi colori, raggio, campi e piè di pagina del pannello dei filtri */
+#aliasDlg {
+    width: min(440px, calc(100vw - 2 * var(--sp)));
+    padding: 20px;
+    border-radius: var(--rad);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .4)
+}
+
+#aliasForm {
+    display: flex;
+    flex-direction: column;
+    gap: 18px
+}
+
+#aliasDlg .dlg-t {
+    margin: 0;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--mute);
+    font-weight: 600
+}
+
+#aliasDlg .dlg-veh {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: -10px
+}
+
+#aliasDlg .dlg-veh span {
+    font-size: 13px;
+    font-weight: 550;
+    color: var(--mute)
+}
+
+#aliasDlg .dlg-veh b {
+    font-size: 20px
+}
+
+#aliasDlg input {
+    height: var(--ctl);
+    width: 100%;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 0 12px;
+    font-size: 14.5px;
+    font-weight: 400;
+    color: var(--ink)
+}
+
+#aliasDlg input::placeholder {
+    color: var(--mute);
+    opacity: .8
+}
+
+#aliasDlg input:focus {
+    border-color: var(--acc);
+    box-shadow: 0 0 0 3px var(--acc-soft);
+    outline: none
+}
+
+#aliasDlg .dlg-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid var(--line2);
+    padding-top: var(--sp)
+}
+
+#aliasDlg .dlg-foot .btn {
+    height: var(--ctl);
+    padding: 0 18px;
+    border-radius: 10px;
+    justify-content: center
+}
+
 dialog::backdrop {
     background: rgba(0, 0, 0, .4)
 }
@@ -2633,6 +2711,18 @@ td.c-att .badge {
 
 .rf-wrap table + .rf-note {
     margin: var(--sp) 0 0
+}
+
+.rf-wrap .rf-act {
+    width: 1%;
+    padding-left: 0;
+    text-align: right
+}
+
+.rf-wrap .ibtn {
+    padding: 4px 6px;
+    color: var(--mute);
+    flex: none
 }
 
 .rf-wrap .rf-sub {

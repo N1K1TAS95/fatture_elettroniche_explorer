@@ -29,6 +29,7 @@
 <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
 <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
 <symbol id="i-expand" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
 <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
@@ -150,6 +151,15 @@
 
 <dialog id="errDlg"><h3 style="margin-top:0">File non letti</h3><div id="errList" style="max-height:50vh;overflow:auto;font-size:13px"></div>
   <p style="text-align:right"><button class="btn" id="errClose">Chiudi</button></p></dialog>
+
+<dialog id="aliasDlg" aria-labelledby="aliasTit"><form id="aliasForm" method="dialog">
+  <h3 id="aliasTit" class="dlg-t">Alias del veicolo</h3>
+  <div class="dlg-veh"><span>Targa</span><b id="aliasTarga"></b></div>
+  <label class="f" for="aliasIn">Nome da mostrare al posto della targa
+    <input id="aliasIn" type="text" maxlength="40" autocomplete="off" placeholder="Es. Furgone di Mario">
+    <small>Resta salvato solo in questo browser. Lascia vuoto per togliere l'alias.</small></label>
+  <div class="dlg-foot"><button class="btn" type="button" id="aliasNo">Annulla</button><button class="btn primary" type="submit">Salva</button></div>
+</form></dialog>
 
 <script src="esempi.js"></script>
 <script src="app.js"></script>
