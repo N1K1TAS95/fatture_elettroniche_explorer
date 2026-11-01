@@ -6,7 +6,7 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ### Aggiunto
 - Scheda Rifornimenti: sezione **Da controllare** con i rifornimenti che meritano una verifica, ognuno con il motivo: litri sopra soglia, rifornimenti troppo ravvicinati dello stesso veicolo, carburante insolito per il veicolo (con almeno 4 rifornimenti e un carburante prevalente), carta usata su targhe diverse, rifornimenti di notte (22–06) e di domenica. Sono indizi, non prove. Un avviso in cima alla scheda ne riporta il numero.
-- **Soglie configurabili** (litri massimi, ore minime tra due rifornimenti, controllo di notte e domenica) per tutti i veicoli e per ogni singolo veicolo dal pulsante *Soglie…*. Restano salvate nel browser.
+- **Controlli e soglie configurabili**: dal pulsante *Soglie…* si attiva o disattiva ogni controllo e si impostano i litri massimi e le ore minime tra due rifornimenti, per tutti i veicoli o per ogni singolo veicolo. Restano salvati nel browser.
 - Il CSV esportato ha la colonna *Da controllare* con i motivi.
 
 ## [1.5.0] - 2026-11-01
