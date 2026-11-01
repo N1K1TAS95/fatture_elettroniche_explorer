@@ -30,6 +30,7 @@
 <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
 <symbol id="i-expand" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
 <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
 <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
@@ -49,6 +50,7 @@
     <button class="btn" id="bRecent" style="display:none" title="Cartelle e fatture aperte di recente"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span class="lbl">Recenti</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
     <input type="file" id="fFiles" accept=".xml,.p7m" multiple hidden>
     <button class="btn" id="bRescan" disabled title="Rilegge la cartella e importa i file nuovi"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span class="lbl">Aggiorna</span></button>
+    <button class="btn" id="bImp" title="Impostazioni: esporta o importa alias, soglie e altro" aria-label="Impostazioni"><svg class="i" aria-hidden="true"><use href="#i-gear"/></svg><span class="lbl">Impostazioni</span></button>
     <label class="btn" id="bFallback" style="display:none">Scegli cartella (modalità compatibile)
       <input type="file" id="fFallback" webkitdirectory multiple hidden></label>
     <div class="sel" id="themeSeg"><button class="btn" id="bTheme" aria-haspopup="menu" aria-expanded="false" title="Tema"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="lbl" id="themeLbl">Automatico</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button><div class="pop r" id="themeMenu" role="menu" hidden><div class="opt" role="menuitemradio" data-th="auto"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="ot"><b>Automatico</b><small>Segue il sistema</small></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span class="ot"><b>Chiaro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg><span class="ot"><b>Scuro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div></div></div>
@@ -160,6 +162,28 @@
     <small>Resta salvato solo in questo browser. Lascia vuoto per togliere l'alias.</small></label>
   <div class="dlg-foot"><button class="btn" type="button" id="aliasNo">Annulla</button><button class="btn primary" type="submit">Salva</button></div>
 </form></dialog>
+
+<dialog id="impDlg" aria-labelledby="impTit"><div id="impForm">
+  <h3 id="impTit" class="dlg-t">Impostazioni</h3>
+  <p class="imp-p">Alias dei veicoli, soglie e controlli, fornitori di carburante, tema e azienda scelta restano in questo browser. Salvali in un file per usarli su un altro browser o come copia di sicurezza.</p>
+  <dl class="imp-sum" id="impSum"></dl>
+  <div class="imp-act">
+    <button class="btn" type="button" id="impEsporta"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Esporta in un file</button>
+    <button class="btn" type="button" id="impImporta"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg>Importa da un file…</button>
+    <input type="file" id="impFile" accept=".json,application/json" hidden>
+  </div>
+  <p class="imp-msg" id="impMsg" role="alert" hidden></p>
+  <div id="impPrev" hidden>
+    <h3 class="dlg-t">Contenuto del file</h3>
+    <dl class="imp-sum" id="impPrevSum"></dl>
+    <div class="imp-mode">
+      <label class="chk"><input type="radio" name="impMode" value="unisci" checked> Unisci alle impostazioni attuali (quelle del file prevalgono)</label>
+      <label class="chk"><input type="radio" name="impMode" value="sostituisci"> Sostituisci alias, soglie e fornitori attuali</label>
+    </div>
+  </div>
+  <p class="imp-note">Il file contiene targhe, alias e l'identificativo della tua azienda, ma nessun dato delle fatture. Conservalo con cura.</p>
+  <div class="dlg-foot"><button class="btn" type="button" id="impAnnulla" hidden>Annulla importazione</button><span class="sp"></span><button class="btn" type="button" id="impChiudi">Chiudi</button><button class="btn primary" type="button" id="impApplica" hidden>Importa</button></div>
+</div></dialog>
 
 <dialog id="sogliaDlg" aria-labelledby="sgTit"><form id="sogliaForm" method="dialog">
   <h3 id="sgTit" class="dlg-t">Soglie di controllo</h3>

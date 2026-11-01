@@ -171,8 +171,9 @@ function csvText(b){try{return new TextDecoder('utf-8',{fatal:true}).decode(b)}c
 const normTarga=t=>String(t||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 // Alias dei veicoli (targa normalizzata -> nome scelto dall'utente): restano solo in questo browser (localStorage) e si mostrano sempre con esc().
 const ALIAS=Object.create(null);
-try{const v=JSON.parse(localStorage.getItem('fe_alias')||'{}');if(v&&typeof v==='object'&&!Array.isArray(v))for(const[k,a]of Object.entries(v).slice(0,500))
-  if(/^[A-Z0-9]{1,20}$/.test(k)&&typeof a==='string'&&a.trim())ALIAS[k]=a.trim().slice(0,40)}catch{}
+const normAlias=v=>{const o={};if(v&&typeof v==='object'&&!Array.isArray(v))for(const[k,a]of Object.entries(v).slice(0,500))
+  if(/^[A-Z0-9]{1,20}$/.test(k)&&typeof a==='string'&&a.trim())o[k]=a.trim().slice(0,40);return o};
+try{Object.assign(ALIAS,normAlias(JSON.parse(localStorage.getItem('fe_alias')||'{}')))}catch{}
 const vlab=t=>ALIAS[t]||t||'(senza targa)';
 const vhtml=t=>ALIAS[t]?`<b>${esc(ALIAS[t])}</b><div class="sub">${esc(t)}</div>`:`<b>${esc(t||'(senza targa)')}</b>`;
 // Lettore Q8: ogni fattura ha tre CSV, riconosciuti dall'intestazione: ACC (riepilogo per prodotto), TRS (un rifornimento per riga), FEE (spese delle carte).
@@ -209,7 +210,8 @@ async function parseQ8(body){
 // Fornitori le cui fatture contengono CSV di rifornimenti nel formato Q8. Nessuno è predefinito: li sceglie l'utente (dalla scheda
 // Rifornimenti o dal dettaglio fattura) e la scelta resta solo in questo browser (localStorage). Si identificano con paese + partita IVA del cedente.
 let CARB_UTENTE=[];
-try{const v=JSON.parse(localStorage.getItem('fe_carb')||'[]');if(Array.isArray(v))CARB_UTENTE=v.filter(x=>typeof x==='string'&&/^[A-Z]{2}[A-Za-z0-9]{2,28}$/.test(x)).slice(0,50)}catch{}
+const normCarb=v=>Array.isArray(v)?v.filter(x=>typeof x==='string'&&/^[A-Z]{2}[A-Za-z0-9]{2,28}$/.test(x)).slice(0,50):[];
+try{CARB_UTENTE=normCarb(JSON.parse(localStorage.getItem('fe_carb')||'[]'))}catch{}
 const isCarb=piva=>!!piva&&CARB_UTENTE.includes(piva);
 
 async function parseFile(file){
@@ -538,8 +540,9 @@ const sgNorm=o=>{const r={};if(o&&typeof o==='object'){
   if(Number.isFinite(o.litri)&&o.litri>=1&&o.litri<=2000)r.litri=o.litri;
   if(Number.isFinite(o.ore)&&o.ore>=1&&o.ore<=168)r.ore=o.ore;
   for(const k of['orari','onLitri','onOre','onCarb','onCarta'])if(typeof o[k]==='boolean')r[k]=o[k]}return r};
-try{const v=JSON.parse(localStorage.getItem('fe_soglie')||'{}');if(v&&typeof v==='object'&&!Array.isArray(v))for(const[k,o]of Object.entries(v).slice(0,500))
-  if(k==='*'||/^[A-Z0-9]{1,20}$/.test(k)){const n=sgNorm(o);if(Object.keys(n).length)SOGLIE[k]=n}}catch{}
+const normSoglie=v=>{const r={};if(v&&typeof v==='object'&&!Array.isArray(v))for(const[k,o]of Object.entries(v).slice(0,500))
+  if(k==='*'||/^[A-Z0-9]{1,20}$/.test(k)){const n=sgNorm(o);if(Object.keys(n).length)r[k]=n}return r};
+try{Object.assign(SOGLIE,normSoglie(JSON.parse(localStorage.getItem('fe_soglie')||'{}')))}catch{}
 const sgGet=t=>Object.assign({},SG_DEF,SOGLIE['*'],t?SOGLIE[t]:null);
 // Indizi su singoli rifornimenti (non prove): litri sopra soglia, rifornimenti troppo ravvicinati, carburante insolito per il veicolo,
 // carta usata su targhe diverse, notte e domenica. Restituisce Map rifornimento -> elenco dei motivi.
@@ -714,7 +717,7 @@ function renderRif(){
   drawRifChart();drawRifPrice();
 }
 // Aggiunge o toglie un fornitore dall'elenco e rilegge gli allegati solo delle sue fatture.
-async function applicaCarb(piva,on){
+async function applicaCarb(piva,on,quiet){
   const docs=ALL.filter(d=>d.ced.piva===piva);
   const nome=docs.length?nm(docs[0].ced):piva;
   CARB_UTENTE=on?[...new Set([...CARB_UTENTE,piva])]:CARB_UTENTE.filter(x=>x!==piva);
@@ -731,11 +734,11 @@ async function applicaCarb(piva,on){
       }
     }finally{$id('overlay').style.display='none'}
     const righe=docs.reduce((a,d)=>a+(d.car?d.car.rows.length:0),0);
-    if(!righe){ // formato diverso: si torna come prima
+    if(!righe&&!quiet){ // formato diverso: si torna come prima
       CARB_UTENTE=CARB_UTENTE.filter(x=>x!==piva);for(const d of docs)delete d.car;
       toast(falliti?'Impossibile rileggere i file di questo fornitore':'Nessun rifornimento riconosciuto: gli allegati non sono nel formato Q8',4500);
-    }else toast(`Letti ${righe.toLocaleString('it-IT')} rifornimenti da ${nome}`,3500);
-  }else{for(const d of docs)delete d.car;toast(`${nome} non viene più letto come carta carburante`,3500)}
+    }else if(righe&&!quiet)toast(`Letti ${righe.toLocaleString('it-IT')} rifornimenti da ${nome}`,3500);
+  }else{for(const d of docs)delete d.car;if(!quiet)toast(`${nome} non viene più letto come carta carburante`,3500)}
   try{localStorage.setItem('fe_carb',JSON.stringify(CARB_UTENTE))}catch{}
   syncRifTab();render();if(drawerIdx>=0&&$id('split').classList.contains('open'))loadDetail();
 }
@@ -1088,6 +1091,59 @@ $id('sogliaForm').onsubmit=()=>{
   else{const b=sgGet(''),o={};for(const k of Object.keys(v))if(v[k]!==b[k])o[k]=v[k];if(Object.keys(sgNorm(o)).length)SOGLIE[t]=sgNorm(o);else delete SOGLIE[t]}
   sgSalva();sgRender();
 };
+// Impostazioni dell'app (alias, soglie e controlli, fornitori di carburante, tema, azienda): esportazione e importazione in un file JSON.
+// Il file è non fidato: ogni parte passa dagli stessi controlli di quando si leggono dal browser e nulla viene mostrato se non come numero o etichetta.
+const IMP_APP='fatture-elettroniche-explorer',IMP_MAX=1024*1024,TEMI={auto:'Automatico',light:'Chiaro',dark:'Scuro'};
+let impPend=null;
+function impAttuali(){let tema='auto';try{tema=localStorage.getItem('fe_theme')||'auto'}catch{}
+  return{alias:Object.assign({},ALIAS),soglie:Object.assign({},SOGLIE),carburante:CARB_UTENTE.slice(),tema:TEMI[tema]?tema:'auto',miaAzienda:myId||''}}
+function impRiassunto(o){
+  const ns=Object.keys(o.soglie).filter(k=>k!=='*').length,r=[['Alias dei veicoli',Object.keys(o.alias).length],
+    ['Soglie e controlli',o.soglie['*']||ns?[o.soglie['*']?'generali':'',ns?`${ns} ${ns===1?'veicolo':'veicoli'}`:''].filter(Boolean).join(' + '):'—'],
+    ['Fornitori di carburante',o.carburante.length],['Tema',o.tema?TEMI[o.tema]:'—'],['La mia azienda',o.miaAzienda?'impostata':'—']];
+  return r.map(x=>`<div><dt>${x[0]}</dt><dd>${esc(x[1])}</dd></div>`).join('');
+}
+function impMsg(t){const m=$id('impMsg');m.hidden=!t;m.textContent=t||''}
+function impReset(){impPend=null;$id('impPrev').hidden=true;$id('impApplica').hidden=$id('impAnnulla').hidden=true;impMsg('')}
+function apriImp(){impReset();$id('impSum').innerHTML=impRiassunto(impAttuali());$id('impDlg').showModal()}
+function impEsporta(){
+  const o=impAttuali(),out={app:IMP_APP,formato:1,esportato:new Date().toISOString(),impostazioni:o};
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`impostazioni-fatture-explorer-${out.esportato.slice(0,10)}.json`;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),60000);toast('Impostazioni esportate');
+}
+async function impLeggi(file){
+  impReset();
+  try{
+    if(file.size>IMP_MAX)throw new Error('Il file è troppo grande per essere un file di impostazioni.');
+    let j;try{j=JSON.parse(await file.text())}catch{throw new Error('Il file non è un JSON valido.')}
+    if(!j||typeof j!=='object'||j.app!==IMP_APP||j.formato!==1||!j.impostazioni||typeof j.impostazioni!=='object')throw new Error('Non è un file di impostazioni di questa app (o è di una versione più recente).');
+    const s=j.impostazioni,o={alias:normAlias(s.alias),soglie:normSoglie(s.soglie),carburante:normCarb(s.carburante),
+      tema:TEMI[s.tema]?s.tema:'',miaAzienda:typeof s.miaAzienda==='string'&&s.miaAzienda.length<=120?s.miaAzienda:''};
+    if(!Object.keys(o.alias).length&&!Object.keys(o.soglie).length&&!o.carburante.length&&!o.tema&&!o.miaAzienda)throw new Error('Il file non contiene impostazioni riconosciute.');
+    impPend=o;$id('impPrevSum').innerHTML=impRiassunto(o);$id('impPrev').hidden=false;$id('impApplica').hidden=$id('impAnnulla').hidden=false;
+  }catch(err){impMsg(err.message||String(err))}
+}
+async function impApplica(){
+  const o=impPend,sost=document.querySelector('input[name="impMode"]:checked').value==='sostituisci';if(!o)return;
+  if(sost){for(const k of Object.keys(ALIAS))delete ALIAS[k];for(const k of Object.keys(SOGLIE))delete SOGLIE[k]}
+  Object.assign(ALIAS,o.alias);Object.assign(SOGLIE,o.soglie);
+  try{localStorage.setItem('fe_alias',JSON.stringify(ALIAS));localStorage.setItem('fe_soglie',JSON.stringify(SOGLIE))}catch{toast('Impossibile salvare le impostazioni in questo browser',4000)}
+  if(o.tema)setTheme(o.tema);
+  if(o.miaAzienda){myId=o.miaAzienda;try{localStorage.setItem('fe_my',myId)}catch{}
+    if(ALL.length&&[...$id('my').options].some(x=>x.value===myId)){$id('my').value=myId;SELS.forEach(f=>f());F.dir='';classify();apply()}}
+  // fornitori di carburante: dove i file sono caricati si rileggono gli allegati, altrimenti si salva soltanto la scelta
+  const nuovi=sost?o.carburante:[...new Set([...CARB_UTENTE,...o.carburante])],agg=nuovi.filter(x=>!CARB_UTENTE.includes(x)),tol=CARB_UTENTE.filter(x=>!nuovi.includes(x));
+  $id('impDlg').close();
+  for(const p of agg){if(ALL.some(d=>d.ced.piva===p))await applicaCarb(p,true,true);else CARB_UTENTE.push(p)}
+  for(const p of tol){if(ALL.some(d=>d.ced.piva===p))await applicaCarb(p,false,true);else CARB_UTENTE=CARB_UTENTE.filter(x=>x!==p)}
+  try{localStorage.setItem('fe_carb',JSON.stringify(CARB_UTENTE))}catch{}
+  const c=$id('content'),y=c.scrollTop;syncRifTab();render();c.scrollTop=y;toast('Impostazioni importate',3500);
+}
+$id('bImp').onclick=apriImp;$id('impChiudi').onclick=()=>$id('impDlg').close();
+$id('impEsporta').onclick=impEsporta;$id('impImporta').onclick=()=>$id('impFile').click();
+$id('impFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)impLeggi(f)};
+$id('impAnnulla').onclick=impReset;$id('impApplica').onclick=impApplica;
 $id('errClose').onclick=()=>$id('errDlg').close();
 document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){$id(g.dataset.go).click();return}if(e.target.closest('[data-act="reset"]'))resetAll();if(e.target.closest('[data-act="demo"]'))loadDemo()});
 
