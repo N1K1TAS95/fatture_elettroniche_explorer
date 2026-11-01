@@ -5,6 +5,7 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 ## [Non rilasciato]
 
 ### Aggiunto
+- **Impostazioni**: nuovo pulsante nella barra in alto (solo icona sotto i 1500 px) per **esportare in un file** e **importare** alias dei veicoli, soglie e controlli, fornitori di carburante, tema e azienda scelta. L'importazione mostra il contenuto del file prima di applicarlo, con la scelta tra *unire* alle impostazioni attuali o *sostituirle*; il file è validato come non fidato e nessun dato delle fatture ne fa parte.
 - Scheda Rifornimenti: sezione **Da controllare** con i rifornimenti che meritano una verifica, ognuno con il motivo: litri sopra soglia, rifornimenti troppo ravvicinati dello stesso veicolo, carburante insolito per il veicolo (con almeno 4 rifornimenti e un carburante prevalente), carta usata su targhe diverse, rifornimenti di notte (22–06) e di domenica. Sono indizi, non prove. Un avviso in cima alla scheda ne riporta il numero.
 - **Controlli e soglie configurabili**: dal pulsante *Soglie…* si attiva o disattiva ogni controllo e si impostano i litri massimi e le ore minime tra due rifornimenti, per tutti i veicoli o per ogni singolo veicolo. Restano salvati nel browser.
 - Il CSV esportato ha la colonna *Da controllare* con i motivi.
