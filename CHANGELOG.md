@@ -4,6 +4,10 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+## [1.4.0] - 2026-11-01
+
+Scheda Rifornimenti per le carte carburante Q8.
+
 ### Aggiunto
 - Scheda **Rifornimenti** per le fatture delle carte carburante Q8 (Kuwait Petroleum Italia, P.IVA IT00891951006): l'app legge i CSV zippati allegati e mostra spesa, litri e prezzo al litro per periodo, veicolo (targa), carburante e stazione, con l'elenco dei rifornimenti e l'esportazione in CSV. Compare solo se tra le fatture ce ne sono. Segue i filtri di periodo e la ricerca; un clic su una targa o su una barra del grafico restringe i dati.
 - Altri fornitori di carte carburante: dal dettaglio di una fattura con allegati CSV o ZIP, il pulsante **Leggi come carta carburante Q8** fa leggere i suoi allegati nello stesso formato di Q8. La scelta resta nel browser; si toglie con **Non leggere più** (dal dettaglio fattura o dall'elenco *Fornitori letti* nella scheda). Se gli allegati non sono nel formato Q8 non cambia nulla e l'app lo segnala.
@@ -97,7 +101,8 @@ Prima versione pubblica.
 - Firefox e Safari usano la modalità compatibile, senza cartelle recenti né installazione come app.
 - Il foglio di stile Assosoftware non è incluso per via della sua licenza.
 
-[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.3.0...HEAD
+[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.0...v1.1.1
