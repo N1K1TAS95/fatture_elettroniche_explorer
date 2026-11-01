@@ -2677,3 +2677,21 @@ body.on-rif #dirSeg {
     opacity: .4;
     pointer-events: none
 }
+
+/* su schermi stretti le tabelle della scheda tengono le colonne essenziali */
+@container left (max-width:640px) {
+    .c-xs {
+        display: none
+    }
+
+    .rf-wrap td.wrapc {
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere
+    }
+}
+
+.rf-wrap .rf-w {
+    white-space: normal;
+    overflow-wrap: anywhere
+}

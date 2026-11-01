@@ -19,21 +19,21 @@ Per provare la modalità **fattura singola**: **Apri fattura…** e scegli un fi
 
 | Verifica | Atteso |
 | --- | --- |
-| Fatture mostrate | **25** (la 26ª è un duplicato nascosto) |
-| Emesse / ricevute | 3 / 22 |
-| Imponibile · IVA · Totale | **4.622,63 € · 936,90 € · 5.561,53 €** |
-| Emesse (totale) / ricevute (totale) | 1.195,60 € / 4.365,93 € |
+| Fatture mostrate | **26** (la 27ª è un duplicato nascosto) |
+| Emesse / ricevute | 3 / 23 |
+| Imponibile · IVA · Totale | **4.680,01 € · 949,52 € · 5.631,53 €** |
+| Emesse (totale) / ricevute (totale) | 1.195,60 € / 4.435,93 € |
 | La mia azienda (proposta in automatico) | **Azienda Test S.r.l.** (IT01234567897) |
 | File non letti | **1**: `casi-limite/xml-non-valido.xml` |
-| Anno | 2024: 1 fattura (12,20 €) · 2025: 23 (5.537,13 €) · senza data: 1 (12,20 €) |
-| Tipi documento | TD01: 21 · TD04: 2 (importi negativi, -170,80 €) · TD06: 1 · TD24: 1 |
-| Duplicati | Spunta *Nascondi duplicati* disattivata → 26 fatture, una con l'etichetta `dup` |
+| Anno | 2024: 1 fattura (12,20 €) · 2025: 24 (5.607,13 €) · senza data: 1 (12,20 €) |
+| Tipi documento | TD01: 22 · TD04: 2 (importi negativi, -170,80 €) · TD06: 1 · TD24: 1 |
+| Duplicati | Spunta *Nascondi duplicati* disattivata → 27 fatture, una con l'etichetta `dup` |
 
 Il totale include la fattura in dollari (`valuta-usd.xml`, 200 USD) sommata senza conversione: è un limite noto dell'app, non un errore.
 
 ## Scheda Rifornimenti (cartella `carburante/`)
 
-Le tre fatture hanno come fornitore la partita IVA di Q8 (necessaria perché l'app riconosca gli allegati: gli altri dati sono inventati). Con l'intera cartella `tests/fixtures` la scheda **Rifornimenti** deve mostrare: **7 rifornimenti**, spesa **460,71 €**, **270,50 litri**, prezzo medio **1,703 €/l**, **3 veicoli** (`AB123CD`, `EF456GH`, `FURGONE`) e spese delle carte **19,52 €**. Cliccando la targa `AB123CD`: 3 rifornimenti, 243,50 €. Nessun avviso di totali non coincidenti. Per provare la scelta del fornitore: la P.IVA delle tre fatture è quella di Q8, quindi la scheda c'è da subito. Per vedere il percorso per un altro fornitore, in una copia delle tre fatture sostituisci `00891951006` con un'altra P.IVA: la scheda sparisce; apri una fattura, usa **Leggi come carta carburante Q8** tra gli allegati e la scheda ricompare con gli stessi 7 rifornimenti. Su una fattura con solo PDF il pulsante non compare.
+Le quattro fatture hanno come fornitore la partita IVA di Q8 (necessaria perché l'app riconosca gli allegati: gli altri dati sono inventati). Con l'intera cartella `tests/fixtures` la scheda **Rifornimenti** deve mostrare: **9 rifornimenti**, spesa **530,71 €**, **315,50 litri**, prezzo medio **1,682 €/l**, **5 veicoli** e spese delle carte **19,52 €**. Cliccando la targa `AB123CD`: 3 rifornimenti, 243,50 €. Nessun avviso di totali non coincidenti. Per provare la scelta del fornitore: la P.IVA delle quattro fatture è quella di Q8, quindi la scheda c'è da subito. Per vedere il percorso per un altro fornitore, in una copia delle quattro fatture sostituisci `00891951006` con un'altra P.IVA: la scheda sparisce; apri una fattura, usa **Leggi come carta carburante Q8** tra gli allegati e la scheda ricompare con gli stessi 9 rifornimenti. Su una fattura con solo PDF il pulsante non compare.
 
 ## Cosa copre ogni file
 
@@ -54,6 +54,7 @@ Le tre fatture hanno come fornitore la partita IVA di Q8 (necessaria perché l'a
 | `carburante/IT00000000001_00001.xml` | **carta carburante Q8**: 3 CSV zippati (nome `.csv`, compressione ZIP dichiarata), 4 rifornimenti, 3 veicoli, spese carta 9,76 € |
 | `carburante/IT00000000001_00002.xml` | come sopra ma con allegati chiamati `.zip` (formato dal 2023): 3 rifornimenti. Le targhe `AB 123 CD`, `ab123cd` ed `AB123CD` devono contare come **un solo veicolo** |
 | `carburante/IT00000000001_00003.xml` | solo spese della carta, **nessun rifornimento** (manca il CSV `TRS`) |
+| `carburante/IT00000000001_00004.xml` | **sicurezza**: CSV con HTML e script in targa, indirizzo e città, formule Excel in carta e ticket (`=cmd…`, `@SUM…`, `+1+1`), un codice prodotto `constructor` e un numero fattura con un attributo HTML. Devono comparire come **testo**: `window.__xss` deve restare `undefined`, nessun elemento iniettato, e nel CSV le celle che iniziano con `=`, `+`, `-` o `@` hanno un apice davanti. Le targhe ostili diventano due veicoli a sé (lettere e cifre) |
 | `casi-limite/namespace-senza-prefisso.xml` | namespace di default, senza prefisso |
 | `casi-limite/namespace-ns2.xml` | tutti i tag con prefisso `ns2:` |
 | `casi-limite/namespace-non-valido.xml` | URI del namespace con uno spazio (il browser rifiuterebbe l'XML): l'app lo ripara e lo legge |

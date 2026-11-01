@@ -139,7 +139,7 @@ function parseDoc(root){
 // Alcuni fornitori di carburante allegano alla fattura dei CSV zippati con il dettaglio dei rifornimenti.
 // Il registro FORN_CARB associa la partita IVA del fornitore al suo lettore: per ora solo Q8 (Kuwait Petroleum Italia).
 // Gli allegati sono dati non fidati: si leggono come testo e si mostrano sempre con esc().
-const CARB={GLS:'Gasolio',SSP:'Benzina',HBZ:'Q8 HiPerform (100 ottani)'};
+const CARB=Object.assign(Object.create(null),{GLS:'Gasolio',SSP:'Benzina',HBZ:'Q8 HiPerform (100 ottani)'});
 const ZIP_MAX=20*1024*1024;
 async function inflateRaw(d){
   if(typeof DecompressionStream!=='function')throw new Error('Il browser non sa decomprimere gli allegati ZIP');
@@ -514,23 +514,23 @@ function renderRif(){
   rfMm=aggRif(rows,r=>r.data.slice(0,7)).sort((a,b)=>a.k<b.k?-1:1);
   h+=`<section class="card box2"><h3>Spesa mensile</h3><p class="mute rf-note">${per}</p><div class="legend"><span><i style="background:var(--c1)"></i>Spesa</span><span>· clicca una barra per vedere solo quel mese</span></div><div class="chartwrap" id="rfChart"></div></section>`;
   const tb=(cols,body,click)=>`<table${click?' class="rf-click"':''}><thead><tr>${cols.map(x=>`<th class="${x[1]||''}">${x[0]}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
-  const nums=x=>`<td class="n">${x.n}</td><td class="n">${LIT.format(x.vol)}</td><td class="n"><b>${EUR.format(x.imp)}</b></td><td class="n">${PRZ.format(ppl(x))}</td>`;
+  const nums=x=>`<td class="n c-xs">${x.n}</td><td class="n c-xs">${LIT.format(x.vol)}</td><td class="n"><b>${EUR.format(x.imp)}</b></td><td class="n">${PRZ.format(ppl(x))}</td>`;
   // per veicolo: sempre tutti, per poterne scegliere un altro
-  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti.</p>`+tb([['Targa'],['Rifornimenti','n'],['Litri','n'],['Spesa','n'],['€/l medio','n'],['Carburante prevalente','c-tipo'],['Ultimo','c-tipo']],
-    tutte.sort((a,b)=>b.imp-a.imp).map(x=>{const pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td><b>${esc(x.k||'(senza targa)')}</b></td>${nums(x)}<td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td></tr>`}).join(''),1)+'</section>';
-  h+=`<section class="card box2"><h3>Per carburante</h3>`+tb([['Carburante'],['Rifornimenti','n'],['Litri','n'],['Spesa','n'],['€/l medio','n']],
+  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti.</p>`+tb([['Targa'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n'],['Carburante prevalente','c-tipo'],['Ultimo','c-tipo']],
+    tutte.sort((a,b)=>b.imp-a.imp).map(x=>{const pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w"><b>${esc(x.k||'(senza targa)')}</b></td>${nums(x)}<td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td></tr>`}).join(''),1)+'</section>';
+  h+=`<section class="card box2"><h3>Per carburante</h3>`+tb([['Carburante'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n']],
     aggRif(rows,r=>r.prod).sort((a,b)=>b.imp-a.imp).map(x=>`<tr><td>${esc(carb(x.k))}</td>${nums(x)}</tr>`).join(''))+'</section>';
   const stz=aggRif(rows,stazione).sort((a,b)=>b.imp-a.imp);
-  h+=`<section class="card box2"><h3>Per stazione${stz.length>10?' (le 10 principali)':''}</h3>`+tb([['Stazione'],['Rifornimenti','n'],['Litri','n'],['Spesa','n'],['€/l medio','n']],
+  h+=`<section class="card box2"><h3>Per stazione${stz.length>10?' (le 10 principali)':''}</h3>`+tb([['Stazione'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n']],
     stz.slice(0,10).map(x=>`<tr><td class="wrapc">${esc(x.k)}</td>${nums(x)}</tr>`).join(''))+'</section>';
   const lst=rows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),MAXL=300;
-  h+=`<section class="card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data'],['Targa'],['Carburante','c-tipo'],['Litri','n'],['Spesa','n'],['€/l','n'],['Stazione','c-ces'],['Fattura','c-num']],
-    lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td>${esc(r.targa||'—')}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="n">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="n">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="wrapc c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1)+
+  h+=`<section class="card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data'],['Targa'],['Carburante','c-tipo'],['Litri','n c-xs'],['Spesa','n'],['€/l','n'],['Stazione','c-ces'],['Fattura','c-num']],
+    lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm rf-w">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td class="rf-w">${esc(r.targa||'—')}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="n">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="wrapc c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1)+
     (lst.length>MAXL?`<div class="more">Mostrati gli ultimi ${MAXL} di ${lst.length.toLocaleString('it-IT')} rifornimenti: tutti sono nel CSV esportato.</div>`:'')+'</section>';
   const forn=new Map();
   for(const d of ALL)if(d.car&&!(F.dup&&d.dup)){const x=forn.get(d.ced.piva)||{p:d.ced,n:0,r:0};x.n++;x.r+=d.car.rows.length;forn.set(d.ced.piva,x)}
-  h+=`<section class="card box2"><h3>Fornitori letti come carte carburante</h3>`+tb([['Fornitore'],['P.IVA','c-num'],['Fatture','n'],['Rifornimenti','n'],['','c-tipo']],
-    [...forn.values()].map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n">${x.n}</td><td class="n">${x.r}</td><td class="c-tipo n">${CARB_FISSI.includes(x.p.piva)?'<span class="mute">predefinito</span>':`<button class="btn" data-carboff="${esc(x.p.piva)}">Non leggere più</button>`}</td></tr>`).join(''))+
+  h+=`<section class="card box2"><h3>Fornitori letti come carte carburante</h3>`+tb([['Fornitore'],['P.IVA','c-num'],['Fatture','n c-xs'],['Rifornimenti','n c-xs'],['']],
+    [...forn.values()].map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n c-xs">${x.n}</td><td class="n c-xs">${x.r}</td><td class="n">${CARB_FISSI.includes(x.p.piva)?'<span class="mute">predefinito</span>':`<button class="btn" data-carboff="${esc(x.p.piva)}">Non leggere più</button>`}</td></tr>`).join(''))+
     `<p class="mute rf-note">Per leggere anche un altro fornitore (con CSV nello stesso formato di Q8) apri una sua fattura e usa «Leggi come carta carburante Q8» tra gli allegati.</p></section>`;
   $id('content').innerHTML=`<div class="rf-wrap">${hi}${h}</div>`;
   drawRifChart();
