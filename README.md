@@ -46,10 +46,14 @@ Puoi provare l'app senza installare nulla su **https://fatture-elettroniche-expl
 
 Scarica il repository e scegli un modo:
 
-```bash
+```
 # 1. nessun server: apri html/index.html con Chrome o Edge
+```
+```
 # 2. con un piccolo server locale (uv scarica da solo Python)
-uv run serve.py        # poi apri http://localhost:8000
+```
+```bash
+uv run serve.py
 ```
 
 Clicca **Seleziona cartella…**, scegli quella delle fatture e inizia a cercare. Per provarla subito senza dati reali usa la cartella `tests/fixtures` (vedi [Fatture di prova](#fatture-di-prova)).
