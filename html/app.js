@@ -135,14 +135,90 @@ function parseDoc(root){
     return d;
   });
 }
+/* ====================== Carte carburante (rifornimenti) ====================== */
+// Alcuni fornitori di carburante allegano alla fattura dei CSV zippati con il dettaglio dei rifornimenti.
+// Il registro FORN_CARB associa la partita IVA del fornitore al suo lettore: per ora solo Q8 (Kuwait Petroleum Italia).
+// Gli allegati sono dati non fidati: si leggono come testo e si mostrano sempre con esc().
+const CARB={GLS:'Gasolio',SSP:'Benzina',HBZ:'Q8 HiPerform (100 ottani)'};
+const ZIP_MAX=20*1024*1024;
+async function inflateRaw(d){
+  if(typeof DecompressionStream!=='function')throw new Error('Il browser non sa decomprimere gli allegati ZIP');
+  const rd=new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader(),parts=[];let n=0;
+  for(;;){const{done,value}=await rd.read();if(done)break;n+=value.length;if(n>ZIP_MAX){await rd.cancel();throw new Error('Allegato ZIP troppo grande')}parts.push(value)}
+  const o=new Uint8Array(n);let q=0;for(const x of parts){o.set(x,q);q+=x.length}return o;
+}
+// Legge un archivio ZIP (dalla central directory) e restituisce i file in chiaro. Solo "stored" e "deflate".
+async function unzip(u){
+  const dv=new DataView(u.buffer,u.byteOffset,u.byteLength);let e=-1;
+  for(let i=u.length-22;i>=Math.max(0,u.length-22-65535);i--)if(dv.getUint32(i,true)===0x06054b50){e=i;break}
+  if(e<0)throw new Error('Archivio ZIP non valido');
+  const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);const out=[];
+  for(let k=0;k<n;k++){
+    if(p+46>u.length||dv.getUint32(p,true)!==0x02014b50)throw new Error('Archivio ZIP non valido');
+    const met=dv.getUint16(p+10,true),csz=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),lo=dv.getUint32(p+42,true);
+    const nome=new TextDecoder().decode(u.subarray(p+46,p+46+nl));p+=46+nl+xl+cl;
+    if(lo+30>u.length)throw new Error('Archivio ZIP non valido');
+    const st=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true),raw=u.subarray(st,st+csz);
+    if(nome.endsWith('/'))continue;
+    if(met===0){if(csz>ZIP_MAX)throw new Error('Allegato ZIP troppo grande');out.push({nome,b:raw})}
+    else if(met===8)out.push({nome,b:await inflateRaw(raw)});
+    else throw new Error('Compressione ZIP non supportata');
+  }
+  return out;
+}
+const csvNum=s=>{s=String(s||'').trim();if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n};
+function csvText(b){try{return new TextDecoder('utf-8',{fatal:true}).decode(b)}catch{return new TextDecoder('windows-1252').decode(b)}}
+const normTarga=t=>String(t||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+// Lettore Q8: ogni fattura ha tre CSV, riconosciuti dall'intestazione: ACC (riepilogo per prodotto), TRS (un rifornimento per riga), FEE (spese delle carte).
+async function parseQ8(body){
+  const res={rows:[],fee:0,accL:null,accI:null,err:''};
+  for(const a of $c(body,'Allegati')){
+    const b64=tx(a,'Attachment');if(!b64)continue;
+    let u;try{const bin=atob(b64.replace(/\s+/g,''));u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k)}catch{res.err='Allegato non valido (base64 errato)';continue}
+    let files;
+    try{files=u[0]===0x50&&u[1]===0x4B?await unzip(u):[{nome:tx(a,'NomeAttachment'),b:u}]}catch(err){res.err=err.message||String(err);continue}
+    for(const f of files){
+      const L=csvText(f.b).split(/\r?\n/).filter(l=>l.trim());if(L.length<2)continue;
+      const h=L[0].split(';').map(x=>x.trim().toLowerCase());
+      if(h[0]==='carta'&&h.includes('num ticket')){
+        for(const l of L.slice(1)){
+          const c=l.split(';').map(x=>x.trim());
+          const m=/^(\d{2})\/(\d{2})\/(\d{2})$/.exec(c[2]||'');if(!m||c.length<17)continue;
+          const o=/^(\d{2})(\d{2})/.exec(c[3]||'');
+          const importo=csvNum(c[16])||csvNum(c[11]),vol=csvNum(c[12]);
+          res.rows.push({carta:c[0],ticket:c[1],data:`20${m[3]}-${m[2]}-${m[1]}`,ora:o?o[1]+':'+o[2]:'',prod:c[4],targa:normTarga(c[6]),targaRaw:c[6],staz:c[8],ind:c[9],citta:c[10],importo,vol,
+            prezzo:csvNum(c[15])||csvNum(c[13]),sconto:csvNum(c[14])});
+        }
+      }else if(h[0]==='prodotto'){
+        const t=L.slice(1).map(l=>l.split(';')).find(c=>c[0].trim().toUpperCase()==='TOTALE');
+        if(t){res.accL=csvNum(t[1]);res.accI=csvNum(t[2])}
+      }else if(h[0]==='cod. main'){
+        for(const l of L.slice(1)){const c=l.split(';');for(let k=2;k<c.length;k++)res.fee+=csvNum(c[k])}
+      }
+    }
+  }
+  res.fee=Math.round(res.fee*100)/100;
+  return res;
+}
+// Fornitori le cui fatture contengono CSV di rifornimenti nel formato Q8. Q8 (Kuwait Petroleum Italia) c'è sempre; gli altri li sceglie
+// l'utente dal dettaglio fattura e restano solo in questo browser (localStorage). Si identificano con paese + partita IVA del cedente.
+const CARB_FISSI=['IT00891951006'];
+let CARB_UTENTE=[];
+try{const v=JSON.parse(localStorage.getItem('fe_carb')||'[]');if(Array.isArray(v))CARB_UTENTE=v.filter(x=>typeof x==='string'&&/^[A-Z]{2}[A-Za-z0-9]{2,28}$/.test(x)).slice(0,50)}catch{}
+const isCarb=piva=>!!piva&&(CARB_FISSI.includes(piva)||CARB_UTENTE.includes(piva));
+
 async function parseFile(file){
   const{dom}=await readXml(file);const root=dom.documentElement;
   if(root.localName!=='FatturaElettronica')return[];
-  return parseDoc(root);
+  const docs=parseDoc(root),bodies=$c(root,'FatturaElettronicaBody');
+  for(const d of docs){
+    if(isCarb(d.ced.piva))try{d.car=await parseQ8(bodies[d.idx])}catch(err){d.car={rows:[],fee:0,accL:null,accI:null,err:err.message||String(err)}}
+  }
+  return docs;
 }
 
 /* ====================== Stato ====================== */
-const VER=4;
+const VER=6;
 let ALL=[],view=[],ERR=[],entriesCur=null,rootName='',dirHandle=null;
 let CP_OPTS=[];
 let myId=localStorage.getItem('fe_my')||'';
@@ -150,7 +226,7 @@ const F={q:'',dir:'',cp:'',anno:'',per:'',dal:'',al:'',td:'',min:'',max:'',dup:t
 let tab='fatt',sortF={k:'data',d:-1},shown=0,drawerIdx=-1,canon=new Map(),maxTot=1;
 const PAGE=200;
 const nm=p=>canon.get(p.id)||p.nome;
-function toast(t){const e=$id('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2200)}
+function toast(t,ms=2200){const e=$id('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),ms)}
 const META=/_(MT|NS|RC|NE|DT|AT|EC|MC|SE)_\d+/i;
 
 /* ====================== Scansione cartella ====================== */
@@ -171,7 +247,7 @@ async function loadEntries(entries,root,key=root){
       try{
         const file=await e.getFile();const key=file.size+'|'+file.lastModified;
         let rec=old[e.path];
-        if(!rec||rec.k!==key)rec={k:key,docs:await parseFile(file)};else reused++;
+        if(!rec||rec.k!==key||rec.docs.some(d=>!!d.car!==isCarb(d.ced.piva)))rec={k:key,docs:await parseFile(file)};else reused++;
         nf[e.path]=rec;
         for(const d of rec.docs)docs.push(Object.assign({},d,{path:e.path,e}));
       }catch(err){errors.push({path:e.path,msg:err.message||String(err)})}
@@ -202,7 +278,8 @@ function setupAfterLoad(nFiles,reused){
   $id('years').innerHTML='<span class="lbl">Anno</span><button class="pill" data-y="">Tutti</button>'+years.map(y=>`<button class="pill" data-y="${esc(y)}">${esc(y)}<small>${yc[y]}</small></button>`).join('');
   const tds=[...new Set(ALL.map(d=>d.td))].sort();
   $id('td').innerHTML='<option value="">Tutti</option>'+tds.map(t=>`<option value="${esc(t)}">${esc(t)} · ${esc(TD[t]||'')}</option>`).join('');
-  $id('toolbar').style.display='block';document.body.classList.add('fixed');$id('tabs').style.display='flex';$id('bRescan').disabled=false;
+  $id('toolbar').style.display='block';document.body.classList.add('fixed');$id('tabs').style.display='flex';
+  RF_T=null;syncRifTab();$id('bRescan').disabled=false;
   const nd=ALL.filter(d=>d.dup).length;$id('dupN').textContent=nd?`(${nd})`:'';
   $id('bErr').style.display=ERR.length?'':'none';$id('bErr').textContent=`${ERR.length} file non letti`;
   $id('status').textContent=`${rootName} · ${ALL.length.toLocaleString('it-IT')} fatture da ${nFiles.toLocaleString('it-IT')} file`+(reused?` · ${reused.toLocaleString('it-IT')} da cache`:'');
@@ -266,6 +343,7 @@ function syncUI(){
   if(typeof refreshUI==='function')refreshUI();
 }
 function resetAll(){
+  RF_T=null;
   ['q','cp','dal','al','min','max','per','td'].forEach(i=>$id(i).value='');$id('dup').checked=true;F.anno='';F.dir='';readFilters();
 }
 
@@ -282,8 +360,9 @@ function render(){
   st.style.display='grid';
   st.innerHTML=c.map(x=>`<div class="stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.t===tab));
+  document.body.classList.toggle('on-rif',tab==='rif');
   if(!ALL.length)return;
-  if(tab==='fatt')renderList();else if(tab==='cp')renderCp();else renderMesi();
+  if(tab==='fatt')renderList();else if(tab==='cp')renderCp();else if(tab==='rif')renderRif();else renderMesi();
 }
 function th(k,label,cls,st){const on=st.k===k;return`<th class="${cls||''}${on?' on':''}" data-k="${k}">${label}${on?(st.d>0?' ▲':' ▼'):''}</th>`}
 const noRes=()=>`<div class="empty"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></div><h2>Nessun risultato</h2><p>Nessuna fattura corrisponde ai filtri attuali.</p><button class="btn" data-act="reset">Azzera i filtri</button></div>`;
@@ -328,7 +407,7 @@ function renderCp(){
   if(!cpRows.length){$id('content').innerHTML=noRes();return}
   const mx=Math.max(1,...cpRows.map(x=>Math.abs(x.tot)));
   $id('content').innerHTML=`<table><thead><tr>${th('nome',myId?'Cliente / fornitore':'Cedente','',cpSort)}<th class="c-num" style="cursor:default">P.IVA / CF</th>${th('n','Fatture','n',cpSort)}${th('imp','Imponibile','n c-imp',cpSort)}${th('iva','IVA','n c-iva',cpSort)}${th('tot','Totale','n',cpSort)}${th('last','Ultima fattura','c-tipo',cpSort)}</tr></thead><tbody id="tbcp">`+
-   cpRows.map((x,i)=>`<tr data-i="${i}" title="Mostra le fatture di ${esc(nm(x.p))}"><td class="wrapc">${esc(nm(x.p))}</td><td class="mute c-num">${esc(x.p.piva||x.p.cf)}</td><td class="n">${x.n}</td><td class="n c-imp">${EUR.format(x.imp)}</td><td class="n c-iva">${EUR.format(x.iva)}</td><td class="n"><b>${EUR.format(x.tot)}</b></td><td class="c-tipo">${fdate(x.last)}</td></tr>`).join('')+'</tbody></table>';
+   cpRows.map((x,i)=>`<tr data-i="${i}" title="Mostra le fatture di ${esc(nm(x.p))}"><td class="wrapc">${esc(nm(x.p))}${isCarb(x.p.piva)?' <span class="badge gr" title="Gli allegati di questo fornitore sono letti come rifornimenti (scheda Rifornimenti)">carburante</span>':''}</td><td class="mute c-num">${esc(x.p.piva||x.p.cf)}</td><td class="n">${x.n}</td><td class="n c-imp">${EUR.format(x.imp)}</td><td class="n c-iva">${EUR.format(x.iva)}</td><td class="n"><b>${EUR.format(x.tot)}</b></td><td class="c-tipo">${fdate(x.last)}</td></tr>`).join('')+'</tbody></table>';
 }
 let mesiRows=[];
 function renderMesi(){
@@ -360,6 +439,140 @@ function filterMonth(k){
   const[y,mo]=k.split('-');const last=new Date(+y,+mo,0).getDate();
   F.anno='';$id('per').value='';
   $id('dal').value=`${k}-01`;$id('al').value=`${k}-${String(last).padStart(2,'0')}`;tab='fatt';readFilters();
+}
+
+/* ====================== Rifornimenti (scheda) ====================== */
+let RF_T=null,rfRows=[];
+const PRZ=new Intl.NumberFormat('it-IT',{minimumFractionDigits:3,maximumFractionDigits:3});
+const LIT=new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
+const inPer=ds=>{
+  if(F.anno&&ds.slice(0,4)!==F.anno)return false;
+  if(F.per){const m=+ds.slice(5,7);if(F.per[0]==='m'?m!==+F.per.slice(1):Math.ceil(m/3)!==+F.per.slice(1))return false}
+  if(F.dal&&ds<F.dal)return false;if(F.al&&ds>F.al)return false;return true;
+};
+const carb=c=>CARB[c]||c||'';
+const stazione=r=>[r.ind,r.citta].filter(Boolean).join(', ');
+// i rifornimenti seguono i filtri di periodo e la ricerca testuale (sulla data del rifornimento, non della fattura)
+function rifData(){
+  const toks=F.q.toLowerCase().split(/\s+/).filter(Boolean),rows=[];let fee=0,err=0,diff=0;
+  for(const d of ALL){
+    if(!d.car||(F.dup&&d.dup))continue;
+    if(d.car.err)err++;
+    if(d.car.accI!=null&&Math.abs(d.car.rows.reduce((a,r)=>a+r.importo,0)-d.car.accI)>0.05)diff++;
+    if(inPer(d.data||''))fee+=d.car.fee;
+    for(const r of d.car.rows){
+      if(!inPer(r.data))continue;
+      if(toks.length){const h=[r.targa,r.targaRaw,carb(r.prod),r.prod,r.ind,r.citta,r.carta,r.ticket,d.numero].join(' ').toLowerCase();if(!toks.every(t=>h.includes(t)))continue}
+      rows.push(Object.assign({fn:d.numero,fd:d.data},r));
+    }
+  }
+  return{rows,fee,err,diff};
+}
+function aggRif(rows,kf){
+  const m=new Map();
+  for(const r of rows){const k=kf(r),x=m.get(k)||{k,n:0,vol:0,imp:0,last:'',prod:new Map()};x.n++;x.vol+=r.vol;x.imp+=r.importo;if(r.data>x.last)x.last=r.data;x.prod.set(r.prod,(x.prod.get(r.prod)||0)+r.importo);m.set(k,x)}
+  return[...m.values()];
+}
+const ppl=x=>x.vol>0?x.imp/x.vol:0;
+let rfMm=[];
+// Barre della spesa mensile: il grafico occupa tutta la larghezza della card; con molti mesi scorre e parte dai più recenti.
+function drawRifChart(){
+  const box=$id('rfChart'),mm=rfMm;if(!box||!mm.length)return;
+  const maxV=Math.max(1,...mm.map(x=>x.imp));
+  const top=(()=>{const e=Math.pow(10,Math.floor(Math.log10(maxV))),f=maxV/e;return(f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*e})();
+  const L=58,R=6,H=240,B=34,T=10,ph=H-B-T,avail=Math.max(box.clientWidth,300);
+  const slot=Math.max(34,(avail-L-R)/mm.length),bw=Math.min(slot-8,64),W=Math.max(avail,Math.ceil(L+R+slot*mm.length));
+  const short=v=>v>=1e3?Math.round(v/1e3)+' k':String(Math.round(v));
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Spesa mensile per carburante">`;
+  for(let i=0;i<=4;i++){const v=top*i/4,y=T+ph-ph*i/4;svg+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${L-8}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--mute)">${short(v)} €</text>`}
+  mm.forEach((x,i)=>{
+    const s0=L+i*slot,x0=s0+(slot-bw)/2,hh=Math.max(1,x.imp/top*ph),newY=i===0||x.k.slice(0,4)!==mm[i-1].k.slice(0,4);
+    svg+=`<rect class="mbar" data-rm="${esc(x.k)}" x="${x0}" y="${T+ph-hh}" width="${bw}" height="${hh}" rx="2" fill="var(--c1)" style="cursor:pointer"><title>${MESI[+x.k.slice(5)-1]} ${esc(x.k.slice(0,4))} · ${EUR.format(x.imp)} · ${LIT.format(x.vol)} l · ${PRZ.format(ppl(x))} €/l · ${x.n} rifornimenti</title></rect>`+
+      `<text x="${s0+slot/2}" y="${H-16}" text-anchor="middle" font-size="10.5" fill="var(--mute)">${MESI[+x.k.slice(5)-1]}</text>`+(newY?`<text x="${s0+4}" y="${H-3}" font-size="11" font-weight="700" fill="var(--ink)">${esc(x.k.slice(0,4))}</text>`:'');
+  });
+  box.innerHTML=svg+'</svg>';box.scrollLeft=box.scrollWidth;
+}
+addEventListener('resize',debounce(()=>{if(tab==='rif')drawRifChart()},120));
+function renderRif(){
+  const D=rifData();let rows=D.rows;
+  const tutte=aggRif(rows,r=>r.targa);
+  if(RF_T!==null&&!tutte.some(x=>x.k===RF_T))RF_T=null;
+  if(RF_T!==null)rows=rows.filter(r=>r.targa===RF_T);
+  rfRows=rows;
+  const st=$id('stats'),tot=aggRif(rows,()=>'')[0]||{n:0,vol:0,imp:0};
+  const c=[['Rifornimenti',tot.n.toLocaleString('it-IT')],['Spesa',EUR.format(tot.imp)],['Litri',LIT.format(tot.vol)],['Prezzo medio al litro',tot.vol>0?PRZ.format(ppl(tot))+' €/l':'—'],['Veicoli',aggRif(rows,r=>r.targa).length]];
+  if(RF_T===null&&D.fee>0)c.push(['Spese delle carte',EUR.format(D.fee)]);
+  st.style.display='grid';st.innerHTML=c.map(x=>`<div class="stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
+  if(!rows.length){$id('content').innerHTML=`<div class="empty"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></div><h2>Nessun rifornimento</h2><p>Nessun rifornimento corrisponde ai filtri attuali.</p><button class="btn" data-act="reset">Azzera i filtri</button></div>`;return}
+  let h='',hi='';
+  const ds=rows.map(r=>r.data).sort(),na=[F.dir&&'direzione',F.cp&&'cliente/fornitore',F.td&&'tipo documento',(F.min!==''||F.max!=='')&&'importo'].filter(Boolean);
+  const fn=[...new Map(ALL.filter(d=>d.car&&!(F.dup&&d.dup)).map(d=>[d.ced.id,nm(d.ced)])).values()];
+  const per=`Fornitore: ${fn.slice(0,3).map(esc).join(', ')}${fn.length>3?` e altri ${fn.length-3}`:''} (elenco in fondo). Rifornimenti dal ${fdate(ds[0])} al ${fdate(ds[ds.length-1])}. Si applicano anno, periodo, date e ricerca${na.length?`; non si applicano: ${na.join(', ')}`:''}.`;
+  if(RF_T!==null)hi+=`<div class="card rf-bar">Veicolo: <b>${esc(RF_T||'(senza targa)')}</b> <button class="btn" data-rfclr="1">Mostra tutti i veicoli</button></div>`;
+  if(D.err||D.diff)hi+=`<div class="card rf-bar rf-warn">${D.err?`${D.err} fatture con allegati non leggibili. `:''}${D.diff?`${D.diff} fatture in cui il totale dei rifornimenti non coincide con il riepilogo del fornitore.`:''}</div>`;
+  // andamento mensile della spesa (disegnato dopo, sulla larghezza disponibile)
+  rfMm=aggRif(rows,r=>r.data.slice(0,7)).sort((a,b)=>a.k<b.k?-1:1);
+  h+=`<section class="card box2"><h3>Spesa mensile</h3><p class="mute rf-note">${per}</p><div class="legend"><span><i style="background:var(--c1)"></i>Spesa</span><span>· clicca una barra per vedere solo quel mese</span></div><div class="chartwrap" id="rfChart"></div></section>`;
+  const tb=(cols,body,click)=>`<table${click?' class="rf-click"':''}><thead><tr>${cols.map(x=>`<th class="${x[1]||''}">${x[0]}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
+  const nums=x=>`<td class="n">${x.n}</td><td class="n">${LIT.format(x.vol)}</td><td class="n"><b>${EUR.format(x.imp)}</b></td><td class="n">${PRZ.format(ppl(x))}</td>`;
+  // per veicolo: sempre tutti, per poterne scegliere un altro
+  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti.</p>`+tb([['Targa'],['Rifornimenti','n'],['Litri','n'],['Spesa','n'],['€/l medio','n'],['Carburante prevalente','c-tipo'],['Ultimo','c-tipo']],
+    tutte.sort((a,b)=>b.imp-a.imp).map(x=>{const pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td><b>${esc(x.k||'(senza targa)')}</b></td>${nums(x)}<td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td></tr>`}).join(''),1)+'</section>';
+  h+=`<section class="card box2"><h3>Per carburante</h3>`+tb([['Carburante'],['Rifornimenti','n'],['Litri','n'],['Spesa','n'],['€/l medio','n']],
+    aggRif(rows,r=>r.prod).sort((a,b)=>b.imp-a.imp).map(x=>`<tr><td>${esc(carb(x.k))}</td>${nums(x)}</tr>`).join(''))+'</section>';
+  const stz=aggRif(rows,stazione).sort((a,b)=>b.imp-a.imp);
+  h+=`<section class="card box2"><h3>Per stazione${stz.length>10?' (le 10 principali)':''}</h3>`+tb([['Stazione'],['Rifornimenti','n'],['Litri','n'],['Spesa','n'],['€/l medio','n']],
+    stz.slice(0,10).map(x=>`<tr><td class="wrapc">${esc(x.k)}</td>${nums(x)}</tr>`).join(''))+'</section>';
+  const lst=rows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),MAXL=300;
+  h+=`<section class="card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data'],['Targa'],['Carburante','c-tipo'],['Litri','n'],['Spesa','n'],['€/l','n'],['Stazione','c-ces'],['Fattura','c-num']],
+    lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td>${esc(r.targa||'—')}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="n">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="n">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="wrapc c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1)+
+    (lst.length>MAXL?`<div class="more">Mostrati gli ultimi ${MAXL} di ${lst.length.toLocaleString('it-IT')} rifornimenti: tutti sono nel CSV esportato.</div>`:'')+'</section>';
+  const forn=new Map();
+  for(const d of ALL)if(d.car&&!(F.dup&&d.dup)){const x=forn.get(d.ced.piva)||{p:d.ced,n:0,r:0};x.n++;x.r+=d.car.rows.length;forn.set(d.ced.piva,x)}
+  h+=`<section class="card box2"><h3>Fornitori letti come carte carburante</h3>`+tb([['Fornitore'],['P.IVA','c-num'],['Fatture','n'],['Rifornimenti','n'],['','c-tipo']],
+    [...forn.values()].map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n">${x.n}</td><td class="n">${x.r}</td><td class="c-tipo n">${CARB_FISSI.includes(x.p.piva)?'<span class="mute">predefinito</span>':`<button class="btn" data-carboff="${esc(x.p.piva)}">Non leggere più</button>`}</td></tr>`).join(''))+
+    `<p class="mute rf-note">Per leggere anche un altro fornitore (con CSV nello stesso formato di Q8) apri una sua fattura e usa «Leggi come carta carburante Q8» tra gli allegati.</p></section>`;
+  $id('content').innerHTML=`<div class="rf-wrap">${hi}${h}</div>`;
+  drawRifChart();
+}
+// Aggiunge o toglie un fornitore dall'elenco e rilegge gli allegati solo delle sue fatture.
+async function applicaCarb(piva,on){
+  const docs=ALL.filter(d=>d.ced.piva===piva);
+  const nome=docs.length?nm(docs[0].ced):piva;
+  CARB_UTENTE=on?[...new Set([...CARB_UTENTE,piva])]:CARB_UTENTE.filter(x=>x!==piva);
+  if(on){
+    const paths=[...new Set(docs.map(d=>d.path))];let fatti=0,falliti=0;
+    try{
+      for(const pth of paths){
+        progress(`Lettura degli allegati… ${fatti}/${paths.length}`,fatti/paths.length);
+        try{
+          const fresh=await parseFile(await docs.find(d=>d.path===pth).e.getFile());
+          for(const d of docs)if(d.path===pth){const f=fresh.find(x=>x.idx===d.idx);if(f&&f.car)d.car=f.car;else delete d.car}
+        }catch{falliti++}
+        fatti++;
+      }
+    }finally{$id('overlay').style.display='none'}
+    const righe=docs.reduce((a,d)=>a+(d.car?d.car.rows.length:0),0);
+    if(!righe){ // formato diverso: si torna come prima
+      CARB_UTENTE=CARB_UTENTE.filter(x=>x!==piva);for(const d of docs)delete d.car;
+      toast(falliti?'Impossibile rileggere i file di questo fornitore':'Nessun rifornimento riconosciuto: gli allegati non sono nel formato Q8',4500);
+    }else toast(`Letti ${righe.toLocaleString('it-IT')} rifornimenti da ${nome}`,3500);
+  }else{for(const d of docs)delete d.car;toast(`${nome} non viene più letto come carta carburante`,3500)}
+  try{localStorage.setItem('fe_carb',JSON.stringify(CARB_UTENTE))}catch{}
+  syncRifTab();render();if(drawerIdx>=0&&$id('split').classList.contains('open'))loadDetail();
+}
+function syncRifTab(){
+  const has=ALL.some(d=>d.car&&d.car.rows.length);
+  document.querySelector('.tab[data-t="rif"]').hidden=!has;if(!has&&tab==='rif')tab='fatt';
+}
+function exportRifCsv(){
+  const c=v=>{v=String(v??'');return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const n=v=>String(v).replace('.',',');
+  const T=v=>{v=String(v==null?'':v);return/^[=+\-@\t\r]/.test(v)?"'"+v:v}; // evita l'esecuzione di formule in Excel
+  const out=[['Data','Ora','Targa','Carburante','Litri','Importo','Prezzo al litro','Codice stazione','Indirizzo','Città','Carta','Ticket','Fattura','Data fattura']];
+  for(const r of rfRows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?-1:1))out.push([T(r.data.split('-').reverse().join('/')),T(r.ora),T(r.targa),T(carb(r.prod)),n(r.vol),n(r.importo),r.vol>0?n((r.importo/r.vol).toFixed(3)):'',T(r.staz),T(r.ind),T(r.citta),T(r.carta),T(r.ticket),T(r.fn),T(r.fd.split('-').reverse().join('/'))]);
+  const blob=new Blob(['﻿'+out.map(r=>r.map(c).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rifornimenti.csv';a.click();
 }
 
 /* ====================== Dettaglio fattura ====================== */
@@ -405,7 +618,11 @@ async function loadDetail(){
   d.rit.forEach(r=>extra.push(['Ritenuta',`${esc(r.tipo)} ${esc(r.aliq)}% = ${money(r.imp,cur)} ${esc(r.caus)}`]));
   d.cassa.forEach(r=>extra.push(['Cassa prev.',`${esc(r.tipo)} ${money(r.imp,cur)}`]));
   d.rif.forEach(r=>extra.push(['Riferimento',esc(r)]));
-  const al=att.length?`<div class="card box2"><h3>Allegati (${att.length})</h3>${att.map((a,j)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg> ${esc(a.nome)} <span class="mute">${esc(a.fmt)} ${esc(a.descr)} · ${Math.round(a.b64.length*0.75/1024)} KB</span></span><button class="btn" data-att="${j}" data-act="open">Apri</button><button class="btn" data-att="${j}" data-act="dl">Scarica</button></div>`).join('')}</div>`:'';
+  const csvAtt=att.some(a=>/\.(csv|zip)$/i.test(a.nome)||/^(csv|zip)$/i.test(a.fmt)),conRif=ALL.some(x=>x.car&&x.car.rows.length);
+  let cb='';
+  if(isCarb(d.ced.piva))cb=`<div class="rf-cfg"><span>Letto come carta carburante Q8 · <b>${d.car?d.car.rows.length:0}</b> rifornimenti in questa fattura</span><span class="sp"></span>${!single&&conRif?'<button class="btn" data-carb="go">Vedi i rifornimenti</button>':''}${!single&&!CARB_FISSI.includes(d.ced.piva)?'<button class="btn" data-carb="off">Non leggere più</button>':''}</div>`;
+  else if(csvAtt&&d.ced.piva&&!single)cb=`<div class="rf-cfg"><span>Questo fornitore allega file CSV. Se sono rifornimenti di una carta carburante nel formato Q8, puoi leggerli e vederli nella scheda Rifornimenti.</span><span class="sp"></span><button class="btn" data-carb="on">Leggi come carta carburante Q8</button></div>`;
+  const al=att.length?`<div class="card box2"><h3>Allegati (${att.length})</h3>${att.map((a,j)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg> ${esc(a.nome)} <span class="mute">${esc(a.fmt)} ${esc(a.descr)} · ${Math.round(a.b64.length*0.75/1024)} KB</span></span><button class="btn" data-att="${j}" data-act="open">Apri</button><button class="btn" data-att="${j}" data-act="dl">Scarica</button></div>`).join('')}${cb}</div>`:'';
   const scad=d.pag.map(p=>p.scad).filter(Boolean).sort()[0];
   const summ=`<div class="card summary"><div class="stat big"><small>Totale documento</small><b class="${sgn(d.sg)}">${money(d.totS,cur)}</b></div><div class="stat"><small>Imponibile</small><b>${money(d.impS,cur)}</b></div><div class="stat"><small>IVA</small><b>${money(d.ivaS,cur)}</b></div>${scad?`<div class="stat"><small>Scadenza</small><b>${fdate(scad)}</b></div>`:''}</div>`;
   $id('dbody').innerHTML=summ+`<div class="parties">${partyBox('Cedente / prestatore',d.ced)}${partyBox('Cessionario / committente',d.ces)}</div><div class="dcols"><div class="dc1">${righe}${riep}</div><div class="dc2">
@@ -413,7 +630,10 @@ async function loadDetail(){
   ${pag}${al}
   <div class="card box2"><h3>Trasmissione e file</h3>${kv([['File',esc(d.path)],['Progressivo invio',esc(d.sdi.progressivo)],['Cod. destinatario',esc(d.sdi.codDest)],['PEC destinatario',esc(d.sdi.pec)],['Trasmittente',esc(d.sdi.trasm)]])}</div></div></div>`;
   $id('dbody').scrollTop=0;
-  $id('dbody').onclick=e=>{const b=e.target.closest('[data-att]');if(!b)return;const a=att[+b.dataset.att];
+  $id('dbody').onclick=e=>{
+    const cbn=e.target.closest('[data-carb]');
+    if(cbn){const k=cbn.dataset.carb;if(k==='go'){closeDrawer();tab='rif';render();toTop()}else applicaCarb(d.ced.piva,k==='on');return}
+    const b=e.target.closest('[data-att]');if(!b)return;const a=att[+b.dataset.att];
     let u;try{const bin=atob(a.b64.replace(/\s+/g,''));u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k)}catch{toast('Allegato non valido (base64 errato)');return}
     const pdf=/pdf/i.test(a.fmt+a.nome)&&String.fromCharCode(...u.subarray(0,5))==='%PDF-';
     // nel browser si apre solo un vero PDF (controllo dei primi byte)
@@ -667,9 +887,17 @@ $id('dirSeg').onclick=e=>{const b=e.target.closest('button');if(b){F.dir=b.datas
 $id('years').onclick=e=>{const b=e.target.closest('.pill');if(b){F.anno=b.dataset.y;apply()}};
 $id('chips').onclick=e=>{const c=e.target.closest('[data-clr]');if(!c)return;const k=c.dataset.clr;if(k==='dup')$id('dup').checked=true;else $id(k).value='';readFilters()};
 $id('tabs').onclick=e=>{const t=e.target.closest('.tab');if(t){tab=t.dataset.t;render();toTop()}};
-$id('bCsv').onclick=()=>{exportCsv();toast(`Esportate ${view.length} fatture in CSV`)};
+$id('bCsv').onclick=()=>{if(tab==='rif'){exportRifCsv();toast(`Esportati ${rfRows.length} rifornimenti in CSV`)}else{exportCsv();toast(`Esportate ${view.length} fatture in CSV`)}};
 $id('bErr').onclick=()=>{$id('errList').innerHTML=ERR.map(x=>`<div style="margin-bottom:6px"><b>${esc(x.path)}</b><br><span class="mute">${esc(x.msg)}</span></div>`).join('');$id('errDlg').showModal()};
 $id('content').addEventListener('click',e=>{
+  if(tab==='rif'){
+    const bar=e.target.closest('[data-rm]');if(bar){const k=bar.dataset.rm,last=new Date(+k.slice(0,4),+k.slice(5),0).getDate();F.anno='';$id('per').value='';$id('dal').value=`${k}-01`;$id('al').value=`${k}-${String(last).padStart(2,'0')}`;readFilters();return}
+    if(e.target.closest('[data-rfclr]')){RF_T=null;render();return}
+    const off=e.target.closest('[data-carboff]');if(off){applicaCarb(off.dataset.carboff,false);return}
+    const fn=e.target.closest('tr[data-fn]');if(fn){$id('q').value=fn.dataset.fn;tab='fatt';readFilters();toTop();return}
+    const tr=e.target.closest('tr[data-t]');if(tr){RF_T=RF_T===tr.dataset.t?null:tr.dataset.t;render()}
+    return;
+  }
   const h=e.target.closest('th[data-k]');
   if(h){const st=tab==='fatt'?sortF:cpSort;const k=h.dataset.k;if(st.k===k)st.d*=-1;else{st.k=k;st.d=(k==='data'||k==='tot'||k==='imp'||k==='iva'||k==='n'||k==='last')?-1:1}if(tab==='fatt')sortView();render();return}
   const bar=e.target.closest('[data-m]');if(bar){filterMonth(bar.dataset.m);return}
