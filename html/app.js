@@ -499,6 +499,15 @@ function ritmo(ds,vol){
 const kml=o=>o.km/o.vol,KMF=new Intl.NumberFormat('it-IT',{maximumFractionDigits:0});
 const KML=new Intl.NumberFormat('it-IT',{minimumFractionDigits:1,maximumFractionDigits:1});
 let rfMm=[];
+// Ordinamento delle tabelle della scheda: una scelta per tabella, che resta tra un rendering e l'altro.
+const RF_S={veic:{k:'imp',d:-1},carb:{k:'imp',d:-1},staz:{k:'imp',d:-1},elenco:{k:'data',d:-1}};
+const RF_TXT=new Set(['t','pv','prod','staz','tg','fn']); // colonne di testo: ordine crescente alla prima pressione
+function rfSort(arr,tbl,get){
+  const st=RF_S[tbl],f=get[st.k]||get[Object.keys(get)[0]];
+  return arr.sort((a,b)=>{ // i valori mancanti (null) vanno sempre in fondo; a parità resta l'ordine di partenza (Array.sort è stabile)
+    const x=f(a),y=f(b);if(x==null||y==null)return x==null?(y==null?0:1):-1;
+    return(typeof x==='string'?x.localeCompare(y,'it'):x<y?-1:x>y?1:0)*st.d});
+}
 // Barre della spesa mensile: il grafico occupa tutta la larghezza della card; con molti mesi scorre e parte dai più recenti.
 function drawRifChart(){
   const box=$id('rfChart'),mm=rfMm;if(!box||!mm.length)return;
@@ -560,20 +569,23 @@ function renderRif(){
   // andamento mensile della spesa (disegnato dopo, sulla larghezza disponibile)
   rfMm=aggRif(rows,r=>r.data.slice(0,7)).sort((a,b)=>a.k<b.k?-1:1);
   h+=`<section class="card box2"><h3>Spesa mensile</h3><p class="mute rf-note">${per}</p><div class="legend"><span><i style="background:var(--c1)"></i>Spesa</span><span>· clicca una barra per vedere solo quel mese</span></div><div class="chartwrap" id="rfChart"></div></section>`;
-  const tb=(cols,body,click)=>`<table${click?' class="rf-click"':''}><thead><tr>${cols.map(x=>`<th class="${x[1]||''}">${x[0]}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
+  const tb=(cols,body,click,tbl)=>`<table${click?' class="rf-click"':''}><thead><tr>${cols.map(x=>{
+    if(!tbl||!x[2])return`<th class="${x[1]||''}">${x[0]}</th>`;
+    const on=RF_S[tbl].k===x[2];
+    return`<th class="${x[1]||''}${on?' on':''}" data-rs="${tbl}:${x[2]}" tabindex="0" title="Ordina per ${esc(x[0].toLowerCase())}"${on?` aria-sort="${RF_S[tbl].d>0?'ascending':'descending'}"`:''}>${x[0]}${on?(RF_S[tbl].d>0?' ▲':' ▼'):''}</th>`}).join('')}</tr></thead><tbody>${body}</tbody></table>`;
   const nums=x=>`<td class="n c-xs">${x.n}</td><td class="n c-xs">${LIT.format(x.vol)}</td><td class="n"><b>${EUR.format(x.imp)}</b></td><td class="n">${PRZ.format(ppl(x))}</td>`;
   // per veicolo: sempre tutti, per poterne scegliere un altro
-  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti. «Litri al mese» si calcola sui mesi dal primo all'ultimo rifornimento. Il consumo in km/l si calcola dai chilometri del contachilometri indicati nei rifornimenti, presumendo il pieno a ogni rifornimento: compare solo per i veicoli che li hanno.</p>`+tb([['Targa'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n'],['Litri al mese','n c-xs'],['Consumo','n c-xs'],['Carburante prevalente','c-tipo'],['Ultimo','c-tipo']],
-    tutte.sort((a,b)=>b.imp-a.imp).map(x=>{const pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w"><b>${esc(x.k||'(senza targa)')}</b></td>${nums(x)}<td class="n c-xs">${(rt=>`${LIT.format(rt.lm)}${rt.gg!=null?`<div class="sub">un pieno ogni ${Math.round(rt.gg)} giorni</div>`:''}`)(ritmo(x.ds,x.vol))}</td><td class="n c-xs">${cons.has(x.k)?`<b title="${KMF.format(cons.get(x.k).km)} km su ${LIT.format(cons.get(x.k).vol)} l · ${PRZ.format(cons.get(x.k).imp/cons.get(x.k).km*100)} € ogni 100 km">${KML.format(kml(cons.get(x.k)))} km/l</b><div class="sub">${KML.format(100/kml(cons.get(x.k)))} l/100 km</div>`:'<span class="mute">—</span>'}</td><td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td></tr>`}).join(''),1)+'</section>';
-  h+=`<section class="card box2"><h3>Per carburante</h3>`+tb([['Carburante'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n']],
-    aggRif(rows,r=>r.prod).sort((a,b)=>b.imp-a.imp).map(x=>`<tr><td>${esc(carb(x.k))}</td>${nums(x)}</tr>`).join(''))+'</section>';
+  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti. «Litri al mese» si calcola sui mesi dal primo all'ultimo rifornimento. Il consumo in km/l si calcola dai chilometri del contachilometri indicati nei rifornimenti, presumendo il pieno a ogni rifornimento: compare solo per i veicoli che li hanno.</p>`+tb([['Targa','','t'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl'],['Litri al mese','n c-xs','lm'],['Consumo','n c-xs','cons'],['Carburante prevalente','c-tipo','pv'],['Ultimo','c-tipo','last']],
+    rfSort(tutte.sort((a,b)=>b.imp-a.imp).map(x=>{x.pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];x.rt=ritmo(x.ds,x.vol);return x}),'veic',{t:x=>x.k,n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl,lm:x=>x.rt.lm,cons:x=>cons.has(x.k)?kml(cons.get(x.k)):null,pv:x=>carb(x.pv&&x.pv[0]),last:x=>x.last}).map(x=>{const pv=x.pv;return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w"><b>${esc(x.k||'(senza targa)')}</b></td>${nums(x)}<td class="n c-xs">${(rt=>`${LIT.format(rt.lm)}${rt.gg!=null?`<div class="sub">un pieno ogni ${Math.round(rt.gg)} giorni</div>`:''}`)(x.rt)}</td><td class="n c-xs">${cons.has(x.k)?`<b title="${KMF.format(cons.get(x.k).km)} km su ${LIT.format(cons.get(x.k).vol)} l · ${PRZ.format(cons.get(x.k).imp/cons.get(x.k).km*100)} € ogni 100 km">${KML.format(kml(cons.get(x.k)))} km/l</b><div class="sub">${KML.format(100/kml(cons.get(x.k)))} l/100 km</div>`:'<span class="mute">—</span>'}</td><td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td></tr>`}).join(''),1,'veic')+'</section>';
+  h+=`<section class="card box2"><h3>Per carburante</h3>`+tb([['Carburante','','prod'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl']],
+    rfSort(aggRif(rows,r=>r.prod).sort((a,b)=>b.imp-a.imp),'carb',{prod:x=>carb(x.k),n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl}).map(x=>`<tr><td>${esc(carb(x.k))}</td>${nums(x)}</tr>`).join(''),0,'carb')+'</section>';
   const stz=aggRif(rows,stazione).sort((a,b)=>b.imp-a.imp);
-  h+=`<section class="card box2"><h3>Per stazione${stz.length>10?' (le 10 principali)':''}</h3>`+tb([['Stazione'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n']],
-    stz.slice(0,10).map(x=>`<tr><td class="wrapc">${esc(x.k)}</td>${nums(x)}</tr>`).join(''))+'</section>';
-  const lst=rows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),MAXL=300;
-  h+=`<section class="card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data'],['Targa'],['Carburante','c-tipo'],['Litri','n c-xs'],['Spesa','n'],['€/l','n'],['Stazione','c-ces'],['Fattura','c-num']],
-    lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm rf-w">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td class="rf-w">${esc(r.targa||'—')}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="n">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="wrapc c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1)+
-    (lst.length>MAXL?`<div class="more">Mostrati gli ultimi ${MAXL} di ${lst.length.toLocaleString('it-IT')} rifornimenti: tutti sono nel CSV esportato.</div>`:'')+'</section>';
+  h+=`<section class="card box2"><h3>Per stazione${stz.length>10?' (le 10 principali)':''}</h3>`+tb([['Stazione','','staz'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl']],
+    rfSort(stz.slice(0,10),'staz',{staz:x=>x.k,n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl}).map(x=>`<tr><td class="wrapc">${esc(x.k)}</td>${nums(x)}</tr>`).join(''),0,'staz')+'</section>';
+  const lst=rfSort(rows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),'elenco',{data:r=>r.data+r.ora,tg:r=>r.targa,prod:r=>carb(r.prod),vol:r=>r.vol,imp:r=>r.importo,ppl:r=>r.vol>0?r.importo/r.vol:null,staz:r=>stazione(r),fn:r=>r.fn}),MAXL=300;
+  h+=`<section class="card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data','','data'],['Targa','','tg'],['Carburante','c-tipo','prod'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l','n','ppl'],['Stazione','c-ces','staz'],['Fattura','c-num','fn']],
+    lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm rf-w">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td class="rf-w">${esc(r.targa||'—')}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="n">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="wrapc c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'elenco')+
+    (lst.length>MAXL?`<div class="more">Mostrati i primi ${MAXL} di ${lst.length.toLocaleString('it-IT')} rifornimenti, nell'ordine scelto: tutti sono nel CSV esportato.</div>`:'')+'</section>';
   const forn=new Map();
   for(const d of ALL)if(d.car&&!(F.dup&&d.dup)){const x=forn.get(d.ced.piva)||{p:d.ced,n:0,r:0};x.n++;x.r+=d.car.rows.length;forn.set(d.ced.piva,x)}
   h+=`<section class="card box2"><h3>Fornitori letti come carte carburante</h3>`+tb([['Fornitore'],['P.IVA','c-num'],['Fatture','n c-xs'],['Rifornimenti','n c-xs'],['']],
@@ -936,10 +948,13 @@ $id('chips').onclick=e=>{const c=e.target.closest('[data-clr]');if(!c)return;con
 $id('tabs').onclick=e=>{const t=e.target.closest('.tab');if(t){tab=t.dataset.t;render();toTop()}};
 $id('bCsv').onclick=()=>{if(tab==='rif'){exportRifCsv();toast(`Esportati ${rfRows.length} rifornimenti in CSV`)}else{exportCsv();toast(`Esportate ${view.length} fatture in CSV`)}};
 $id('bErr').onclick=()=>{$id('errList').innerHTML=ERR.map(x=>`<div style="margin-bottom:6px"><b>${esc(x.path)}</b><br><span class="mute">${esc(x.msg)}</span></div>`).join('');$id('errDlg').showModal()};
+$id('content').addEventListener('keydown',e=>{const h=e.target.closest&&e.target.closest('th[data-rs]');if(h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();h.click()}});
 $id('content').addEventListener('click',e=>{
   if(tab==='rif'){
     const bar=e.target.closest('[data-rm]');if(bar){const k=bar.dataset.rm,last=new Date(+k.slice(0,4),+k.slice(5),0).getDate();F.anno='';$id('per').value='';$id('dal').value=`${k}-01`;$id('al').value=`${k}-${String(last).padStart(2,'0')}`;readFilters();return}
     if(e.target.closest('[data-rfclr]')){RF_T=null;render();return}
+    const rs=e.target.closest('th[data-rs]');
+    if(rs){const[t,k]=rs.dataset.rs.split(':'),st=RF_S[t];if(st){if(st.k===k)st.d*=-1;else{st.k=k;st.d=RF_TXT.has(k)?1:-1}const c=$id('content'),y=c.scrollTop;render();c.scrollTop=y;const nh=document.querySelector(`th[data-rs="${t}:${k}"]`);if(nh)nh.focus({preventScroll:true})}return}
     const on=e.target.closest('[data-carbon]');if(on){applicaCarb(on.dataset.carbon,true);return}
     const off=e.target.closest('[data-carboff]');if(off){applicaCarb(off.dataset.carboff,false);return}
     const fn=e.target.closest('tr[data-fn]');if(fn){$id('q').value=fn.dataset.fn;tab='fatt';readFilters();toTop();return}
