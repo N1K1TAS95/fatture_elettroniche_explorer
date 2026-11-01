@@ -16,6 +16,7 @@ I file .p7m non sono riproducibili byte per byte (contengono la data della firma
 rigeneri, git li mostrerà come modificati. I .xml invece sono sempre identici.
 """
 import base64
+import io
 import json
 import os
 import re
@@ -23,6 +24,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 import zlib
 from pathlib import Path
 
@@ -180,6 +182,10 @@ def body_xml(b):
         xml += (f"<Allegati><NomeAttachment>{nome}</NomeAttachment><FormatoAttachment>PDF</FormatoAttachment>"
                 f"<DescrizioneAttachment>Copia di cortesia</DescrizioneAttachment>"
                 f"<Attachment>{base64.b64encode(contenuto).decode()}</Attachment></Allegati>")
+    for nome, compressione, formato, contenuto in b.get("allegati", []):
+        xml += (f"<Allegati><NomeAttachment>{nome}</NomeAttachment>"
+                + (f"<AlgoritmoCompressione>{compressione}</AlgoritmoCompressione>" if compressione else "")
+                + f"<FormatoAttachment>{formato}</FormatoAttachment><Attachment>{base64.b64encode(contenuto).decode()}</Attachment></Allegati>")
     return xml + "</FatturaElettronicaBody>", imp, iva, tot
 
 
@@ -343,6 +349,9 @@ def genera_tutto():
     # ===== file firmati (.xml.p7m) =====
     firmate(F1, AZ)
 
+    # ===== carte carburante =====
+    carburante()
+
     # ===== casi limite =====
     casi_limite()
 
@@ -389,6 +398,97 @@ def firmate(ced, ces):
         raise
     finally:
         shutil.rmtree(tmp, ignore_errors=True)  # il certificato di prova e la chiave non restano da nessuna parte
+
+
+# ---------------------------------------------------------------- carte carburante (Q8)
+# L'app legge i CSV allegati alle fatture del fornitore con questa partita IVA (Kuwait Petroleum Italia, Q8): nelle
+# fatture di prova serve proprio quella, altrimenti il lettore non scatta. Nome, indirizzo, carte, targhe e importi sono inventati.
+PIVA_Q8 = "00891951006"
+Q8 = {"nome": "Carburanti Esempio S.p.A. (fornitore Q8 di prova)", "piva": PIVA_Q8, "cf": PIVA_Q8, "via": "Via del Rifornimento",
+      "civ": "1", "cap": "00100", "comune": "Roma", "prov": "RM", "naz": "IT", "paese": "IT", "dest": "0000000", "regime": "RF01"}
+Q8_PRODOTTI = {"GLS": "GASOLIO", "SSP": "SUPER SENZA PB", "HBZ": "Q8HI PERFORM - 100 OTTANI"}
+Q8_TRS = "Carta;Num Ticket;Data;Ora;Cod Prod;Veicolo;Targa/Nome;KM;Cod;Indirizzo;Citta';Imp;Vol;Prezzo E/L;Sconto E/L;Prezzo Scontato;Imp Tot;"
+Q8_ACC = "Prodotto;Quantita' Litri;Importo;IVA;Imponibile;Importo Accisa;Base imponib al netto di IVA e Accisa;IVA su imponibile al netto di Accisa;Tot Fattura"
+Q8_FEE = "Cod. Main; Cod.Sub;Servizio Cartissima Web;Cartissima Web Plus;Invio Documentazione Cartacea;Spese mensili per carta;Spese riemissione carta;Insoluti;Incentive B2B;"
+STAZIONI = {"0001": ("VIA DELLE PROVE 1", "ROMA"), "0002": ("CORSO ESEMPIO 22", "MILANO")}
+
+
+def virgola(x, dec=2):
+    return f"{x:.{dec}f}".replace(".", ",")
+
+
+def zip_di(nome, testo):
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr(zipfile.ZipInfo(nome, date_time=(2025, 1, 1, 0, 0, 0)), testo.encode("utf-8"), compress_type=zipfile.ZIP_DEFLATED)
+    return buf.getvalue()
+
+
+def allegati_q8(base, righe, fee=0.0):
+    """Ritorna (allegati, righe-fattura) per una fattura Q8 di prova.
+    righe: (carta, ticket, gg/mm/aa, hhmmss, prodotto, targa, stazione, importo, litri)."""
+    trs = [Q8_TRS]
+    per_prod = {}
+    for carta, tk, data, ora, prod, targa, stz, imp, vol in righe:
+        prezzo = imp / vol
+        via, citta = STAZIONI[stz]
+        trs.append(f"{carta};{tk};{data};{ora};{prod};0000;{targa};00000000;{stz};{via};{citta};{virgola(imp)};{virgola(vol)};"
+                   f"{virgola(prezzo, 3)};0,000000;{virgola(prezzo, 6)};{virgola(imp)};")
+        x = per_prod.setdefault(prod, [0.0, 0.0])
+        x[0] += vol
+        x[1] += imp
+    acc = [Q8_ACC]
+    tl = ti = tv = tb = ta = 0.0
+    voci = []
+    for prod, (vol, imp) in per_prod.items():
+        base_imp = round(imp / 1.22, 2)
+        iva = round(imp - base_imp, 2)
+        accisa = round(vol * 0.5, 2)
+        acc.append(f"{Q8_PRODOTTI[prod]};{virgola(vol)};{virgola(imp)};{virgola(iva)};{virgola(base_imp)};{virgola(accisa)}; ; ; ")
+        tl += vol; ti += imp; tv += iva; tb += base_imp; ta += accisa
+        voci.append((Q8_PRODOTTI[prod].title(), 1, "NR", base_imp, 22.0, None))
+    acc.append(f"TOTALE;{virgola(tl)};{virgola(ti)};{virgola(tv)};{virgola(tb)};{virgola(ta)}; ; ; ")
+    crlf = "\r\n"
+    csv = {"ACC": crlf.join(acc) + crlf, "FEE": crlf.join([Q8_FEE, f"0000000001;0000000;0;0;0;{fee:.2f};0;0;0;"]) + crlf}
+    if righe:
+        csv["TRS"] = crlf.join(trs) + crlf
+    if fee:
+        voci.append(("Spese carta", 1, "NR", round(fee / 1.22, 2), 22.0, None))
+    allegati = []
+    for tipo in ("ACC", "TRS", "FEE"):
+        if tipo in csv:
+            if base.endswith(".zip"):  # dal 2023 i file si chiamano .zip, senza compressione dichiarata
+                allegati.append((f"{base[:-4]}_{tipo}.zip", None, "ZIP", zip_di(f"{base[:-4]}_{tipo}.csv", csv[tipo])))
+            else:
+                allegati.append((f"{base}_{tipo}.csv", "ZIP", "CSV", zip_di(f"{base}_{tipo}.csv", csv[tipo])))
+    return allegati, voci
+
+
+def carburante():
+    L = "carburante/"
+    gen = [
+        # (file, data fattura, numero, base allegati, righe, spese carta)
+        ("IT00000000001_00001.xml", "2025-01-31", "PJ0000001", "PROVA_Cards_2025_PJ0000001", [
+            ("7000000000000000001", "00001", "08/01/25", "071710", "GLS", "AB123CD", "0001", 80.00, 50.00),
+            ("7000000000000000001", "00002", "15/01/25", "183015", "GLS", "AB 123 CD", "0002", 73.50, 45.00),
+            ("7000000000000000002", "00001", "20/01/25", "090000", "SSP", "EF456GH", "0001", 50.01, 30.00),
+            ("7000000000000000003", "00001", "27/01/25", "120500", "HBZ", "FURGONE", "0002", 60.00, 31.00),
+        ], 9.76),
+        ("IT00000000001_00002.xml", "2025-02-28", "PJ0000002", "PROVA_Cards_2025_PJ0000002.zip", [
+            ("7000000000000000001", "00003", "05/02/25", "081000", "GLS", "ab123cd", "0001", 90.00, 55.00),
+            ("7000000000000000002", "00002", "12/02/25", "164500", "SSP", "EF-456-GH", "0002", 45.00, 27.50),
+            ("7000000000000000003", "00002", "19/02/25", "101010", "HBZ", "FURGONE", "0001", 62.20, 32.00),
+        ], 0.0),
+        # solo spese della carta, nessun rifornimento (succede davvero nei mesi senza movimenti)
+        ("IT00000000001_00003.xml", "2025-03-31", "PJ0000003", "PROVA_Cards_2025_PJ0000003", [], 9.76),
+    ]
+    for f, data, numero, base, righe, fee in gen:
+        allegati, voci = allegati_q8(base, righe, fee)
+        voci = voci or [("Spese carta", 1, "NR", round(fee / 1.22, 2), 22.0, None)]
+        genera(L + f, Q8, AZ, [dict(tipo="TD01", data=data, numero=numero, righe=voci, allegati=allegati,
+                                    pagamento=pag(scad=data))], numero[-5:],
+               note="carta carburante Q8: scheda Rifornimenti" + (f" ({len(righe)} rifornimenti)" if righe else " (solo spese della carta)"))
+        ATTESO[-1]["rifornimenti"] = len(righe)
 
 
 def casi_limite():

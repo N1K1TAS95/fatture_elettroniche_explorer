@@ -4,6 +4,16 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Scheda **Rifornimenti** per le fatture delle carte carburante Q8 (Kuwait Petroleum Italia, P.IVA IT00891951006): l'app legge i CSV zippati allegati e mostra spesa, litri e prezzo al litro per periodo, veicolo (targa), carburante e stazione, con l'elenco dei rifornimenti e l'esportazione in CSV. Compare solo se tra le fatture ce ne sono. Segue i filtri di periodo e la ricerca; un clic su una targa o su una barra del grafico restringe i dati.
+- Altri fornitori di carte carburante: dal dettaglio di una fattura con allegati CSV o ZIP, il pulsante **Leggi come carta carburante Q8** fa leggere i suoi allegati nello stesso formato di Q8. La scelta resta nel browser; si toglie con **Non leggere più** (dal dettaglio fattura o dall'elenco *Fornitori letti* nella scheda). Se gli allegati non sono nel formato Q8 non cambia nulla e l'app lo segnala.
+- Scheda Rifornimenti: periodo coperto e filtri non applicabili in evidenza, clic su un rifornimento per aprire la sua fattura, grafico che parte dai mesi più recenti, stazione e carburante sotto la data sugli schermi stretti.
+- Lettore ZIP integrato, senza librerie: usa la decompressione nativa del browser.
+- Fatture di prova Q8 in `tests/fixtures/carburante`, con il relativo controllo in `tests/check.py`.
+
+### Modificato
+- Cambia il formato della cache delle cartelle recenti: al primo uso le fatture vengono rilette una volta.
+
 ## [1.3.0] - 2026-11-01
 
 Esportazione dell'XML dal dettaglio fattura.

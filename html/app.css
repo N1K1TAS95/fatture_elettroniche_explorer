@@ -2591,3 +2591,89 @@ td.c-att .badge {
     height: var(--ctl);
     margin: 0
 }
+
+/* ---- scheda Rifornimenti: isole (.card.box2) separate da --sp, come nel dettaglio fattura ---- */
+.tab[hidden] {
+    display: none
+}
+
+#content:has(>.rf-wrap) {
+    background: none;
+    border: 0;
+    box-shadow: none
+}
+
+.rf-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp)
+}
+
+.rf-wrap .box2 {
+    margin: 0
+}
+
+.rf-wrap .legend {
+    padding: 0 0 var(--row)
+}
+
+.rf-wrap .chartwrap {
+    padding: 0
+}
+
+.rf-wrap .rf-note {
+    margin: 0 0 var(--sp);
+    font-size: 12.5px
+}
+
+.rf-wrap table + .rf-note {
+    margin: var(--sp) 0 0
+}
+
+.rf-wrap .more {
+    padding: var(--sp) 0 0
+}
+
+.rf-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--sp);
+    flex-wrap: wrap;
+    padding: var(--sp)
+}
+
+.rf-warn {
+    background: var(--hover)
+}
+
+.rf-click tbody tr {
+    cursor: pointer
+}
+
+.rf-wrap .rf-click tbody tr:hover td {
+    background: var(--hover)
+}
+
+.rf-wrap .rf-click tbody tr.sel td {
+    background: var(--acc-soft)
+}
+
+.rf-cfg {
+    display: flex;
+    align-items: center;
+    gap: var(--sp);
+    flex-wrap: wrap;
+    margin-top: var(--sp);
+    padding-top: var(--sp);
+    border-top: 1px solid var(--line);
+    font-size: 13px
+}
+
+.rf-cfg .sp {
+    flex: 1
+}
+
+body.on-rif #dirSeg {
+    opacity: .4;
+    pointer-events: none
+}

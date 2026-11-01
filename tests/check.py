@@ -4,10 +4,13 @@
 A mano: `uv run tests/check.py`. In automatico: GitHub Action `.github/workflows/ci.yml`.
 Esce con codice 1 se qualcosa non torna.
 """
+import base64
+import io
 import json
 import re
 import sys
 import xml.dom.minidom
+import zipfile
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -137,6 +140,26 @@ try:
     json.loads(leggi(FIXTURES / "ATTESO.json"))
 except (OSError, ValueError) as e:
     ko(f"ATTESO.json non valido: {e}")
+
+print("Fatture di prova con CSV zippati (carte carburante)")
+n_carb = 0
+for f in sorted((FIXTURES / "carburante").glob("*.xml")):
+    n_carb += 1
+    try:
+        dom = xml.dom.minidom.parseString(f.read_bytes())
+        csv = {}
+        for a in dom.getElementsByTagName("Allegati"):
+            nome = a.getElementsByTagName("NomeAttachment")[0].firstChild.data
+            z = zipfile.ZipFile(io.BytesIO(base64.b64decode(a.getElementsByTagName("Attachment")[0].firstChild.data)))
+            csv[nome.rsplit("_", 1)[1][:3]] = [r.split(";") for r in z.read(z.namelist()[0]).decode("utf-8").splitlines() if r.strip()]
+        totale = next(r for r in csv["ACC"][1:] if r[0] == "TOTALE")
+        somma = sum(float(r[16].replace(",", ".")) for r in csv.get("TRS", [[]])[1:])
+        if abs(somma - float(totale[2].replace(",", "."))) > 0.005:
+            ko(f"{f.relative_to(ROOT)}: la somma dei rifornimenti ({somma:.2f}) non coincide con il TOTALE di ACC ({totale[2]})")
+    except Exception as e:  # noqa: BLE001
+        ko(f"{f.relative_to(ROOT)}: allegati CSV non leggibili ({e!r})")
+if n_carb < 3:
+    ko(f"trovate solo {n_carb} fatture di prova per le carte carburante (ne attendo almeno 3)")
 
 if errori:
     print(f"\nFALLITO: {len(errori)} problema/i")
