@@ -4,6 +4,10 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+## [1.6.0] - 2026-11-01
+
+Controlli sui rifornimenti ed esportazione delle impostazioni.
+
 ### Aggiunto
 - **Impostazioni**: nuovo pulsante nella barra in alto (solo icona sotto i 1500 px) per **esportare in un file** e **importare** alias dei veicoli, soglie e controlli, fornitori di carburante, tema e azienda scelta. L'importazione mostra il contenuto del file prima di applicarlo, con la scelta tra *unire* alle impostazioni attuali o *sostituirle*; il file è validato come non fidato e nessun dato delle fatture ne fa parte.
 - Scheda Rifornimenti: sezione **Da controllare** con i rifornimenti che meritano una verifica, ognuno con il motivo: litri sopra soglia, rifornimenti troppo ravvicinati dello stesso veicolo, carburante insolito per il veicolo (con almeno 4 rifornimenti e un carburante prevalente), carta usata su targhe diverse, rifornimenti di notte (22–06) e di domenica. Sono indizi, non prove. Un avviso in cima alla scheda ne riporta il numero.
@@ -124,7 +128,8 @@ Prima versione pubblica.
 - Firefox e Safari usano la modalità compatibile, senza cartelle recenti né installazione come app.
 - Il foglio di stile Assosoftware non è incluso per via della sua licenza.
 
-[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.5.0...HEAD
+[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.2.0...v1.3.0
