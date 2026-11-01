@@ -7,6 +7,8 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 ### Aggiunto
 - Scheda Rifornimenti: **consumo medio** (km/l e l/100 km) per veicolo e nel riepilogo, calcolato con il metodo «pieno a pieno» dai chilometri del contachilometri (colonna KM del CSV) di rifornimenti consecutivi della stessa targa. Compare solo per i veicoli i cui rifornimenti riportano i km; gli altri mostrano «—». I km sono anche nel CSV esportato.
 
+- Scheda Rifornimenti, tabella *Per veicolo*: **litri al mese** e giorni medi tra un rifornimento e l'altro, disponibili anche senza i km.
+
 ### Modificato
 - Cambia di nuovo il formato della cache delle cartelle recenti: al primo uso le fatture vengono rilette una volta.
 

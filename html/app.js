@@ -470,7 +470,7 @@ function rifData(){
 }
 function aggRif(rows,kf){
   const m=new Map();
-  for(const r of rows){const k=kf(r),x=m.get(k)||{k,n:0,vol:0,imp:0,last:'',prod:new Map()};x.n++;x.vol+=r.vol;x.imp+=r.importo;if(r.data>x.last)x.last=r.data;x.prod.set(r.prod,(x.prod.get(r.prod)||0)+r.importo);m.set(k,x)}
+  for(const r of rows){const k=kf(r),x=m.get(k)||{k,n:0,vol:0,imp:0,last:'',prod:new Map(),ds:[]};x.ds.push(r.data);x.n++;x.vol+=r.vol;x.imp+=r.importo;if(r.data>x.last)x.last=r.data;x.prod.set(r.prod,(x.prod.get(r.prod)||0)+r.importo);m.set(k,x)}
   return[...m.values()];
 }
 const ppl=x=>x.vol>0?x.imp/x.vol:0;
@@ -488,6 +488,14 @@ function consumi(rows){
     if(o.n)out.set(t,o);
   }
   return out;
+}
+// Ritmo di rifornimento (non richiede i km): litri al mese sui mesi di calendario dal primo all'ultimo rifornimento (compresi quelli
+// senza rifornimenti) e giorni medi tra un rifornimento e il successivo (servono almeno due rifornimenti).
+function ritmo(ds,vol){
+  const a=ds.slice().sort(),p=a[0],u=a[a.length-1];
+  const mesi=(+u.slice(0,4)-+p.slice(0,4))*12+(+u.slice(5,7)-+p.slice(5,7))+1;
+  const gg=(Date.UTC(+u.slice(0,4),+u.slice(5,7)-1,+u.slice(8,10))-Date.UTC(+p.slice(0,4),+p.slice(5,7)-1,+p.slice(8,10)))/864e5;
+  return{lm:vol/mesi,gg:a.length>1?gg/(a.length-1):null};
 }
 const kml=o=>o.km/o.vol,KMF=new Intl.NumberFormat('it-IT',{maximumFractionDigits:0});
 const KML=new Intl.NumberFormat('it-IT',{minimumFractionDigits:1,maximumFractionDigits:1});
@@ -535,8 +543,8 @@ function renderRif(){
   const tb=(cols,body,click)=>`<table${click?' class="rf-click"':''}><thead><tr>${cols.map(x=>`<th class="${x[1]||''}">${x[0]}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
   const nums=x=>`<td class="n c-xs">${x.n}</td><td class="n c-xs">${LIT.format(x.vol)}</td><td class="n"><b>${EUR.format(x.imp)}</b></td><td class="n">${PRZ.format(ppl(x))}</td>`;
   // per veicolo: sempre tutti, per poterne scegliere un altro
-  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti. Il consumo si calcola dai chilometri del contachilometri indicati nei rifornimenti, presumendo il pieno a ogni rifornimento: compare solo per i veicoli che li hanno.</p>`+tb([['Targa'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n'],['Consumo','n c-xs'],['Carburante prevalente','c-tipo'],['Ultimo','c-tipo']],
-    tutte.sort((a,b)=>b.imp-a.imp).map(x=>{const pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w"><b>${esc(x.k||'(senza targa)')}</b></td>${nums(x)}<td class="n c-xs">${cons.has(x.k)?`<b title="${KMF.format(cons.get(x.k).km)} km su ${LIT.format(cons.get(x.k).vol)} l · ${PRZ.format(cons.get(x.k).imp/cons.get(x.k).km*100)} € ogni 100 km">${KML.format(kml(cons.get(x.k)))} km/l</b><div class="sub">${KML.format(100/kml(cons.get(x.k)))} l/100 km</div>`:'<span class="mute">—</span>'}</td><td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td></tr>`}).join(''),1)+'</section>';
+  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti. «Litri al mese» si calcola sui mesi dal primo all'ultimo rifornimento. Il consumo in km/l si calcola dai chilometri del contachilometri indicati nei rifornimenti, presumendo il pieno a ogni rifornimento: compare solo per i veicoli che li hanno.</p>`+tb([['Targa'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n'],['Litri al mese','n c-xs'],['Consumo','n c-xs'],['Carburante prevalente','c-tipo'],['Ultimo','c-tipo']],
+    tutte.sort((a,b)=>b.imp-a.imp).map(x=>{const pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w"><b>${esc(x.k||'(senza targa)')}</b></td>${nums(x)}<td class="n c-xs">${(rt=>`${LIT.format(rt.lm)}${rt.gg!=null?`<div class="sub">un pieno ogni ${Math.round(rt.gg)} giorni</div>`:''}`)(ritmo(x.ds,x.vol))}</td><td class="n c-xs">${cons.has(x.k)?`<b title="${KMF.format(cons.get(x.k).km)} km su ${LIT.format(cons.get(x.k).vol)} l · ${PRZ.format(cons.get(x.k).imp/cons.get(x.k).km*100)} € ogni 100 km">${KML.format(kml(cons.get(x.k)))} km/l</b><div class="sub">${KML.format(100/kml(cons.get(x.k)))} l/100 km</div>`:'<span class="mute">—</span>'}</td><td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td></tr>`}).join(''),1)+'</section>';
   h+=`<section class="card box2"><h3>Per carburante</h3>`+tb([['Carburante'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n']],
     aggRif(rows,r=>r.prod).sort((a,b)=>b.imp-a.imp).map(x=>`<tr><td>${esc(carb(x.k))}</td>${nums(x)}</tr>`).join(''))+'</section>';
   const stz=aggRif(rows,stazione).sort((a,b)=>b.imp-a.imp);
