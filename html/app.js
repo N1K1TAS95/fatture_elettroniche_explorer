@@ -506,7 +506,7 @@ const kml=o=>o.km/o.vol,KMF=new Intl.NumberFormat('it-IT',{maximumFractionDigits
 const KML=new Intl.NumberFormat('it-IT',{minimumFractionDigits:1,maximumFractionDigits:1});
 let rfMm=[];
 // Ordinamento delle tabelle della scheda: una scelta per tabella, che resta tra un rendering e l'altro.
-const RF_S={vmese:{k:'tot',d:-1},veic:{k:'imp',d:-1},carb:{k:'imp',d:-1},staz:{k:'imp',d:-1},elenco:{k:'data',d:-1}};
+const RF_S={ctrl:{k:'data',d:-1},vmese:{k:'tot',d:-1},veic:{k:'imp',d:-1},carb:{k:'imp',d:-1},staz:{k:'imp',d:-1},elenco:{k:'data',d:-1}};
 const RF_TXT=new Set(['t','pv','prod','staz','tg','fn','vt']); // colonne di testo: ordine crescente alla prima pressione
 function rfSort(arr,tbl,get){
   const st=RF_S[tbl],f=get[st.k]||get[Object.keys(get)[0]];
@@ -531,6 +531,54 @@ function drawRifChart(){
   });
   box.innerHTML=svg+'</svg>';box.scrollLeft=box.scrollWidth;
 }
+// Soglie dei controlli (per tutti i veicoli, "*", o per una targa): restano solo in questo browser. Di un veicolo si salvano solo i valori diversi dai generali.
+const SG_DEF={litri:80,ore:6,orari:true};
+const SOGLIE=Object.create(null);
+const sgNorm=o=>{const r={};if(o&&typeof o==='object'){
+  if(Number.isFinite(o.litri)&&o.litri>=1&&o.litri<=2000)r.litri=o.litri;
+  if(Number.isFinite(o.ore)&&o.ore>=0&&o.ore<=168)r.ore=o.ore;
+  if(typeof o.orari==='boolean')r.orari=o.orari}return r};
+try{const v=JSON.parse(localStorage.getItem('fe_soglie')||'{}');if(v&&typeof v==='object'&&!Array.isArray(v))for(const[k,o]of Object.entries(v).slice(0,500))
+  if(k==='*'||/^[A-Z0-9]{1,20}$/.test(k)){const n=sgNorm(o);if(Object.keys(n).length)SOGLIE[k]=n}}catch{}
+const sgGet=t=>Object.assign({},SG_DEF,SOGLIE['*'],t?SOGLIE[t]:null);
+// Indizi su singoli rifornimenti (non prove): litri sopra soglia, rifornimenti troppo ravvicinati, carburante insolito per il veicolo,
+// carta usata su targhe diverse, notte e domenica. Restituisce Map rifornimento -> elenco dei motivi.
+const oraMin=r=>{const m=/^(\d{2}):(\d{2})/.exec(r.ora||'');return m?+m[1]*60+ +m[2]:null};
+const giornoMin=r=>Date.UTC(+r.data.slice(0,4),+r.data.slice(5,7)-1,+r.data.slice(8,10))/6e4;
+const tipoCarb=c=>c==='GLS'?'gasolio':c==='SSP'||c==='HBZ'?'benzina':String(c||'');
+function controlli(rows){
+  const fl=new Map(),add=(r,t)=>{const a=fl.get(r);if(a)a.push(t);else fl.set(r,[t])},perT=new Map(),perC=new Map();
+  for(const r of rows){
+    if(r.targa){const a=perT.get(r.targa);if(a)a.push(r);else perT.set(r.targa,[r])}
+    if(r.carta&&r.targa){const m=perC.get(r.carta)||perC.set(r.carta,new Map()).get(r.carta);m.set(r.targa,(m.get(r.targa)||0)+1)}
+    const c=sgGet(r.targa);
+    if(r.vol>c.litri)add(r,`${LIT.format(r.vol)} l: oltre la soglia di ${KMF.format(c.litri)} l`);
+    if(c.orari){
+      const o=oraMin(r);if(o!==null&&(o>=1320||o<360))add(r,`Di notte (${r.ora})`);
+      if(new Date(giornoMin(r)*6e4).getUTCDay()===0)add(r,'Di domenica');
+    }
+  }
+  for(const[t,a]of perT){
+    a.sort((x,y)=>x.data+x.ora<y.data+y.ora?-1:1);
+    const c=sgGet(t);
+    if(c.ore>0)for(let i=1;i<a.length;i++){
+      const p=a[i-1],q=a[i],op=oraMin(p),oq=oraMin(q);
+      if(op!==null&&oq!==null){const h=(giornoMin(q)+oq-giornoMin(p)-op)/60;if(h<c.ore)add(q,`A ${h<1?Math.round(h*60)+' min':KML.format(h)+' h'} dal rifornimento precedente (minimo ${c.ore} h)`)}
+      else if(p.data===q.data)add(q,'Stesso giorno del rifornimento precedente (orario mancante)');
+    }
+    if(a.length>=4){ // solo con abbastanza storico e un carburante nettamente prevalente
+      const m=new Map();for(const r of a){const k=tipoCarb(r.prod);m.set(k,(m.get(k)||0)+1)}
+      const top=[...m.entries()].sort((x,y)=>y[1]-x[1])[0];
+      if(top[1]/a.length>=.75)for(const r of a)if(tipoCarb(r.prod)!==top[0])add(r,`${carb(r.prod)} su un veicolo che di solito fa ${top[0]}`);
+    }
+  }
+  for(const[carta,m]of perC)if(m.size>1){
+    const top=[...m.entries()].sort((x,y)=>y[1]-x[1])[0][0];
+    for(const r of rows)if(r.carta===carta&&r.targa&&r.targa!==top)add(r,`Carta ${carta} usata di solito su ${top}`);
+  }
+  return fl;
+}
+let rfFl=new Map(),rfVeic=[];
 // Andamento del prezzo medio pagato (spesa / litri) per mese, una linea per carburante (i 3 con più spesa).
 let rfPr=null;
 const PR2=new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -576,11 +624,13 @@ function renderRif(){
       ${single?'':scelta(false)}</section></div>`;
     return;
   }
-  const D=rifData();let rows=D.rows;
+  const D=rifData(),tutteRighe=D.rows;let rows=D.rows;
   const tutte=aggRif(rows,r=>r.targa);
   if(RF_T!==null&&!tutte.some(x=>x.k===RF_T))RF_T=null;
   if(RF_T!==null)rows=rows.filter(r=>r.targa===RF_T);
   rfRows=rows;
+  rfFl=controlli(tutteRighe);rfVeic=tutte.map(x=>x.k).filter(Boolean).sort();
+  const segn=rows.filter(r=>rfFl.has(r));
   const cons=consumi(rows),cTot=[...cons.values()].reduce((a,o)=>({km:a.km+o.km,vol:a.vol+o.vol,imp:a.imp+o.imp}),{km:0,vol:0,imp:0});
   const st=$id('stats'),tot=aggRif(rows,()=>'')[0]||{n:0,vol:0,imp:0};
   const c=[['Rifornimenti',tot.n.toLocaleString('it-IT')],['Spesa',EUR.format(tot.imp)],['Litri',LIT.format(tot.vol)],['Prezzo medio al litro',tot.vol>0?PRZ.format(ppl(tot))+' €/l':'—'],['Veicoli',aggRif(rows,r=>r.targa).length]];
@@ -593,6 +643,7 @@ function renderRif(){
   const fn=[...new Map(ALL.filter(d=>d.car&&!(F.dup&&d.dup)).map(d=>[d.ced.id,nm(d.ced)])).values()];
   const per=`Fornitore: ${fn.slice(0,3).map(esc).join(', ')}${fn.length>3?` e altri ${fn.length-3}`:''} (elenco in fondo). Rifornimenti dal ${fdate(ds[0])} al ${fdate(ds[ds.length-1])}. Si applicano anno, periodo, date e ricerca${na.length?`; non si applicano: ${na.join(', ')}`:''}.`;
   if(RF_T!==null)hi+=`<div class="card rf-bar">Veicolo: <b>${esc(vlab(RF_T))}</b>${ALIAS[RF_T]?` <span class="mute">${esc(RF_T)}</span>`:''} <button class="btn" data-rfclr="1">Mostra tutti i veicoli</button></div>`;
+  if(segn.length)hi+=`<div class="card rf-bar rf-warn"><b>${segn.length}</b> ${segn.length===1?'rifornimento':'rifornimenti'} da controllare <button class="btn" data-goctrl="1">Vedi</button></div>`;
   if(D.err||D.diff)hi+=`<div class="card rf-bar rf-warn">${D.err?`${D.err} fatture con allegati non leggibili. `:''}${D.diff?`${D.diff} fatture in cui il totale dei rifornimenti non coincide con il riepilogo del fornitore.`:''}</div>`;
   // andamento mensile della spesa (disegnato dopo, sulla larghezza disponibile)
   rfMm=aggRif(rows,r=>r.data.slice(0,7)).sort((a,b)=>a.k<b.k?-1:1);
@@ -640,6 +691,14 @@ function renderRif(){
     const cols=n=>[[n],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['Quota della spesa','rf-q']];
     h+=`<section class="card box2"><h3>Quando si fa rifornimento</h3><p class="mute rf-note">Nel fine settimana: <b>${we}</b> rifornimenti su ${nt} (${pc(we,nt)}), ${EUR.format(weI)}.${con?` Di notte (22–06): <b>${notte}</b> su ${con} con orario (${pc(notte,con)}).`:''}${senza?` ${senza} rifornimenti non riportano l'orario e non sono nelle fasce.`:''} Dato indicativo: serve a notare abitudini insolite, non prova un uso improprio.</p>`+
       tb(cols('Giorno'),dd.map((x,i)=>riga(GG[i],x,ni)).join('')+(con?`<tr class="rf-subh"><td>Fascia oraria</td><td class="n c-xs">Rifornimenti</td><td class="n c-xs">Litri</td><td class="n">Spesa</td><td class="rf-q">Quota della spesa</td></tr>`+ff.map((x,i)=>riga(FASCE[i],x,ff.reduce((a,y)=>a+y.imp,0))).join(''):''))+'</section>';}
+  // rifornimenti segnalati dai controlli
+  {const MAXC=100,propri=Object.keys(SOGLIE).filter(k=>k!=='*').length,g=sgGet('');
+    const lista=rfSort(segn.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),'ctrl',{data:r=>r.data+r.ora,tg:r=>vlab(r.targa),vol:r=>r.vol,imp:r=>r.importo});
+    h+=`<section class="card box2" id="rfCtrl"><div class="rf-head"><h3>Da controllare</h3><button class="btn" data-sogl="1">Soglie…</button></div><p class="mute rf-note">Indizi, non prove: un rifornimento segnalato può avere una spiegazione normale (un pieno più grande del solito, un viaggio, un mezzo in prestito). Soglie generali: massimo ${KMF.format(g.litri)} l per rifornimento, almeno ${g.ore} ore tra due rifornimenti${g.orari?', notte e domenica segnalate':''}${propri?`; ${propri} ${propri===1?'veicolo ha':'veicoli hanno'} soglie proprie`:''}. Si controllano anche il carburante insolito per il veicolo (con almeno 4 rifornimenti) e le carte usate su targhe diverse.</p>`+
+      (lista.length?tb([['Data','','data'],['Veicolo','','tg'],['Motivo'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['Fattura','c-num']],
+        lista.slice(0,MAXC).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}</td><td class="rf-w">${r.targa?vhtml(r.targa):'—'}</td><td><div class="rf-why">${rfFl.get(r).map(t=>`<span class="badge ri">${esc(t)}</span>`).join('')}</div></td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'ctrl')+
+        (lista.length>MAXC?`<div class="more">Mostrati ${MAXC} di ${lista.length} rifornimenti segnalati, nell'ordine scelto: tutti sono nel CSV esportato (colonna <i>Da controllare</i>).</div>`:'')
+      :`<p class="rf-note">Nessun rifornimento da controllare con le soglie attuali.</p>`)+'</section>';}
   const lst=rfSort(rows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),'elenco',{data:r=>r.data+r.ora,tg:r=>vlab(r.targa),prod:r=>carb(r.prod),vol:r=>r.vol,imp:r=>r.importo,ppl:r=>r.vol>0?r.importo/r.vol:null,staz:r=>stazione(r),fn:r=>r.fn}),MAXL=300;
   h+=`<section class="card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data','','data'],['Veicolo','','tg'],['Carburante','c-tipo','prod'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l','n','ppl'],['Stazione','c-ces','staz'],['Fattura','c-num','fn']],
     lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm rf-w">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td class="rf-w">${r.targa?(ALIAS[r.targa]?`${esc(ALIAS[r.targa])}<div class="sub">${esc(r.targa)}</div>`:esc(r.targa)):'—'}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="n">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="wrapc c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'elenco')+
@@ -686,8 +745,8 @@ function exportRifCsv(){
   const c=v=>{v=String(v??'');return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   const n=v=>String(v).replace('.',',');
   const T=v=>{v=String(v==null?'':v);return/^[=+\-@\t\r]/.test(v)?"'"+v:v}; // evita l'esecuzione di formule in Excel
-  const out=[['Data','Ora','Targa','Carburante','Litri','Importo','Prezzo al litro','Codice stazione','Indirizzo','Città','Carta','Ticket','Fattura','Data fattura','Km','Alias veicolo']];
-  for(const r of rfRows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?-1:1))out.push([T(r.data.split('-').reverse().join('/')),T(r.ora),T(r.targa),T(carb(r.prod)),n(r.vol),n(r.importo),r.vol>0?n((r.importo/r.vol).toFixed(3)):'',T(r.staz),T(r.ind),T(r.citta),T(r.carta),T(r.ticket),T(r.fn),T(r.fd.split('-').reverse().join('/')),r.km>0?String(Math.round(r.km)):'',T(ALIAS[r.targa]||'')]);
+  const out=[['Data','Ora','Targa','Carburante','Litri','Importo','Prezzo al litro','Codice stazione','Indirizzo','Città','Carta','Ticket','Fattura','Data fattura','Km','Alias veicolo','Da controllare']];
+  for(const r of rfRows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?-1:1))out.push([T(r.data.split('-').reverse().join('/')),T(r.ora),T(r.targa),T(carb(r.prod)),n(r.vol),n(r.importo),r.vol>0?n((r.importo/r.vol).toFixed(3)):'',T(r.staz),T(r.ind),T(r.citta),T(r.carta),T(r.ticket),T(r.fn),T(r.fd.split('-').reverse().join('/')),r.km>0?String(Math.round(r.km)):'',T(ALIAS[r.targa]||''),T((rfFl.get(r)||[]).join(' | '))]);
   const blob=new Blob(['﻿'+out.map(r=>r.map(c).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rifornimenti.csv';a.click();
 }
@@ -1001,6 +1060,27 @@ $id('aliasForm').onsubmit=()=>{
   try{localStorage.setItem('fe_alias',JSON.stringify(ALIAS))}catch{toast('Impossibile salvare l\'alias in questo browser',4000)}
   const c=$id('content'),y=c.scrollTop;render();c.scrollTop=y;
 };
+// Dialogo delle soglie: «Tutti i veicoli» o un veicolo. Salva nel browser e ridisegna la scheda senza spostare lo scorrimento.
+const sgSalva=()=>{try{localStorage.setItem('fe_soglie',JSON.stringify(SOGLIE))}catch{toast('Impossibile salvare le soglie in questo browser',4000)}};
+const sgRender=()=>{const c=$id('content'),y=c.scrollTop;render();c.scrollTop=y};
+function sgCarica(t){
+  const c=sgGet(t==='*'?'':t);
+  $id('sgLitri').value=c.litri;$id('sgOre').value=c.ore;$id('sgOrari').checked=c.orari;
+  $id('sgHint').textContent=t==='*'?'Valgono per i veicoli senza soglie proprie.':SOGLIE[t]?'Questo veicolo ha soglie proprie.':'Usa le soglie di «Tutti i veicoli» finché non le cambi.';
+}
+function apriSoglie(){
+  $id('sgVei').innerHTML='<option value="*">Tutti i veicoli</option>'+rfVeic.map(t=>`<option value="${esc(t)}">${esc(ALIAS[t]?`${ALIAS[t]} (${t})`:t)}</option>`).join('');
+  $id('sgVei').value='*';SELS.forEach(f=>f());sgCarica('*');$id('sogliaDlg').showModal();
+}
+$id('sgVei').addEventListener('change',()=>sgCarica($id('sgVei').value));
+$id('sgNo').onclick=()=>$id('sogliaDlg').close();
+$id('sgReset').onclick=()=>{delete SOGLIE[$id('sgVei').value];sgSalva();$id('sogliaDlg').close();sgRender()};
+$id('sogliaForm').onsubmit=()=>{
+  const t=$id('sgVei').value,v={litri:+$id('sgLitri').value,ore:+$id('sgOre').value,orari:$id('sgOrari').checked};
+  if(t==='*')SOGLIE['*']=sgNorm(v);
+  else{const b=sgGet(''),o={};for(const k of Object.keys(v))if(v[k]!==b[k])o[k]=v[k];if(Object.keys(sgNorm(o)).length)SOGLIE[t]=sgNorm(o);else delete SOGLIE[t]}
+  sgSalva();sgRender();
+};
 $id('errClose').onclick=()=>$id('errDlg').close();
 document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){$id(g.dataset.go).click();return}if(e.target.closest('[data-act="reset"]'))resetAll();if(e.target.closest('[data-act="demo"]'))loadDemo()});
 
@@ -1021,6 +1101,8 @@ $id('content').addEventListener('click',e=>{
   if(tab==='rif'){
     const bar=e.target.closest('[data-rm]');if(bar){const k=bar.dataset.rm,last=new Date(+k.slice(0,4),+k.slice(5),0).getDate();F.anno='';$id('per').value='';$id('dal').value=`${k}-01`;$id('al').value=`${k}-${String(last).padStart(2,'0')}`;readFilters();return}
     if(e.target.closest('[data-rfclr]')){RF_T=null;render();return}
+    if(e.target.closest('[data-goctrl]')){const s=$id('rfCtrl');if(s)s.scrollIntoView({block:'start'});return}
+    if(e.target.closest('[data-sogl]')){apriSoglie();return}
     const al=e.target.closest('[data-alias]');if(al){apriAlias(al.dataset.alias);return}
     const rs=e.target.closest('th[data-rs]');
     if(rs){const[t,k]=rs.dataset.rs.split(':'),st=RF_S[t];if(st){if(st.k===k)st.d*=-1;else{st.k=k;st.d=RF_TXT.has(k)?1:-1}const c=$id('content'),y=c.scrollTop;render();c.scrollTop=y;const nh=document.querySelector(`th[data-rs="${t}:${k}"]`);if(nh)nh.focus({preventScroll:true})}return}
@@ -1190,7 +1272,7 @@ function enhanceCombo(inp,getList){
   pop.addEventListener('click',e=>{const o=e.target.closest('.opt');if(o){e.preventDefault();inp.value=o.dataset.v;close();openPop=null;inp.dispatchEvent(new Event('input',{bubbles:true}))}});
   pop.addEventListener('mousemove',e=>{const o=e.target.closest('.opt');if(o&&!o.classList.contains('act')){const a=pop.querySelector('.opt.act');if(a)a.classList.remove('act');o.classList.add('act')}});
 }
-['my','per','td','demoN'].forEach(i=>enhanceSelect($id(i)));
+['my','per','td','demoN','sgVei'].forEach(i=>enhanceSelect($id(i)));
 enhanceCombo($id('cp'),()=>CP_OPTS);
 /* tema: un solo pulsante con menu */
 (()=>{

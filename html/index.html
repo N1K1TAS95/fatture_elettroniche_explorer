@@ -161,6 +161,22 @@
   <div class="dlg-foot"><button class="btn" type="button" id="aliasNo">Annulla</button><button class="btn primary" type="submit">Salva</button></div>
 </form></dialog>
 
+<dialog id="sogliaDlg" aria-labelledby="sgTit"><form id="sogliaForm" method="dialog">
+  <h3 id="sgTit" class="dlg-t">Soglie di controllo</h3>
+  <label class="f" for="sgVei">Veicolo
+    <select id="sgVei"></select>
+    <small id="sgHint"></small></label>
+  <div class="dlg-2">
+    <label class="f" for="sgLitri">Litri massimi per rifornimento
+      <input id="sgLitri" type="number" min="1" max="2000" step="1" inputmode="numeric" required></label>
+    <label class="f" for="sgOre">Ore minime tra due rifornimenti
+      <input id="sgOre" type="number" min="0" max="168" step="1" inputmode="numeric" required>
+      <small>0 per non controllarle.</small></label>
+  </div>
+  <label class="chk"><input id="sgOrari" type="checkbox"> Segnala i rifornimenti di notte (22–06) e di domenica</label>
+  <div class="dlg-foot"><button class="btn" type="button" id="sgReset">Ripristina</button><span class="sp"></span><button class="btn" type="button" id="sgNo">Annulla</button><button class="btn primary" type="submit">Salva</button></div>
+</form></dialog>
+
 <script src="esempi.js"></script>
 <script src="app.js"></script>
 </body>
