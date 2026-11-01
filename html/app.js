@@ -200,12 +200,11 @@ async function parseQ8(body){
   res.fee=Math.round(res.fee*100)/100;
   return res;
 }
-// Fornitori le cui fatture contengono CSV di rifornimenti nel formato Q8. Q8 (Kuwait Petroleum Italia) c'è sempre; gli altri li sceglie
-// l'utente dal dettaglio fattura e restano solo in questo browser (localStorage). Si identificano con paese + partita IVA del cedente.
-const CARB_FISSI=['IT00891951006'];
+// Fornitori le cui fatture contengono CSV di rifornimenti nel formato Q8. Nessuno è predefinito: li sceglie l'utente (dalla scheda
+// Rifornimenti o dal dettaglio fattura) e la scelta resta solo in questo browser (localStorage). Si identificano con paese + partita IVA del cedente.
 let CARB_UTENTE=[];
 try{const v=JSON.parse(localStorage.getItem('fe_carb')||'[]');if(Array.isArray(v))CARB_UTENTE=v.filter(x=>typeof x==='string'&&/^[A-Z]{2}[A-Za-z0-9]{2,28}$/.test(x)).slice(0,50)}catch{}
-const isCarb=piva=>!!piva&&(CARB_FISSI.includes(piva)||CARB_UTENTE.includes(piva));
+const isCarb=piva=>!!piva&&CARB_UTENTE.includes(piva);
 
 async function parseFile(file){
   const{dom}=await readXml(file);const root=dom.documentElement;
@@ -518,7 +517,28 @@ function drawRifChart(){
   box.innerHTML=svg+'</svg>';box.scrollLeft=box.scrollWidth;
 }
 addEventListener('resize',debounce(()=>{if(tab==='rif')drawRifChart()},120));
+// Fornitori che allegano file CSV o ZIP e non sono ancora letti come carte carburante: l'utente sceglie qui quale leggere.
+function scelta(conIntro){
+  const m=new Map();
+  for(const d of ALL)if(d.ced.piva&&!isCarb(d.ced.piva)&&d.all.some(a=>/\.(csv|zip)$/i.test(a.nome)||/^(csv|zip)$/i.test(a.fmt))){
+    const x=m.get(d.ced.piva)||{p:d.ced,n:0};x.n++;m.set(d.ced.piva,x);
+  }
+  if(!m.size)return conIntro?'':'<p class="mute rf-note">Nessuna delle fatture caricate ha allegati CSV o ZIP, quindi non ci sono fornitori da proporre.</p>';
+  return`<h3 class="rf-sub">Fornitori con allegati CSV o ZIP</h3><table><thead><tr><th>Fornitore</th><th class="c-num">P.IVA</th><th class="n c-xs">Fatture</th><th></th></tr></thead><tbody>`+
+    [...m.values()].sort((a,b)=>b.n-a.n).map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n c-xs">${x.n}</td><td class="n"><button class="btn" data-carbon="${esc(x.p.piva)}">Leggi come carta carburante</button></td></tr>`).join('')+'</tbody></table>';
+}
 function renderRif(){
+  if(!CARB_UTENTE.length){
+    rfRows=[];$id('stats').style.display='none';
+    $id('content').innerHTML=`<div class="rf-wrap"><section class="card box2"><h3>Fornitore non selezionato</h3>
+      <p>Per vedere i rifornimenti scegli quale fornitore di carburante leggere. Non ce n'è uno predefinito: l'app non sa quali delle tue fatture riguardano una carta carburante.</p>
+      <ol class="rf-steps"><li>Scegli il fornitore dall'elenco qui sotto. Sono quelli che allegano file CSV o ZIP; in alternativa apri una sua fattura dall'elenco e usa «Leggi come carta carburante Q8» tra gli allegati.</li>
+      <li>L'app legge gli allegati e mostra spesa, litri, consumi e stazioni.</li>
+      <li>La scelta resta salvata in questo browser: al prossimo avvio la scheda è già pronta. Si toglie con «Non leggere più».</li></ol>
+      <p class="mute rf-note">Gli allegati devono essere nel formato delle carte carburante Q8 (CSV con rifornimenti, riepilogo e spese). Gli altri formati non sono supportati.</p>
+      ${single?'':scelta(false)}</section></div>`;
+    return;
+  }
   const D=rifData();let rows=D.rows;
   const tutte=aggRif(rows,r=>r.targa);
   if(RF_T!==null&&!tutte.some(x=>x.k===RF_T))RF_T=null;
@@ -557,8 +577,8 @@ function renderRif(){
   const forn=new Map();
   for(const d of ALL)if(d.car&&!(F.dup&&d.dup)){const x=forn.get(d.ced.piva)||{p:d.ced,n:0,r:0};x.n++;x.r+=d.car.rows.length;forn.set(d.ced.piva,x)}
   h+=`<section class="card box2"><h3>Fornitori letti come carte carburante</h3>`+tb([['Fornitore'],['P.IVA','c-num'],['Fatture','n c-xs'],['Rifornimenti','n c-xs'],['']],
-    [...forn.values()].map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n c-xs">${x.n}</td><td class="n c-xs">${x.r}</td><td class="n">${CARB_FISSI.includes(x.p.piva)?'<span class="mute">predefinito</span>':`<button class="btn" data-carboff="${esc(x.p.piva)}">Non leggere più</button>`}</td></tr>`).join(''))+
-    `<p class="mute rf-note">Per leggere anche un altro fornitore (con CSV nello stesso formato di Q8) apri una sua fattura e usa «Leggi come carta carburante Q8» tra gli allegati.</p></section>`;
+    [...forn.values()].map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n c-xs">${x.n}</td><td class="n c-xs">${x.r}</td><td class="n"><button class="btn" data-carboff="${esc(x.p.piva)}">Non leggere più</button></td></tr>`).join(''))+
+    `<p class="mute rf-note">Per leggere anche un altro fornitore (con CSV nello stesso formato di Q8) scegli uno dei fornitori qui sotto, oppure apri una sua fattura e usa «Leggi come carta carburante Q8» tra gli allegati.</p>${scelta(true)}</section>`;
   $id('content').innerHTML=`<div class="rf-wrap">${hi}${h}</div>`;
   drawRifChart();
 }
@@ -589,7 +609,7 @@ async function applicaCarb(piva,on){
   syncRifTab();render();if(drawerIdx>=0&&$id('split').classList.contains('open'))loadDetail();
 }
 function syncRifTab(){
-  const has=ALL.some(d=>d.car&&d.car.rows.length);
+  const has=ALL.length>0&&!single;
   document.querySelector('.tab[data-t="rif"]').hidden=!has;if(!has&&tab==='rif')tab='fatt';
 }
 function exportRifCsv(){
@@ -647,7 +667,7 @@ async function loadDetail(){
   d.rif.forEach(r=>extra.push(['Riferimento',esc(r)]));
   const csvAtt=att.some(a=>/\.(csv|zip)$/i.test(a.nome)||/^(csv|zip)$/i.test(a.fmt)),conRif=ALL.some(x=>x.car&&x.car.rows.length);
   let cb='';
-  if(isCarb(d.ced.piva))cb=`<div class="rf-cfg"><span>Letto come carta carburante Q8 · <b>${d.car?d.car.rows.length:0}</b> rifornimenti in questa fattura</span><span class="sp"></span>${!single&&conRif?'<button class="btn" data-carb="go">Vedi i rifornimenti</button>':''}${!single&&!CARB_FISSI.includes(d.ced.piva)?'<button class="btn" data-carb="off">Non leggere più</button>':''}</div>`;
+  if(isCarb(d.ced.piva))cb=`<div class="rf-cfg"><span>Letto come carta carburante Q8 · <b>${d.car?d.car.rows.length:0}</b> rifornimenti in questa fattura</span><span class="sp"></span>${!single&&conRif?'<button class="btn" data-carb="go">Vedi i rifornimenti</button>':''}${!single?'<button class="btn" data-carb="off">Non leggere più</button>':''}</div>`;
   else if(csvAtt&&d.ced.piva&&!single)cb=`<div class="rf-cfg"><span>Questo fornitore allega file CSV. Se sono rifornimenti di una carta carburante nel formato Q8, puoi leggerli e vederli nella scheda Rifornimenti.</span><span class="sp"></span><button class="btn" data-carb="on">Leggi come carta carburante Q8</button></div>`;
   const al=att.length?`<div class="card box2"><h3>Allegati (${att.length})</h3>${att.map((a,j)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg> ${esc(a.nome)} <span class="mute">${esc(a.fmt)} ${esc(a.descr)} · ${Math.round(a.b64.length*0.75/1024)} KB</span></span><button class="btn" data-att="${j}" data-act="open">Apri</button><button class="btn" data-att="${j}" data-act="dl">Scarica</button></div>`).join('')}${cb}</div>`:'';
   const scad=d.pag.map(p=>p.scad).filter(Boolean).sort()[0];
@@ -920,6 +940,7 @@ $id('content').addEventListener('click',e=>{
   if(tab==='rif'){
     const bar=e.target.closest('[data-rm]');if(bar){const k=bar.dataset.rm,last=new Date(+k.slice(0,4),+k.slice(5),0).getDate();F.anno='';$id('per').value='';$id('dal').value=`${k}-01`;$id('al').value=`${k}-${String(last).padStart(2,'0')}`;readFilters();return}
     if(e.target.closest('[data-rfclr]')){RF_T=null;render();return}
+    const on=e.target.closest('[data-carbon]');if(on){applicaCarb(on.dataset.carbon,true);return}
     const off=e.target.closest('[data-carboff]');if(off){applicaCarb(off.dataset.carboff,false);return}
     const fn=e.target.closest('tr[data-fn]');if(fn){$id('q').value=fn.dataset.fn;tab='fatt';readFilters();toTop();return}
     const tr=e.target.closest('tr[data-t]');if(tr){RF_T=RF_T===tr.dataset.t?null:tr.dataset.t;render()}

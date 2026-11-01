@@ -10,6 +10,7 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 - Scheda Rifornimenti, tabella *Per veicolo*: **litri al mese** e giorni medi tra un rifornimento e l'altro, disponibili anche senza i km.
 
 ### Modificato
+- Scheda Rifornimenti: il fornitore di carburante **non è più predefinito**. La scheda è sempre presente e, finché non ne scegli uno, mostra «Fornitore non selezionato» con le istruzioni e l'elenco dei fornitori che allegano file CSV o ZIP. La scelta resta salvata nel browser; per chi usava Q8 senza averlo scelto, va rifatta una volta.
 - Cambia di nuovo il formato della cache delle cartelle recenti: al primo uso le fatture vengono rilette una volta.
 
 ## [1.4.0] - 2026-11-01

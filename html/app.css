@@ -2630,6 +2630,17 @@ td.c-att .badge {
     margin: var(--sp) 0 0
 }
 
+.rf-wrap .rf-sub {
+    margin: calc(var(--sp) * 2) 0 var(--sp);
+    font-size: 14px
+}
+
+.rf-wrap .rf-steps {
+    margin: 0 0 var(--sp);
+    padding-left: 22px;
+    line-height: 1.6
+}
+
 .rf-wrap .more {
     padding: var(--sp) 0 0
 }
