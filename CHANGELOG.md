@@ -13,6 +13,10 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 - Scheda Rifornimenti: **alias dei veicoli**. Il pulsante con la matita accanto a una targa, nella tabella *Per veicolo*, permette di darle un nome (per esempio «Furgone di Mario»), mostrato al posto della targa in tabelle, filtro e ordinamento, con la targa sotto. L'alias si cerca come testo, finisce nel CSV esportato (colonna *Alias veicolo*) e resta salvato nel browser. Lasciandolo vuoto si toglie.
 
+- Scheda Rifornimenti: **Prezzo al litro nel tempo**, grafico del prezzo medio pagato (spesa ÷ litri) per mese, con una linea per carburante (i 3 con più spesa).
+- Scheda Rifornimenti: **Spesa mensile per veicolo**, tabella veicoli × mesi con totale, media al mese e proiezione annua (da 3 mesi di storia), ordinabile.
+- Scheda Rifornimenti: **Quando si fa rifornimento**, rifornimenti e spesa per giorno della settimana e fascia oraria, con il riepilogo di fine settimana e notte. È un dato indicativo, non prova un uso improprio.
+
 ### Modificato
 - Scheda Rifornimenti: il fornitore di carburante **non è più predefinito**. La scheda è sempre presente e, finché non ne scegli uno, mostra «Fornitore non selezionato» con le istruzioni e l'elenco dei fornitori che allegano file CSV o ZIP. La scelta resta salvata nel browser; per chi usava Q8 senza averlo scelto, va rifatta una volta.
 - Cambia di nuovo il formato della cache delle cartelle recenti: al primo uso le fatture vengono rilette una volta.
