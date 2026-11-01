@@ -4,22 +4,22 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+## [1.5.0] - 2026-11-01
+
+Scheda Rifornimenti: consumi, alias, ordinamento e nuove analisi.
+
 ### Aggiunto
 - Scheda Rifornimenti: **consumo medio** (km/l e l/100 km) per veicolo e nel riepilogo, calcolato con il metodo «pieno a pieno» dai chilometri del contachilometri (colonna KM del CSV) di rifornimenti consecutivi della stessa targa. Compare solo per i veicoli i cui rifornimenti riportano i km; gli altri mostrano «—». I km sono anche nel CSV esportato.
-
 - Scheda Rifornimenti, tabella *Per veicolo*: **litri al mese** e giorni medi tra un rifornimento e l'altro, disponibili anche senza i km.
-
 - Scheda Rifornimenti: tutte le tabelle (*Per veicolo*, *Per carburante*, *Per stazione*, *Elenco rifornimenti*) si ordinano cliccando l'intestazione di una colonna (di nuovo per invertire), anche da tastiera. I valori mancanti, come il consumo senza km, restano in fondo. Nell'elenco, oltre i 300 rifornimenti, si vedono i primi 300 nell'ordine scelto.
-
 - Scheda Rifornimenti: **alias dei veicoli**. Il pulsante con la matita accanto a una targa, nella tabella *Per veicolo*, permette di darle un nome (per esempio «Furgone di Mario»), mostrato al posto della targa in tabelle, filtro e ordinamento, con la targa sotto. L'alias si cerca come testo, finisce nel CSV esportato (colonna *Alias veicolo*) e resta salvato nel browser. Lasciandolo vuoto si toglie.
-
 - Scheda Rifornimenti: **Prezzo al litro nel tempo**, grafico del prezzo medio pagato (spesa ÷ litri) per mese, con una linea per carburante (i 3 con più spesa).
 - Scheda Rifornimenti: **Spesa mensile per veicolo**, tabella veicoli × mesi con totale, media al mese e proiezione annua (da 3 mesi di storia), ordinabile.
 - Scheda Rifornimenti: **Quando si fa rifornimento**, rifornimenti e spesa per giorno della settimana e fascia oraria, con il riepilogo di fine settimana e notte. È un dato indicativo, non prova un uso improprio.
 
 ### Modificato
 - Scheda Rifornimenti: il fornitore di carburante **non è più predefinito**. La scheda è sempre presente e, finché non ne scegli uno, mostra «Fornitore non selezionato» con le istruzioni e l'elenco dei fornitori che allegano file CSV o ZIP. La scelta resta salvata nel browser; per chi usava Q8 senza averlo scelto, va rifatta una volta.
-- Cambia di nuovo il formato della cache delle cartelle recenti: al primo uso le fatture vengono rilette una volta.
+- Cambia il formato della cache delle cartelle recenti: al primo uso le fatture vengono rilette una volta.
 
 ## [1.4.0] - 2026-11-01
 
@@ -118,7 +118,8 @@ Prima versione pubblica.
 - Firefox e Safari usano la modalità compatibile, senza cartelle recenti né installazione come app.
 - Il foglio di stile Assosoftware non è incluso per via della sua licenza.
 
-[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.4.0...HEAD
+[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.1.1...v1.2.0
