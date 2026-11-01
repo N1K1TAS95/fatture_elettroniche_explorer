@@ -4,6 +4,12 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Scheda Rifornimenti: **consumo medio** (km/l e l/100 km) per veicolo e nel riepilogo, calcolato con il metodo «pieno a pieno» dai chilometri del contachilometri (colonna KM del CSV) di rifornimenti consecutivi della stessa targa. Compare solo per i veicoli i cui rifornimenti riportano i km; gli altri mostrano «—». I km sono anche nel CSV esportato.
+
+### Modificato
+- Cambia di nuovo il formato della cache delle cartelle recenti: al primo uso le fatture vengono rilette una volta.
+
 ## [1.4.0] - 2026-11-01
 
 Scheda Rifornimenti per le carte carburante Q8.

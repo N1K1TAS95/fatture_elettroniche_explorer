@@ -186,7 +186,7 @@ async function parseQ8(body){
           const m=/^(\d{2})\/(\d{2})\/(\d{2})$/.exec(c[2]||'');if(!m||c.length<17)continue;
           const o=/^(\d{2})(\d{2})/.exec(c[3]||'');
           const importo=csvNum(c[16])||csvNum(c[11]),vol=csvNum(c[12]);
-          res.rows.push({carta:c[0],ticket:c[1],data:`20${m[3]}-${m[2]}-${m[1]}`,ora:o?o[1]+':'+o[2]:'',prod:c[4],targa:normTarga(c[6]),targaRaw:c[6],staz:c[8],ind:c[9],citta:c[10],importo,vol,
+          res.rows.push({carta:c[0],ticket:c[1],data:`20${m[3]}-${m[2]}-${m[1]}`,ora:o?o[1]+':'+o[2]:'',prod:c[4],targa:normTarga(c[6]),targaRaw:c[6],km:csvNum(c[7]),staz:c[8],ind:c[9],citta:c[10],importo,vol,
             prezzo:csvNum(c[15])||csvNum(c[13]),sconto:csvNum(c[14])});
         }
       }else if(h[0]==='prodotto'){
@@ -218,7 +218,7 @@ async function parseFile(file){
 }
 
 /* ====================== Stato ====================== */
-const VER=6;
+const VER=7;
 let ALL=[],view=[],ERR=[],entriesCur=null,rootName='',dirHandle=null;
 let CP_OPTS=[];
 let myId=localStorage.getItem('fe_my')||'';
@@ -474,6 +474,23 @@ function aggRif(rows,kf){
   return[...m.values()];
 }
 const ppl=x=>x.vol>0?x.imp/x.vol:0;
+// Consumo per veicolo dalla colonna KM (contachilometri) dei rifornimenti, con il metodo «pieno a pieno»: tra due rifornimenti
+// consecutivi con i km, i km percorsi si dividono per i litri del secondo (si presume il pieno ogni volta). Si saltano km a zero
+// o non crescenti e i rifornimenti senza targa. Il primo rifornimento del periodo fa solo da punto di partenza.
+function consumi(rows){
+  const per=new Map();
+  for(const r of rows)if(r.targa&&r.km>0){const a=per.get(r.targa)||[];a.push(r);per.set(r.targa,a)}
+  const out=new Map();
+  for(const[t,a]of per){
+    a.sort((x,y)=>x.data+x.ora<y.data+y.ora?-1:1);
+    const o={km:0,vol:0,imp:0,n:0};
+    for(let i=1;i<a.length;i++){const d=a[i].km-a[i-1].km;if(d>0&&a[i].vol>0){o.km+=d;o.vol+=a[i].vol;o.imp+=a[i].importo;o.n++}}
+    if(o.n)out.set(t,o);
+  }
+  return out;
+}
+const kml=o=>o.km/o.vol,KMF=new Intl.NumberFormat('it-IT',{maximumFractionDigits:0});
+const KML=new Intl.NumberFormat('it-IT',{minimumFractionDigits:1,maximumFractionDigits:1});
 let rfMm=[];
 // Barre della spesa mensile: il grafico occupa tutta la larghezza della card; con molti mesi scorre e parte dai più recenti.
 function drawRifChart(){
@@ -499,8 +516,10 @@ function renderRif(){
   if(RF_T!==null&&!tutte.some(x=>x.k===RF_T))RF_T=null;
   if(RF_T!==null)rows=rows.filter(r=>r.targa===RF_T);
   rfRows=rows;
+  const cons=consumi(rows),cTot=[...cons.values()].reduce((a,o)=>({km:a.km+o.km,vol:a.vol+o.vol,imp:a.imp+o.imp}),{km:0,vol:0,imp:0});
   const st=$id('stats'),tot=aggRif(rows,()=>'')[0]||{n:0,vol:0,imp:0};
   const c=[['Rifornimenti',tot.n.toLocaleString('it-IT')],['Spesa',EUR.format(tot.imp)],['Litri',LIT.format(tot.vol)],['Prezzo medio al litro',tot.vol>0?PRZ.format(ppl(tot))+' €/l':'—'],['Veicoli',aggRif(rows,r=>r.targa).length]];
+  if(cTot.km>0)c.push(['Consumo medio',KML.format(kml(cTot))+' km/l']);
   if(RF_T===null&&D.fee>0)c.push(['Spese delle carte',EUR.format(D.fee)]);
   st.style.display='grid';st.innerHTML=c.map(x=>`<div class="stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
   if(!rows.length){$id('content').innerHTML=`<div class="empty"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></div><h2>Nessun rifornimento</h2><p>Nessun rifornimento corrisponde ai filtri attuali.</p><button class="btn" data-act="reset">Azzera i filtri</button></div>`;return}
@@ -516,8 +535,8 @@ function renderRif(){
   const tb=(cols,body,click)=>`<table${click?' class="rf-click"':''}><thead><tr>${cols.map(x=>`<th class="${x[1]||''}">${x[0]}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
   const nums=x=>`<td class="n c-xs">${x.n}</td><td class="n c-xs">${LIT.format(x.vol)}</td><td class="n"><b>${EUR.format(x.imp)}</b></td><td class="n">${PRZ.format(ppl(x))}</td>`;
   // per veicolo: sempre tutti, per poterne scegliere un altro
-  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti.</p>`+tb([['Targa'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n'],['Carburante prevalente','c-tipo'],['Ultimo','c-tipo']],
-    tutte.sort((a,b)=>b.imp-a.imp).map(x=>{const pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w"><b>${esc(x.k||'(senza targa)')}</b></td>${nums(x)}<td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td></tr>`}).join(''),1)+'</section>';
+  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti. Il consumo si calcola dai chilometri del contachilometri indicati nei rifornimenti, presumendo il pieno a ogni rifornimento: compare solo per i veicoli che li hanno.</p>`+tb([['Targa'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n'],['Consumo','n c-xs'],['Carburante prevalente','c-tipo'],['Ultimo','c-tipo']],
+    tutte.sort((a,b)=>b.imp-a.imp).map(x=>{const pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w"><b>${esc(x.k||'(senza targa)')}</b></td>${nums(x)}<td class="n c-xs">${cons.has(x.k)?`<b title="${KMF.format(cons.get(x.k).km)} km su ${LIT.format(cons.get(x.k).vol)} l · ${PRZ.format(cons.get(x.k).imp/cons.get(x.k).km*100)} € ogni 100 km">${KML.format(kml(cons.get(x.k)))} km/l</b><div class="sub">${KML.format(100/kml(cons.get(x.k)))} l/100 km</div>`:'<span class="mute">—</span>'}</td><td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td></tr>`}).join(''),1)+'</section>';
   h+=`<section class="card box2"><h3>Per carburante</h3>`+tb([['Carburante'],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['€/l medio','n']],
     aggRif(rows,r=>r.prod).sort((a,b)=>b.imp-a.imp).map(x=>`<tr><td>${esc(carb(x.k))}</td>${nums(x)}</tr>`).join(''))+'</section>';
   const stz=aggRif(rows,stazione).sort((a,b)=>b.imp-a.imp);
@@ -569,8 +588,8 @@ function exportRifCsv(){
   const c=v=>{v=String(v??'');return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   const n=v=>String(v).replace('.',',');
   const T=v=>{v=String(v==null?'':v);return/^[=+\-@\t\r]/.test(v)?"'"+v:v}; // evita l'esecuzione di formule in Excel
-  const out=[['Data','Ora','Targa','Carburante','Litri','Importo','Prezzo al litro','Codice stazione','Indirizzo','Città','Carta','Ticket','Fattura','Data fattura']];
-  for(const r of rfRows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?-1:1))out.push([T(r.data.split('-').reverse().join('/')),T(r.ora),T(r.targa),T(carb(r.prod)),n(r.vol),n(r.importo),r.vol>0?n((r.importo/r.vol).toFixed(3)):'',T(r.staz),T(r.ind),T(r.citta),T(r.carta),T(r.ticket),T(r.fn),T(r.fd.split('-').reverse().join('/'))]);
+  const out=[['Data','Ora','Targa','Carburante','Litri','Importo','Prezzo al litro','Codice stazione','Indirizzo','Città','Carta','Ticket','Fattura','Data fattura','Km']];
+  for(const r of rfRows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?-1:1))out.push([T(r.data.split('-').reverse().join('/')),T(r.ora),T(r.targa),T(carb(r.prod)),n(r.vol),n(r.importo),r.vol>0?n((r.importo/r.vol).toFixed(3)):'',T(r.staz),T(r.ind),T(r.citta),T(r.carta),T(r.ticket),T(r.fn),T(r.fd.split('-').reverse().join('/')),r.km>0?String(Math.round(r.km)):'']);
   const blob=new Blob(['﻿'+out.map(r=>r.map(c).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rifornimenti.csv';a.click();
 }
