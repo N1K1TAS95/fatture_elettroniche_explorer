@@ -286,7 +286,7 @@ function setupAfterLoad(nFiles,reused){
   const yc=Object.create(null);for(const d of ALL)if(d.data&&!(F.dup&&d.dup))yc[d.data.slice(0,4)]=(yc[d.data.slice(0,4)]||0)+1;
   const years=Object.keys(yc).sort().reverse();
   if(!years.includes(F.anno))F.anno='';
-  $id('years').innerHTML='<span class="lbl">Anno</span><button class="pill" data-y="">Tutti</button>'+years.map(y=>`<button class="pill" data-y="${esc(y)}">${esc(y)}<small>${yc[y]}</small></button>`).join('');
+  $id('years').innerHTML='<span class="lbl">Anno</span><button class="kit-pill" data-y="">Tutti</button>'+years.map(y=>`<button class="kit-pill" data-y="${esc(y)}">${esc(y)}<small>${yc[y]}</small></button>`).join('');
   const tds=[...new Set(ALL.map(d=>d.td))].sort();
   $id('td').innerHTML='<option value="">Tutti</option>'+tds.map(t=>`<option value="${esc(t)}">${esc(t)} · ${esc(TD[t]||'')}</option>`).join('');
   $id('toolbar').style.display='block';document.body.classList.add('fixed');$id('tabs').style.display='flex';
@@ -338,8 +338,8 @@ function readFilters(){
   F.td=$id('td').value;F.min=$id('min').value;F.max=$id('max').value;F.dup=$id('dup').checked;apply();
 }
 function syncUI(){
-  document.querySelectorAll('#years .pill').forEach(b=>b.classList.toggle('on',b.dataset.y===F.anno));
-  document.querySelectorAll('#dirSeg button').forEach(b=>b.classList.toggle('on',b.dataset.dir===F.dir));
+  document.querySelectorAll('#years .kit-pill').forEach(b=>b.classList.toggle('is-on',b.dataset.y===F.anno));
+  document.querySelectorAll('#dirSeg button').forEach(b=>b.classList.toggle('is-on',b.dataset.dir===F.dir));
   const ch=[];
   if(F.cp)ch.push(['cp','Cliente/fornitore',F.cp.split(' — ')[0]]);
   if(F.per)ch.push(['per','Periodo',$id('per').selectedOptions[0].text]);
@@ -349,7 +349,7 @@ function syncUI(){
   if(F.min!=='')ch.push(['min','Da',EUR.format(+F.min)]);
   if(F.max!=='')ch.push(['max','Fino a',EUR.format(+F.max)]);
   if(!F.dup)ch.push(['dup','Duplicati','inclusi']);
-  $id('chips').innerHTML=ch.map(c=>`<button class="chip" data-clr="${c[0]}" title="Rimuovi filtro">${c[1]}: <b>${esc(c[2])}</b><i>✕</i></button>`).join('');
+  $id('chips').innerHTML=ch.map(c=>`<button class="kit-chip" data-clr="${c[0]}" title="Rimuovi filtro">${c[1]}: <b>${esc(c[2])}</b><i>✕</i></button>`).join('');
   const n=$id('fcount');n.style.display=ch.length?'':'none';n.textContent=ch.length;
   if(typeof refreshUI==='function')refreshUI();
 }
@@ -369,14 +369,14 @@ function render(){
   const c=[['Fatture',view.length.toLocaleString('it-IT')+(view.length!==ALL.length?`<em>su ${ALL.length.toLocaleString('it-IT')}</em>`:'')],['Imponibile',EUR.format(imp)],['IVA',EUR.format(iva)],['Totale',EUR.format(tot)]];
   if(em.length&&ri.length){c.push(['Emesso',EUR.format(sumBy(em,d=>d.totS))]);c.push(['Ricevuto',EUR.format(sumBy(ri,d=>d.totS))])}
   st.style.display='grid';
-  st.innerHTML=c.map(x=>`<div class="stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.t===tab));
+  st.innerHTML=c.map(x=>`<div class="kit-stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
+  document.querySelectorAll('.kit-tab').forEach(t=>t.classList.toggle('is-on',t.dataset.t===tab));
   document.body.classList.toggle('on-rif',tab==='rif');
   if(!ALL.length)return;
   if(tab==='fatt')renderList();else if(tab==='cp')renderCp();else if(tab==='rif')renderRif();else renderMesi();
 }
 function th(k,label,cls,st){const on=st.k===k;return`<th class="${cls||''}${on?' on':''}" data-k="${k}">${label}${on?(st.d>0?' ▲':' ▼'):''}</th>`}
-const noRes=()=>`<div class="empty"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></div><h2>Nessun risultato</h2><p>Nessuna fattura corrisponde ai filtri attuali.</p><button class="btn" data-act="reset">Azzera i filtri</button></div>`;
+const noRes=()=>`<div class="empty"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></div><h2>Nessun risultato</h2><p>Nessuna fattura corrisponde ai filtri attuali.</p><button class="kit-btn" data-act="reset">Azzera i filtri</button></div>`;
 let two=false,showDir=false;
 function rowHtml(d,i){
   const neg=d.sg<0,p=two?null:(d.cp||d.ced);
@@ -384,12 +384,12 @@ function rowHtml(d,i){
   const sub=(p?(p.piva||p.cf):'')+(desc?(p?' · ':'')+desc.slice(0,80):'');
   const party=q=>`${esc(nm(q))}<div class="sub">${esc(q.piva||q.cf)}</div>`;
   return`<tr data-i="${i}"${i===drawerIdx?' class="sel"':''}><td>${fdate(d.data)}</td><td class="c-num">${esc(d.numero)}</td>
-  <td class="c-tipo"><span class="badge${neg?' cr':''}" title="${esc(TD[d.td]||'')}">${esc(d.td)}</span></td>
+  <td class="c-tipo"><span class="kit-badge${neg?' kit-badge-danger':''}" title="${esc(TD[d.td]||'')}">${esc(d.td)}</span></td>
   ${two?`<td class="wrapc">${party(d.ced)}<div class="sub only-sm">${esc(d.td)} n. ${esc(d.numero)}${showDir&&d.dir?' · '+(d.dir==='emessa'?'Emessa':'Ricevuta'):''}</div></td><td class="wrapc c-ces">${party(d.ces)}</td>`:`<td class="wrapc">${esc(nm(p))}<div class="sub only-sm">${esc(d.td)} n. ${esc(d.numero)}${showDir&&d.dir?' · '+(d.dir==='emessa'?'Emessa':'Ricevuta'):''}</div><div class="sub">${esc(sub)}</div></td>`}
-  ${showDir?`<td class="c-dir">${d.dir?`<span class="badge ${d.dir==='emessa'?'em':'ri'}">${d.dir==='emessa'?'Emessa':'Ricevuta'}</span>`:''}</td>`:''}
+  ${showDir?`<td class="c-dir">${d.dir?`<span class="kit-badge ${d.dir==='emessa'?'kit-badge-success':'kit-badge-warning'}">${d.dir==='emessa'?'Emessa':'Ricevuta'}</span>`:''}</td>`:''}
   <td class="n c-imp ${sgn(d.sg)}">${money(d.impS,d.divisa)}</td><td class="n c-iva ${sgn(d.sg)}">${money(d.ivaS,d.divisa)}</td>
   <td class="n ${sgn(d.sg)}"><b>${money(d.totS,d.divisa)}</b></td>
-  <td class="c-att">${d.all.length?'<span class="att" title="Allegati"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg></span>':''}${d.dup?' <span class="badge gr" title="Duplicato di un\'altra fattura">dup</span>':''}</td></tr>`;
+  <td class="c-att">${d.all.length?'<span class="att" title="Allegati"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg></span>':''}${d.dup?' <span class="kit-badge kit-badge-neutral" title="Duplicato di un\'altra fattura">dup</span>':''}</td></tr>`;
 }
 const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))fill()},{rootMargin:'600px'});
 function fill(){
@@ -418,7 +418,7 @@ function renderCp(){
   if(!cpRows.length){$id('content').innerHTML=noRes();return}
   const mx=Math.max(1,...cpRows.map(x=>Math.abs(x.tot)));
   $id('content').innerHTML=`<table><thead><tr>${th('nome',myId?'Cliente / fornitore':'Cedente','',cpSort)}<th class="c-num" style="cursor:default">P.IVA / CF</th>${th('n','Fatture','n',cpSort)}${th('imp','Imponibile','n c-imp',cpSort)}${th('iva','IVA','n c-iva',cpSort)}${th('tot','Totale','n',cpSort)}${th('last','Ultima fattura','c-tipo',cpSort)}</tr></thead><tbody id="tbcp">`+
-   cpRows.map((x,i)=>`<tr data-i="${i}" title="Mostra le fatture di ${esc(nm(x.p))}"><td class="wrapc">${esc(nm(x.p))}${isCarb(x.p.piva)?' <span class="badge gr" title="Gli allegati di questo fornitore sono letti come rifornimenti (scheda Rifornimenti)">carburante</span>':''}</td><td class="mute c-num">${esc(x.p.piva||x.p.cf)}</td><td class="n">${x.n}</td><td class="n c-imp">${EUR.format(x.imp)}</td><td class="n c-iva">${EUR.format(x.iva)}</td><td class="n"><b>${EUR.format(x.tot)}</b></td><td class="c-tipo">${fdate(x.last)}</td></tr>`).join('')+'</tbody></table>';
+   cpRows.map((x,i)=>`<tr data-i="${i}" title="Mostra le fatture di ${esc(nm(x.p))}"><td class="wrapc">${esc(nm(x.p))}${isCarb(x.p.piva)?' <span class="kit-badge kit-badge-neutral" title="Gli allegati di questo fornitore sono letti come rifornimenti (scheda Rifornimenti)">carburante</span>':''}</td><td class="mute c-num">${esc(x.p.piva||x.p.cf)}</td><td class="n">${x.n}</td><td class="n c-imp">${EUR.format(x.imp)}</td><td class="n c-iva">${EUR.format(x.iva)}</td><td class="n"><b>${EUR.format(x.tot)}</b></td><td class="c-tipo">${fdate(x.last)}</td></tr>`).join('')+'</tbody></table>';
 }
 let mesiRows=[];
 function renderMesi(){
@@ -617,12 +617,12 @@ function scelta(conIntro){
   }
   if(!m.size)return conIntro?'':'<p class="mute rf-note">Nessuna delle fatture caricate ha allegati CSV o ZIP, quindi non ci sono fornitori da proporre.</p>';
   return`<h3 class="rf-sub">Fornitori con allegati CSV o ZIP</h3><table><thead><tr><th>Fornitore</th><th class="c-num">P.IVA</th><th class="n c-xs">Fatture</th><th></th></tr></thead><tbody>`+
-    [...m.values()].sort((a,b)=>b.n-a.n).map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n c-xs">${x.n}</td><td class="n"><button class="btn" data-carbon="${esc(x.p.piva)}">Leggi come carta carburante</button></td></tr>`).join('')+'</tbody></table>';
+    [...m.values()].sort((a,b)=>b.n-a.n).map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n c-xs">${x.n}</td><td class="n"><button class="kit-btn" data-carbon="${esc(x.p.piva)}">Leggi come carta carburante</button></td></tr>`).join('')+'</tbody></table>';
 }
 function renderRif(){
   if(!CARB_UTENTE.length){
     rfRows=[];$id('stats').style.display='none';
-    $id('content').innerHTML=`<div class="rf-wrap"><section class="card box2"><h3>Fornitore non selezionato</h3>
+    $id('content').innerHTML=`<div class="rf-wrap"><section class="kit-card box2"><h3>Fornitore non selezionato</h3>
       <p>Per vedere i rifornimenti scegli quale fornitore di carburante leggere. Non ce n'è uno predefinito: l'app non sa quali delle tue fatture riguardano una carta carburante.</p>
       <ol class="rf-steps"><li>Scegli il fornitore dall'elenco qui sotto. Sono quelli che allegano file CSV o ZIP; in alternativa apri una sua fattura dall'elenco e usa «Leggi come carta carburante Q8» tra gli allegati.</li>
       <li>L'app legge gli allegati e mostra spesa, litri, consumi e stazioni.</li>
@@ -643,46 +643,46 @@ function renderRif(){
   const c=[['Rifornimenti',tot.n.toLocaleString('it-IT')],['Spesa',EUR.format(tot.imp)],['Litri',LIT.format(tot.vol)],['Prezzo medio al litro',tot.vol>0?PRZ.format(ppl(tot))+' €/l':'—'],['Veicoli',aggRif(rows,r=>r.targa).length]];
   if(cTot.km>0)c.push(['Consumo medio',KML.format(kml(cTot))+' km/l']);
   if(RF_T===null&&D.fee>0)c.push(['Spese delle carte',EUR.format(D.fee)]);
-  st.style.display='grid';st.innerHTML=c.map(x=>`<div class="stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
-  if(!rows.length){$id('content').innerHTML=`<div class="empty"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></div><h2>Nessun rifornimento</h2><p>Nessun rifornimento corrisponde ai filtri attuali.</p><button class="btn" data-act="reset">Azzera i filtri</button></div>`;return}
+  st.style.display='grid';st.innerHTML=c.map(x=>`<div class="kit-stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
+  if(!rows.length){$id('content').innerHTML=`<div class="empty"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></div><h2>Nessun rifornimento</h2><p>Nessun rifornimento corrisponde ai filtri attuali.</p><button class="kit-btn" data-act="reset">Azzera i filtri</button></div>`;return}
   let h='',hi='';
   const ds=rows.map(r=>r.data).sort(),na=[F.dir&&'direzione',F.cp&&'cliente/fornitore',F.td&&'tipo documento',(F.min!==''||F.max!=='')&&'importo'].filter(Boolean);
   const fn=[...new Map(ALL.filter(d=>d.car&&!(F.dup&&d.dup)).map(d=>[d.ced.id,nm(d.ced)])).values()];
   const per=`Fornitore: ${fn.slice(0,3).map(esc).join(', ')}${fn.length>3?` e altri ${fn.length-3}`:''} (elenco in fondo). Rifornimenti dal ${fdate(ds[0])} al ${fdate(ds[ds.length-1])}. Si applicano anno, periodo, date e ricerca${na.length?`; non si applicano: ${na.join(', ')}`:''}.`;
-  if(RF_T!==null)hi+=`<div class="card rf-bar">Veicolo: <b>${esc(vlab(RF_T))}</b>${ALIAS[RF_T]?` <span class="mute">${esc(RF_T)}</span>`:''} <button class="btn" data-rfclr="1">Mostra tutti i veicoli</button></div>`;
-  if(segn.length)hi+=`<div class="card rf-bar rf-warn"><b>${segn.length}</b> ${segn.length===1?'rifornimento':'rifornimenti'} da controllare <button class="btn" data-goctrl="1">Vedi</button></div>`;
-  if(D.err||D.diff)hi+=`<div class="card rf-bar rf-warn">${D.err?`${D.err} fatture con allegati non leggibili. `:''}${D.diff?`${D.diff} fatture in cui il totale dei rifornimenti non coincide con il riepilogo del fornitore.`:''}</div>`;
+  if(RF_T!==null)hi+=`<div class="kit-card rf-bar">Veicolo: <b>${esc(vlab(RF_T))}</b>${ALIAS[RF_T]?` <span class="mute">${esc(RF_T)}</span>`:''} <button class="kit-btn" data-rfclr="1">Mostra tutti i veicoli</button></div>`;
+  if(segn.length)hi+=`<div class="kit-card rf-bar rf-warn"><b>${segn.length}</b> ${segn.length===1?'rifornimento':'rifornimenti'} da controllare <button class="kit-btn" data-goctrl="1">Vedi</button></div>`;
+  if(D.err||D.diff)hi+=`<div class="kit-card rf-bar rf-warn">${D.err?`${D.err} fatture con allegati non leggibili. `:''}${D.diff?`${D.diff} fatture in cui il totale dei rifornimenti non coincide con il riepilogo del fornitore.`:''}</div>`;
   // andamento mensile della spesa (disegnato dopo, sulla larghezza disponibile)
   rfMm=aggRif(rows,r=>r.data.slice(0,7)).sort((a,b)=>a.k<b.k?-1:1);
-  h+=`<section class="card box2"><h3>Spesa mensile</h3><p class="mute rf-note">${per}</p><div class="legend"><span><i style="background:var(--c1)"></i>Spesa</span><span>· clicca una barra per vedere solo quel mese</span></div><div class="chartwrap" id="rfChart"></div></section>`;
+  h+=`<section class="kit-card box2"><h3>Spesa mensile</h3><p class="mute rf-note">${per}</p><div class="legend"><span><i style="background:var(--c1)"></i>Spesa</span><span>· clicca una barra per vedere solo quel mese</span></div><div class="chartwrap" id="rfChart"></div></section>`;
   // prezzo medio al litro per mese e carburante
   {const fm=new Map();
     for(const r of rows)if(r.vol>0){const f=fm.get(r.prod)||{k:r.prod,imp:0,pts:new Map()},m=r.data.slice(0,7),p=f.pts.get(m)||{imp:0,vol:0};f.imp+=r.importo;p.imp+=r.importo;p.vol+=r.vol;f.pts.set(m,p);fm.set(r.prod,f)}
     const tutti=[...fm.values()].sort((a,b)=>b.imp-a.imp),ser=tutti.slice(0,3);
     rfPr=ser.length?{mm:rfMm.map(x=>x.k),ser}:null;
-    if(rfPr)h+=`<section class="card box2"><h3>Prezzo al litro nel tempo</h3><p class="mute rf-note">Prezzo medio pagato (spesa ÷ litri) in ogni mese, per carburante${tutti.length>3?`: mostrati i 3 con più spesa su ${tutti.length}`:''}. Passa il mouse su un punto per i dettagli.</p><div class="legend">${ser.map((s,j)=>`<span><i style="background:${['var(--c1)','var(--c2)','var(--pos)'][j]};${j===0?'border-radius:50%':j===2?'clip-path:polygon(50% 0,100% 100%,0 100%)':''}"></i>${esc(carb(s.k))}</span>`).join('')}</div><div class="chartwrap" id="rfPrice"></div></section>`}
+    if(rfPr)h+=`<section class="kit-card box2"><h3>Prezzo al litro nel tempo</h3><p class="mute rf-note">Prezzo medio pagato (spesa ÷ litri) in ogni mese, per carburante${tutti.length>3?`: mostrati i 3 con più spesa su ${tutti.length}`:''}. Passa il mouse su un punto per i dettagli.</p><div class="legend">${ser.map((s,j)=>`<span><i style="background:${['var(--c1)','var(--c2)','var(--pos)'][j]};${j===0?'border-radius:50%':j===2?'clip-path:polygon(50% 0,100% 100%,0 100%)':''}"></i>${esc(carb(s.k))}</span>`).join('')}</div><div class="chartwrap" id="rfPrice"></div></section>`}
   const tb=(cols,body,click,tbl)=>`<table${click?' class="rf-click"':''}><thead><tr>${cols.map(x=>{
     if(!tbl||!x[2])return`<th class="${x[1]||''}">${x[0]}</th>`;
     const on=RF_S[tbl].k===x[2];
     return`<th class="${x[1]||''}${on?' on':''}" data-rs="${tbl}:${x[2]}" tabindex="0" title="Ordina per ${esc(x[0].toLowerCase())}"${on?` aria-sort="${RF_S[tbl].d>0?'ascending':'descending'}"`:''}>${x[0]}${on?(RF_S[tbl].d>0?' ▲':' ▼'):''}</th>`}).join('')}</tr></thead><tbody>${body}</tbody></table>`;
   const nums=x=>`<td class="n c-xs">${x.n}</td><td class="n c-xs">${LIT.format(x.vol)}</td><td class="n"><b>${EUR.format(x.imp)}</b></td><td class="n">${PRZ.format(ppl(x))}</td>`;
   // per veicolo: sempre tutti, per poterne scegliere un altro
-  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti. «Litri al mese» si calcola sui mesi dal primo all'ultimo rifornimento. Il consumo in km/l si calcola dai chilometri del contachilometri indicati nei rifornimenti, presumendo il pieno a ogni rifornimento: compare solo per i veicoli che li hanno.</p>`+tb([['Veicolo','','t'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl'],['Litri al mese','n c-xs','lm'],['Consumo','n c-xs','cons'],['Carburante prevalente','c-tipo','pv'],['Ultimo','c-tipo','last'],['','rf-act']],
-    rfSort(tutte.sort((a,b)=>b.imp-a.imp).map(x=>{x.pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];x.rt=ritmo(x.ds,x.vol);return x}),'veic',{t:x=>vlab(x.k),n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl,lm:x=>x.rt.lm,cons:x=>cons.has(x.k)?kml(cons.get(x.k)):null,pv:x=>carb(x.pv&&x.pv[0]),last:x=>x.last}).map(x=>{const pv=x.pv;return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w">${vhtml(x.k)}</td>${nums(x)}<td class="n c-xs">${(rt=>`${LIT.format(rt.lm)}${rt.gg!=null?`<div class="sub">un pieno ogni ${Math.round(rt.gg)} giorni</div>`:''}`)(x.rt)}</td><td class="n c-xs">${cons.has(x.k)?`<b title="${KMF.format(cons.get(x.k).km)} km su ${LIT.format(cons.get(x.k).vol)} l · ${PRZ.format(cons.get(x.k).imp/cons.get(x.k).km*100)} € ogni 100 km">${KML.format(kml(cons.get(x.k)))} km/l</b><div class="sub">${KML.format(100/kml(cons.get(x.k)))} l/100 km</div>`:'<span class="mute">—</span>'}</td><td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td><td class="rf-act">${x.k?`<button class="btn ghost ibtn" data-alias="${esc(x.k)}" title="${ALIAS[x.k]?'Cambia o togli l\'alias':'Imposta un alias'} per ${esc(x.k)}" aria-label="Alias per ${esc(x.k)}"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></button>`:''}</td></tr>`}).join(''),1,'veic')+'</section>';
+  h+=`<section class="kit-card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti. «Litri al mese» si calcola sui mesi dal primo all'ultimo rifornimento. Il consumo in km/l si calcola dai chilometri del contachilometri indicati nei rifornimenti, presumendo il pieno a ogni rifornimento: compare solo per i veicoli che li hanno.</p>`+tb([['Veicolo','','t'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl'],['Litri al mese','n c-xs','lm'],['Consumo','n c-xs','cons'],['Carburante prevalente','c-tipo','pv'],['Ultimo','c-tipo','last'],['','rf-act']],
+    rfSort(tutte.sort((a,b)=>b.imp-a.imp).map(x=>{x.pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];x.rt=ritmo(x.ds,x.vol);return x}),'veic',{t:x=>vlab(x.k),n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl,lm:x=>x.rt.lm,cons:x=>cons.has(x.k)?kml(cons.get(x.k)):null,pv:x=>carb(x.pv&&x.pv[0]),last:x=>x.last}).map(x=>{const pv=x.pv;return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w">${vhtml(x.k)}</td>${nums(x)}<td class="n c-xs">${(rt=>`${LIT.format(rt.lm)}${rt.gg!=null?`<div class="sub">un pieno ogni ${Math.round(rt.gg)} giorni</div>`:''}`)(x.rt)}</td><td class="n c-xs">${cons.has(x.k)?`<b title="${KMF.format(cons.get(x.k).km)} km su ${LIT.format(cons.get(x.k).vol)} l · ${PRZ.format(cons.get(x.k).imp/cons.get(x.k).km*100)} € ogni 100 km">${KML.format(kml(cons.get(x.k)))} km/l</b><div class="sub">${KML.format(100/kml(cons.get(x.k)))} l/100 km</div>`:'<span class="mute">—</span>'}</td><td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td><td class="rf-act">${x.k?`<button class="kit-btn kit-btn-ghost ibtn" data-alias="${esc(x.k)}" title="${ALIAS[x.k]?'Cambia o togli l\'alias':'Imposta un alias'} per ${esc(x.k)}" aria-label="Alias per ${esc(x.k)}"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></button>`:''}</td></tr>`}).join(''),1,'veic')+'</section>';
   // spesa per veicolo e mese; la media considera i mesi di calendario dal primo all'ultimo rifornimento, la proiezione annua serve da 3 mesi in su
   {const mk=rfMm.map(x=>x.k),vm=new Map();
     for(const r of rows){const x=vm.get(r.targa)||{k:r.targa,m:new Map(),tot:0};x.m.set(r.data.slice(0,7),(x.m.get(r.data.slice(0,7))||0)+r.importo);x.tot+=r.importo;vm.set(r.targa,x)}
     const vr=[...vm.values()].map(x=>{const ks=[...x.m.keys()].sort(),n=(+ks[ks.length-1].slice(0,4)-+ks[0].slice(0,4))*12+(+ks[ks.length-1].slice(5,7)-+ks[0].slice(5,7))+1;x.med=x.tot/n;x.prj=n>=3?x.med*12:null;return x});
     const cell=v=>v?EUR.format(v):'<span class="mute">—</span>',mt=k=>`${MESI[+k.slice(5)-1]} ${k.slice(2,4)}`;
     const tot=mk.map(k=>vr.reduce((a,x)=>a+(x.m.get(k)||0),0));
-    h+=`<section class="card box2"><h3>Spesa mensile per veicolo</h3><p class="mute rf-note">Quanto costa ogni veicolo al mese. «Media» divide per i mesi dal primo all'ultimo rifornimento (compresi quelli senza); «Proiezione annua» è la media per 12 e compare da 3 mesi di storia. Le spese delle carte non sono attribuite ai veicoli.</p><div class="rf-scroll">`+
+    h+=`<section class="kit-card box2"><h3>Spesa mensile per veicolo</h3><p class="mute rf-note">Quanto costa ogni veicolo al mese. «Media» divide per i mesi dal primo all'ultimo rifornimento (compresi quelli senza); «Proiezione annua» è la media per 12 e compare da 3 mesi di storia. Le spese delle carte non sono attribuite ai veicoli.</p><div class="rf-scroll">`+
       tb([['Veicolo','','vt'],...mk.map(k=>[mt(k),'n']),['Totale','n','tot'],['Media al mese','n','med'],['Proiezione annua','n c-xs','prj']],
         rfSort(vr.sort((a,b)=>b.tot-a.tot),'vmese',{vt:x=>vlab(x.k),tot:x=>x.tot,med:x=>x.med,prj:x=>x.prj}).map(x=>`<tr><td class="rf-w">${vhtml(x.k)}</td>${mk.map(k=>`<td class="n">${cell(x.m.get(k))}</td>`).join('')}<td class="n"><b>${EUR.format(x.tot)}</b></td><td class="n">${EUR.format(x.med)}</td><td class="n c-xs">${x.prj==null?'<span class="mute">—</span>':EUR.format(x.prj)}</td></tr>`).join('')+
           (vr.length>1?`<tr class="rf-tot"><td><b>Tutti</b></td>${tot.map(v=>`<td class="n">${cell(v)}</td>`).join('')}<td class="n"><b>${EUR.format(tot.reduce((a,b)=>a+b,0))}</b></td><td></td><td class="c-xs"></td></tr>`:''),0,'vmese')+'</div></section>';}
-  h+=`<section class="card box2"><h3>Per carburante</h3>`+tb([['Carburante','','prod'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl']],
+  h+=`<section class="kit-card box2"><h3>Per carburante</h3>`+tb([['Carburante','','prod'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl']],
     rfSort(aggRif(rows,r=>r.prod).sort((a,b)=>b.imp-a.imp),'carb',{prod:x=>carb(x.k),n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl}).map(x=>`<tr><td>${esc(carb(x.k))}</td>${nums(x)}</tr>`).join(''),0,'carb')+'</section>';
   const stz=aggRif(rows,stazione).sort((a,b)=>b.imp-a.imp);
-  h+=`<section class="card box2"><h3>Per stazione${stz.length>10?' (le 10 principali)':''}</h3>`+tb([['Stazione','','staz'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl']],
+  h+=`<section class="kit-card box2"><h3>Per stazione${stz.length>10?' (le 10 principali)':''}</h3>`+tb([['Stazione','','staz'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl']],
     rfSort(stz.slice(0,10),'staz',{staz:x=>x.k,n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl}).map(x=>`<tr><td class="wrapc">${esc(x.k)}</td>${nums(x)}</tr>`).join(''),0,'staz')+'</section>';
   // quando si fa rifornimento: giorno della settimana e fascia oraria (solo dove il CSV riporta l'orario)
   {const GG=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'],FASCE=['Notte (22–06)','Mattina (06–12)','Pomeriggio (12–18)','Sera (18–22)'];
@@ -696,26 +696,26 @@ function renderRif(){
     const we=dd[5].n+dd[6].n,weI=dd[5].imp+dd[6].imp,con=nt-senza,notte=ff[0].n;
     const riga=(nome,x,t)=>`<tr><td>${nome}</td><td class="n c-xs">${x.n}</td><td class="n c-xs">${LIT.format(x.vol)}</td><td class="n"><b>${EUR.format(x.imp)}</b></td><td class="rf-q"><div class="rf-bar2" aria-hidden="true"><i style="width:${t>0?Math.round(x.imp/t*100):0}%"></i></div><span>${pc(x.imp,t)}</span></td></tr>`;
     const cols=n=>[[n],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['Quota della spesa','rf-q']];
-    h+=`<section class="card box2"><h3>Quando si fa rifornimento</h3><p class="mute rf-note">Nel fine settimana: <b>${we}</b> rifornimenti su ${nt} (${pc(we,nt)}), ${EUR.format(weI)}.${con?` Di notte (22–06): <b>${notte}</b> su ${con} con orario (${pc(notte,con)}).`:''}${senza?` ${senza} rifornimenti non riportano l'orario e non sono nelle fasce.`:''} Dato indicativo: serve a notare abitudini insolite, non prova un uso improprio.</p>`+
+    h+=`<section class="kit-card box2"><h3>Quando si fa rifornimento</h3><p class="mute rf-note">Nel fine settimana: <b>${we}</b> rifornimenti su ${nt} (${pc(we,nt)}), ${EUR.format(weI)}.${con?` Di notte (22–06): <b>${notte}</b> su ${con} con orario (${pc(notte,con)}).`:''}${senza?` ${senza} rifornimenti non riportano l'orario e non sono nelle fasce.`:''} Dato indicativo: serve a notare abitudini insolite, non prova un uso improprio.</p>`+
       tb(cols('Giorno'),dd.map((x,i)=>riga(GG[i],x,ni)).join('')+(con?`<tr class="rf-subh"><td>Fascia oraria</td><td class="n c-xs">Rifornimenti</td><td class="n c-xs">Litri</td><td class="n">Spesa</td><td class="rf-q">Quota della spesa</td></tr>`+ff.map((x,i)=>riga(FASCE[i],x,ff.reduce((a,y)=>a+y.imp,0))).join(''):''))+'</section>';}
   // rifornimenti segnalati dai controlli
   {const MAXC=100,propri=Object.keys(SOGLIE).filter(k=>k!=='*').length,g=sgGet(''),
     attivi=[g.onLitri&&`più di ${KMF.format(g.litri)} l per rifornimento`,g.onOre&&`meno di ${g.ore} ore tra due rifornimenti`,g.onCarb&&'carburante insolito (con almeno 4 rifornimenti)',g.onCarta&&'carta su targhe diverse',g.orari&&'notte e domenica'].filter(Boolean),
     nessuno=!attivi.length&&!propri;
     const lista=rfSort(segn.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),'ctrl',{data:r=>r.data+r.ora,tg:r=>vlab(r.targa),vol:r=>r.vol,imp:r=>r.importo});
-    h+=`<section class="card box2" id="rfCtrl"><div class="rf-head"><h3>Da controllare</h3><button class="btn" data-sogl="1">Soglie…</button></div><p class="mute rf-note">Indizi, non prove: un rifornimento segnalato può avere una spiegazione normale (un pieno più grande del solito, un viaggio, un mezzo in prestito). ${attivi.length?`Controlli generali attivi: ${attivi.join('; ')}.`:'Tutti i controlli generali sono disattivati.'}${propri?` ${propri} ${propri===1?'veicolo ha':'veicoli hanno'} impostazioni proprie.`:''} Si cambiano da <i>Soglie…</i>.</p>`+
+    h+=`<section class="kit-card box2" id="rfCtrl"><div class="rf-head"><h3>Da controllare</h3><button class="kit-btn" data-sogl="1">Soglie…</button></div><p class="mute rf-note">Indizi, non prove: un rifornimento segnalato può avere una spiegazione normale (un pieno più grande del solito, un viaggio, un mezzo in prestito). ${attivi.length?`Controlli generali attivi: ${attivi.join('; ')}.`:'Tutti i controlli generali sono disattivati.'}${propri?` ${propri} ${propri===1?'veicolo ha':'veicoli hanno'} impostazioni proprie.`:''} Si cambiano da <i>Soglie…</i>.</p>`+
       (lista.length?tb([['Data','','data'],['Veicolo','','tg'],['Motivo'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['Fattura','c-num']],
-        lista.slice(0,MAXC).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}</td><td class="rf-w">${r.targa?vhtml(r.targa):'—'}</td><td><div class="rf-why">${rfFl.get(r).map(t=>`<span class="badge ri">${esc(t)}</span>`).join('')}</div></td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'ctrl')+
+        lista.slice(0,MAXC).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}</td><td class="rf-w">${r.targa?vhtml(r.targa):'—'}</td><td><div class="rf-why">${rfFl.get(r).map(t=>`<span class="kit-badge kit-badge-warning">${esc(t)}</span>`).join('')}</div></td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'ctrl')+
         (lista.length>MAXC?`<div class="more">Mostrati ${MAXC} di ${lista.length} rifornimenti segnalati, nell'ordine scelto: tutti sono nel CSV esportato (colonna <i>Da controllare</i>).</div>`:'')
       :`<p class="rf-note">${nessuno?'Nessun controllo attivo: attivali da Soglie…':'Nessun rifornimento da controllare con le impostazioni attuali.'}</p>`)+'</section>';}
   const lst=rfSort(rows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),'elenco',{data:r=>r.data+r.ora,tg:r=>vlab(r.targa),prod:r=>carb(r.prod),vol:r=>r.vol,imp:r=>r.importo,ppl:r=>r.vol>0?r.importo/r.vol:null,staz:r=>stazione(r),fn:r=>r.fn}),MAXL=300;
-  h+=`<section class="card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data','','data'],['Veicolo','','tg'],['Carburante','c-tipo','prod'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l','n','ppl'],['Stazione','c-ces','staz'],['Fattura','c-num','fn']],
+  h+=`<section class="kit-card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data','','data'],['Veicolo','','tg'],['Carburante','c-tipo','prod'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l','n','ppl'],['Stazione','c-ces','staz'],['Fattura','c-num','fn']],
     lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm rf-w">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td class="rf-w">${r.targa?(ALIAS[r.targa]?`${esc(ALIAS[r.targa])}<div class="sub">${esc(r.targa)}</div>`:esc(r.targa)):'—'}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="n">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="wrapc c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'elenco')+
     (lst.length>MAXL?`<div class="more">Mostrati i primi ${MAXL} di ${lst.length.toLocaleString('it-IT')} rifornimenti, nell'ordine scelto: tutti sono nel CSV esportato.</div>`:'')+'</section>';
   const forn=new Map();
   for(const d of ALL)if(d.car&&!(F.dup&&d.dup)){const x=forn.get(d.ced.piva)||{p:d.ced,n:0,r:0};x.n++;x.r+=d.car.rows.length;forn.set(d.ced.piva,x)}
-  h+=`<section class="card box2"><h3>Fornitori letti come carte carburante</h3>`+tb([['Fornitore'],['P.IVA','c-num'],['Fatture','n c-xs'],['Rifornimenti','n c-xs'],['']],
-    [...forn.values()].map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n c-xs">${x.n}</td><td class="n c-xs">${x.r}</td><td class="n"><button class="btn" data-carboff="${esc(x.p.piva)}">Non leggere più</button></td></tr>`).join(''))+
+  h+=`<section class="kit-card box2"><h3>Fornitori letti come carte carburante</h3>`+tb([['Fornitore'],['P.IVA','c-num'],['Fatture','n c-xs'],['Rifornimenti','n c-xs'],['']],
+    [...forn.values()].map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n c-xs">${x.n}</td><td class="n c-xs">${x.r}</td><td class="n"><button class="kit-btn" data-carboff="${esc(x.p.piva)}">Non leggere più</button></td></tr>`).join(''))+
     `<p class="mute rf-note">Per leggere anche un altro fornitore (con CSV nello stesso formato di Q8) scegli uno dei fornitori qui sotto, oppure apri una sua fattura e usa «Leggi come carta carburante Q8» tra gli allegati.</p>${scelta(true)}</section>`;
   $id('content').innerHTML=`<div class="rf-wrap">${hi}${h}</div>`;
   drawRifChart();drawRifPrice();
@@ -748,7 +748,7 @@ async function applicaCarb(piva,on,quiet){
 }
 function syncRifTab(){
   const has=ALL.length>0&&!single;
-  document.querySelector('.tab[data-t="rif"]').hidden=!has;if(!has&&tab==='rif')tab='fatt';
+  document.querySelector('.kit-tab[data-t="rif"]').hidden=!has;if(!has&&tab==='rif')tab='fatt';
 }
 function exportRifCsv(){
   const c=v=>{v=String(v??'');return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
@@ -762,8 +762,8 @@ function exportRifCsv(){
 
 /* ====================== Dettaglio fattura ====================== */
 let dMode='d';
-function kv(rows){return`<div class="kv">`+rows.filter(r=>r[1]!==''&&r[1]!=null).map(r=>`<span>${r[0]}</span><span>${r[1]}</span>`).join('')+'</div>'}
-function partyBox(title,p){return`<div class="card box2"><h3>${title}</h3><h4>${esc(nm(p))}</h4>${kv([['P.IVA',esc(p.piva)],['Cod. fiscale',esc(p.cf)],['Indirizzo',esc(p.ind)],['Regime fiscale',p.rf?esc(p.rf+' · '+(RF[p.rf]||'')):''],['REA',esc(p.rea.trim())],['Telefono',esc(p.tel)],['Email',esc(p.mail)]])}</div>`}
+function kv(rows){return`<div class="kit-kv">`+rows.filter(r=>r[1]!==''&&r[1]!=null).map(r=>`<span>${r[0]}</span><span>${r[1]}</span>`).join('')+'</div>'}
+function partyBox(title,p){return`<div class="kit-card box2"><h3>${title}</h3><h4>${esc(nm(p))}</h4>${kv([['P.IVA',esc(p.piva)],['Cod. fiscale',esc(p.cf)],['Indirizzo',esc(p.ind)],['Regime fiscale',p.rf?esc(p.rf+' · '+(RF[p.rf]||'')):''],['REA',esc(p.rea.trim())],['Telefono',esc(p.tel)],['Email',esc(p.mail)]])}</div>`}
 function openDrawer(i){
   drawerIdx=i;SP.open();loadDetail();
 }
@@ -781,7 +781,7 @@ async function loadDetail(){
   $id('dSub').textContent=`${fdate(d.data)} · ${nm(d.ced)}`+(single&&view.length>1?` · fattura ${drawerIdx+1} di ${view.length}`:'');
   $id('dPrev').style.display=$id('dNext').style.display=(single&&view.length<2)?'none':'';
   $id('dPrev').disabled=drawerIdx<=0;$id('dNext').disabled=drawerIdx>=view.length-1;
-  $id('dTabD').classList.toggle('on',dMode==='d');$id('dTabX').classList.toggle('on',dMode==='x');
+  $id('dTabD').classList.toggle('is-on',dMode==='d');$id('dTabX').classList.toggle('is-on',dMode==='x');
   $id('dbody').innerHTML='<p class="mute">Caricamento…</p>';
   let att=[],xml='';
   try{
@@ -793,10 +793,10 @@ async function loadDetail(){
   if(dMode==='x'){$id('dbody').innerHTML=`<p class="mute">${esc(d.path)}</p><pre class="xml">${esc(prettyXml(xml))}</pre>`;return}
   const cur=d.divisa;
   const mm=v=>money(v,cur);
-  const righe=d.righe.length?`<div class="card box2"><div class="tablewrap" style="max-height:none"><table><thead><tr><th>#</th><th>Descrizione</th><th class="n">Q.tà</th><th class="n">Prezzo unit.</th><th class="n">Totale</th><th class="n">IVA</th></tr></thead><tbody>${d.righe.map(r=>`<tr style="cursor:default"><td>${esc(r.n)}</td><td style="white-space:normal;min-width:240px">${esc(r.d)}${r.cod?`<div class="mute" style="font-size:12px">cod. ${esc(r.cod)}</div>`:''}${r.sc?`<div class="mute" style="font-size:12px">sconto/magg. ${esc(r.sc)}</div>`:''}</td><td class="n">${r.q?esc(String(num(r.q)))+' '+esc(r.um):''}</td><td class="n">${r.pu?mm(num(r.pu)):''}</td><td class="n">${mm(num(r.pt))}</td><td class="n">${r.iva?num(r.iva)+'%':''}${r.nat?` ${esc(r.nat)}`:''}</td></tr>`).join('')}</tbody></table></div></div>`:'';
-  const riep=`<div class="card box2"><h3>Riepilogo IVA</h3><table><thead><tr><th>Aliquota</th><th class="n">Imponibile</th><th class="n">Imposta</th><th>Esigibilità</th></tr></thead><tbody>${d.riep.map(r=>`<tr style="cursor:default"><td>${num(r.aliq)}%${r.nat?` · ${esc(r.nat)} ${esc(NAT[r.nat]||'')}`:''}</td><td class="n">${mm(r.imp)}</td><td class="n">${mm(r.iva)}</td><td>${esc(ESI[r.esi]||r.esi)}${r.rif?`<div class="mute" style="font-size:12px;white-space:normal">${esc(r.rif)}</div>`:''}</td></tr>`).join('')}</tbody></table>
+  const righe=d.righe.length?`<div class="kit-card box2"><div class="tablewrap" style="max-height:none"><table><thead><tr><th>#</th><th>Descrizione</th><th class="n">Q.tà</th><th class="n">Prezzo unit.</th><th class="n">Totale</th><th class="n">IVA</th></tr></thead><tbody>${d.righe.map(r=>`<tr style="cursor:default"><td>${esc(r.n)}</td><td style="white-space:normal;min-width:240px">${esc(r.d)}${r.cod?`<div class="mute" style="font-size:12px">cod. ${esc(r.cod)}</div>`:''}${r.sc?`<div class="mute" style="font-size:12px">sconto/magg. ${esc(r.sc)}</div>`:''}</td><td class="n">${r.q?esc(String(num(r.q)))+' '+esc(r.um):''}</td><td class="n">${r.pu?mm(num(r.pu)):''}</td><td class="n">${mm(num(r.pt))}</td><td class="n">${r.iva?num(r.iva)+'%':''}${r.nat?` ${esc(r.nat)}`:''}</td></tr>`).join('')}</tbody></table></div></div>`:'';
+  const riep=`<div class="kit-card box2"><h3>Riepilogo IVA</h3><table><thead><tr><th>Aliquota</th><th class="n">Imponibile</th><th class="n">Imposta</th><th>Esigibilità</th></tr></thead><tbody>${d.riep.map(r=>`<tr style="cursor:default"><td>${num(r.aliq)}%${r.nat?` · ${esc(r.nat)} ${esc(NAT[r.nat]||'')}`:''}</td><td class="n">${mm(r.imp)}</td><td class="n">${mm(r.iva)}</td><td>${esc(ESI[r.esi]||r.esi)}${r.rif?`<div class="mute" style="font-size:12px;white-space:normal">${esc(r.rif)}</div>`:''}</td></tr>`).join('')}</tbody></table>
     <p style="text-align:right;margin:8px 0 0">Imponibile <b>${money(d.imp,cur)}</b> · IVA <b>${money(d.iva,cur)}</b> · Totale documento <b style="font-size:16px">${money(d.tot,cur)}</b></p></div>`;
-  const pag=d.pag.length?`<div class="card box2"><h3>Pagamento</h3><table><thead><tr><th>Modalità</th><th>Scadenza</th><th class="n">Importo</th><th>IBAN / Istituto</th></tr></thead><tbody>${d.pag.map(p=>`<tr style="cursor:default"><td>${esc(MP[p.mod]||p.mod)}${p.cond?`<div class="mute" style="font-size:12px">${esc(COND[p.cond]||p.cond)}</div>`:''}</td><td>${fdate(p.scad)}</td><td class="n">${mm(p.imp)}</td><td>${esc(p.iban)} ${esc(p.ist)}</td></tr>`).join('')}</tbody></table></div>`:'';
+  const pag=d.pag.length?`<div class="kit-card box2"><h3>Pagamento</h3><table><thead><tr><th>Modalità</th><th>Scadenza</th><th class="n">Importo</th><th>IBAN / Istituto</th></tr></thead><tbody>${d.pag.map(p=>`<tr style="cursor:default"><td>${esc(MP[p.mod]||p.mod)}${p.cond?`<div class="mute" style="font-size:12px">${esc(COND[p.cond]||p.cond)}</div>`:''}</td><td>${fdate(p.scad)}</td><td class="n">${mm(p.imp)}</td><td>${esc(p.iban)} ${esc(p.ist)}</td></tr>`).join('')}</tbody></table></div>`:'';
   const extra=[];
   if(d.caus.length)extra.push(['Causale',esc(d.caus.join(' '))]);
   if(d.bollo)extra.push(['Bollo',money(d.bollo,cur)]);
@@ -805,15 +805,15 @@ async function loadDetail(){
   d.rif.forEach(r=>extra.push(['Riferimento',esc(r)]));
   const csvAtt=att.some(a=>/\.(csv|zip)$/i.test(a.nome)||/^(csv|zip)$/i.test(a.fmt)),conRif=ALL.some(x=>x.car&&x.car.rows.length);
   let cb='';
-  if(isCarb(d.ced.piva))cb=`<div class="rf-cfg"><span>Letto come carta carburante Q8 · <b>${d.car?d.car.rows.length:0}</b> rifornimenti in questa fattura</span><span class="sp"></span>${!single&&conRif?'<button class="btn" data-carb="go">Vedi i rifornimenti</button>':''}${!single?'<button class="btn" data-carb="off">Non leggere più</button>':''}</div>`;
-  else if(csvAtt&&d.ced.piva&&!single)cb=`<div class="rf-cfg"><span>Questo fornitore allega file CSV. Se sono rifornimenti di una carta carburante nel formato Q8, puoi leggerli e vederli nella scheda Rifornimenti.</span><span class="sp"></span><button class="btn" data-carb="on">Leggi come carta carburante Q8</button></div>`;
-  const al=att.length?`<div class="card box2"><h3>Allegati (${att.length})</h3>${att.map((a,j)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg> ${esc(a.nome)} <span class="mute">${esc(a.fmt)} ${esc(a.descr)} · ${Math.round(a.b64.length*0.75/1024)} KB</span></span><button class="btn" data-att="${j}" data-act="open">Apri</button><button class="btn" data-att="${j}" data-act="dl">Scarica</button></div>`).join('')}${cb}</div>`:'';
+  if(isCarb(d.ced.piva))cb=`<div class="rf-cfg"><span>Letto come carta carburante Q8 · <b>${d.car?d.car.rows.length:0}</b> rifornimenti in questa fattura</span><span class="sp"></span>${!single&&conRif?'<button class="kit-btn" data-carb="go">Vedi i rifornimenti</button>':''}${!single?'<button class="kit-btn" data-carb="off">Non leggere più</button>':''}</div>`;
+  else if(csvAtt&&d.ced.piva&&!single)cb=`<div class="rf-cfg"><span>Questo fornitore allega file CSV. Se sono rifornimenti di una carta carburante nel formato Q8, puoi leggerli e vederli nella scheda Rifornimenti.</span><span class="sp"></span><button class="kit-btn" data-carb="on">Leggi come carta carburante Q8</button></div>`;
+  const al=att.length?`<div class="kit-card box2"><h3>Allegati (${att.length})</h3>${att.map((a,j)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg> ${esc(a.nome)} <span class="mute">${esc(a.fmt)} ${esc(a.descr)} · ${Math.round(a.b64.length*0.75/1024)} KB</span></span><button class="kit-btn" data-att="${j}" data-act="open">Apri</button><button class="kit-btn" data-att="${j}" data-act="dl">Scarica</button></div>`).join('')}${cb}</div>`:'';
   const scad=d.pag.map(p=>p.scad).filter(Boolean).sort()[0];
-  const summ=`<div class="card summary"><div class="stat big"><small>Totale documento</small><b class="${sgn(d.sg)}">${money(d.totS,cur)}</b></div><div class="stat"><small>Imponibile</small><b>${money(d.impS,cur)}</b></div><div class="stat"><small>IVA</small><b>${money(d.ivaS,cur)}</b></div>${scad?`<div class="stat"><small>Scadenza</small><b>${fdate(scad)}</b></div>`:''}</div>`;
+  const summ=`<div class="kit-card summary"><div class="kit-stat big"><small>Totale documento</small><b class="${sgn(d.sg)}">${money(d.totS,cur)}</b></div><div class="kit-stat"><small>Imponibile</small><b>${money(d.impS,cur)}</b></div><div class="kit-stat"><small>IVA</small><b>${money(d.ivaS,cur)}</b></div>${scad?`<div class="kit-stat"><small>Scadenza</small><b>${fdate(scad)}</b></div>`:''}</div>`;
   $id('dbody').innerHTML=summ+`<div class="parties">${partyBox('Cedente / prestatore',d.ced)}${partyBox('Cessionario / committente',d.ces)}</div><div class="dcols"><div class="dc1">${righe}${riep}</div><div class="dc2">
-  ${extra.length?`<div class="card box2"><h3>Dati documento</h3>${kv([['Tipo',esc(d.td+' · '+(TD[d.td]||''))],...extra])}</div>`:''}
+  ${extra.length?`<div class="kit-card box2"><h3>Dati documento</h3>${kv([['Tipo',esc(d.td+' · '+(TD[d.td]||''))],...extra])}</div>`:''}
   ${pag}${al}
-  <div class="card box2"><h3>Trasmissione e file</h3>${kv([['File',esc(d.path)],['Progressivo invio',esc(d.sdi.progressivo)],['Cod. destinatario',esc(d.sdi.codDest)],['PEC destinatario',esc(d.sdi.pec)],['Trasmittente',esc(d.sdi.trasm)]])}</div></div></div>`;
+  <div class="kit-card box2"><h3>Trasmissione e file</h3>${kv([['File',esc(d.path)],['Progressivo invio',esc(d.sdi.progressivo)],['Cod. destinatario',esc(d.sdi.codDest)],['PEC destinatario',esc(d.sdi.pec)],['Trasmittente',esc(d.sdi.trasm)]])}</div></div></div>`;
   $id('dbody').scrollTop=0;
   $id('dbody').onclick=e=>{
     const cbn=e.target.closest('[data-carb]');
@@ -944,7 +944,7 @@ function recItem(r){
 function renderRecents(){
   const has=RECENTS.length,html=RECENTS.map(recItem).join('');
   $id('bRecent').style.display=has?'':'none';
-  $id('recentMenu').innerHTML=has?`<div class="mh"><b>Aperti di recente</b><button class="btn ghost" data-clear>Svuota</button></div>${html}<p class="mf">Il browser non rivela il percorso completo: ricorda la cartella (o il file) insieme al permesso di accesso. Alla riapertura può chiederti di confermarlo.</p>`:'';
+  $id('recentMenu').innerHTML=has?`<div class="mh"><b>Aperti di recente</b><button class="kit-btn kit-btn-ghost" data-clear>Svuota</button></div>${html}<p class="mf">Il browser non rivela il percorso completo: ricorda la cartella (o il file) insieme al permesso di accesso. Alla riapertura può chiederti di confermarlo.</p>`:'';
   const rh=$id('recentHello');if(rh)rh.innerHTML=has?`<h3>Aperti di recente</h3><div class="recs">${html}</div>`:'';
 }
 async function openRecent(r){
@@ -1158,9 +1158,9 @@ $id('my').onchange=e=>{myId=e.target.value;localStorage.setItem('fe_my',myId);F.
 $id('bReset').onclick=resetAll;
 $id('fbtn').onclick=()=>$id('adv').classList.toggle('open');
 $id('dirSeg').onclick=e=>{const b=e.target.closest('button');if(b){F.dir=b.dataset.dir;apply()}};
-$id('years').onclick=e=>{const b=e.target.closest('.pill');if(b){F.anno=b.dataset.y;apply()}};
+$id('years').onclick=e=>{const b=e.target.closest('.kit-pill');if(b){F.anno=b.dataset.y;apply()}};
 $id('chips').onclick=e=>{const c=e.target.closest('[data-clr]');if(!c)return;const k=c.dataset.clr;if(k==='dup')$id('dup').checked=true;else $id(k).value='';readFilters()};
-$id('tabs').onclick=e=>{const t=e.target.closest('.tab');if(t){tab=t.dataset.t;render();toTop()}};
+$id('tabs').onclick=e=>{const t=e.target.closest('.kit-tab');if(t){tab=t.dataset.t;render();toTop()}};
 $id('bCsv').onclick=()=>{if(tab==='rif'){exportRifCsv();toast(`Esportati ${rfRows.length} rifornimenti in CSV`)}else{exportCsv();toast(`Esportate ${view.length} fatture in CSV`)}};
 $id('bErr').onclick=()=>{$id('errList').innerHTML=ERR.map(x=>`<div style="margin-bottom:6px"><b>${esc(x.path)}</b><br><span class="mute">${esc(x.msg)}</span></div>`).join('');$id('errDlg').showModal()};
 $id('content').addEventListener('keydown',e=>{const h=e.target.closest&&e.target.closest('th[data-rs]');if(h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();h.click()}});
@@ -1214,7 +1214,7 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
 const topBar=$id('top');
 const closeNav=()=>{topBar.classList.remove('open');$id('bMenu').setAttribute('aria-expanded','false')};
 $id('bMenu').onclick=()=>{const o=topBar.classList.toggle('open');$id('bMenu').setAttribute('aria-expanded',String(o));hideMenu()};
-$id('hActions').addEventListener('click',e=>{const b=e.target.closest('.btn,.seg button');if(b&&b.id!=='bRecent'&&innerWidth<=1100)closeNav()});
+$id('hActions').addEventListener('click',e=>{const b=e.target.closest('.kit-btn,.kit-seg button');if(b&&b.id!=='bRecent'&&innerWidth<=1100)closeNav()});
 document.addEventListener('click',e=>{if(!e.target.closest('#top')&&!e.target.closest('#recentMenu'))closeNav()});
 addEventListener('resize',()=>{hideMenu();if(innerWidth>1100)closeNav()});
 function toTop(){scrollTo({top:0});const c=$id('content');if(c)c.scrollTop=0}
@@ -1352,5 +1352,5 @@ enhanceCombo($id('cp'),()=>CP_OPTS);
 })();
 /* il pannello dei filtri si chiude con un clic fuori */
 document.addEventListener('mousedown',e=>{
-  if(!e.target.closest('#adv,#fbtn,#myBadge,.chip'))$id('adv').classList.remove('open');
+  if(!e.target.closest('#adv,#fbtn,#myBadge,.kit-chip'))$id('adv').classList.remove('open');
 });

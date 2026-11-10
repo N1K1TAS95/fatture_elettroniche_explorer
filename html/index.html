@@ -43,18 +43,18 @@
 <header id="top">
   <h1><img class="logo" src="icon.svg" alt="" width="34" height="34"><span class="lbl2">Fatture </span><span class="lbl3">Elettroniche </span><b>Explorer</b></h1>
   <button type="button" class="co" id="myBadge" hidden title="La mia azienda: clicca per cambiarla"><svg class="i" aria-hidden="true"><use href="#i-building"/></svg><span id="myName"></span></button>
-  <button type="button" class="btn ghost icon" id="bMenu" aria-label="Menu" aria-expanded="false" aria-controls="hActions"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg></button>
+  <button type="button" class="kit-btn kit-btn-ghost kit-btn-icon" id="bMenu" aria-label="Menu" aria-expanded="false" aria-controls="hActions"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg></button>
   <div id="hActions">
     <span id="status"></span>
-    <button class="btn primary" id="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span class="lbl">Seleziona cartella…</span></button>
-    <button class="btn" id="bFile" title="Apri una singola fattura (.xml / .p7m)"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg><span class="lbl">Apri fattura…</span></button>
-    <button class="btn" id="bRecent" style="display:none" title="Cartelle e fatture aperte di recente"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span class="lbl">Recenti</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
+    <button class="kit-btn kit-btn-primary" id="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span class="lbl">Seleziona cartella…</span></button>
+    <button class="kit-btn" id="bFile" title="Apri una singola fattura (.xml / .p7m)"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg><span class="lbl">Apri fattura…</span></button>
+    <button class="kit-btn" id="bRecent" style="display:none" title="Cartelle e fatture aperte di recente"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span class="lbl">Recenti</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
     <input type="file" id="fFiles" accept=".xml,.p7m" multiple hidden>
-    <button class="btn" id="bRescan" disabled title="Rilegge la cartella e importa i file nuovi"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span class="lbl">Aggiorna</span></button>
-    <button class="btn" id="bImp" title="Impostazioni: esporta o importa alias, soglie e altro" aria-label="Impostazioni"><svg class="i" aria-hidden="true"><use href="#i-gear"/></svg><span class="lbl">Impostazioni</span></button>
-    <label class="btn" id="bFallback" style="display:none">Scegli cartella (modalità compatibile)
+    <button class="kit-btn" id="bRescan" disabled title="Rilegge la cartella e importa i file nuovi"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span class="lbl">Aggiorna</span></button>
+    <button class="kit-btn" id="bImp" title="Impostazioni: esporta o importa alias, soglie e altro" aria-label="Impostazioni"><svg class="i" aria-hidden="true"><use href="#i-gear"/></svg><span class="lbl">Impostazioni</span></button>
+    <label class="kit-btn" id="bFallback" style="display:none">Scegli cartella (modalità compatibile)
       <input type="file" id="fFallback" webkitdirectory multiple hidden></label>
-    <div class="sel" id="themeSeg"><button class="btn" id="bTheme" aria-haspopup="menu" aria-expanded="false" title="Tema"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="lbl" id="themeLbl">Automatico</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button><div class="pop r" id="themeMenu" role="menu" hidden><div class="opt" role="menuitemradio" data-th="auto"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="ot"><b>Automatico</b><small>Segue il sistema</small></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span class="ot"><b>Chiaro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg><span class="ot"><b>Scuro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div></div></div>
+    <div class="sel" id="themeSeg"><button class="kit-btn" id="bTheme" aria-haspopup="menu" aria-expanded="false" title="Tema"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="lbl" id="themeLbl">Automatico</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button><div class="pop r" id="themeMenu" role="menu" hidden><div class="opt" role="menuitemradio" data-th="auto"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="ot"><b>Automatico</b><small>Segue il sistema</small></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span class="ot"><b>Chiaro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg><span class="ot"><b>Scuro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div></div></div>
   </div>
 </header>
 <div id="recentMenu" class="menu"></div>
@@ -67,13 +67,13 @@
         <input id="q" type="search" autocomplete="off" placeholder="Cerca per numero, fornitore, P.IVA, descrizione, importo…" aria-label="Cerca">
         <kbd>/</kbd>
       </label>
-      <div class="seg" id="dirSeg" role="group" aria-label="Direzione">
-        <button data-dir="" class="on">Tutte</button><button data-dir="ricevuta">Ricevute</button><button data-dir="emessa">Emesse</button>
+      <div class="kit-seg" id="dirSeg" role="group" aria-label="Direzione">
+        <button data-dir="" class="is-on">Tutte</button><button data-dir="ricevuta">Ricevute</button><button data-dir="emessa">Emesse</button>
       </div>
-      <button class="btn" id="fbtn"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg><span>Filtri</span> <span class="n" id="fcount" style="display:none"></span></button>
+      <button class="kit-btn" id="fbtn"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg><span>Filtri</span> <span class="n" id="fcount" style="display:none"></span></button>
     </div>
     <div class="years" id="years"></div>
-    <div id="adv" class="card">
+    <div id="adv" class="kit-card">
       <div class="fgrid">
         <label class="f f2">La mia azienda <select id="my"></select><small>Serve a distinguere le fatture emesse (tu sei il cedente) da quelle ricevute (tu sei il cessionario).</small></label>
         <label class="f f2">Cliente / fornitore
@@ -91,26 +91,26 @@
       </div>
       <div class="ffoot">
         <label class="chk"><input id="dup" type="checkbox" checked> Nascondi duplicati <span id="dupN" class="mute"></span></label>
-        <button class="btn" id="bReset">Azzera tutti i filtri</button>
+        <button class="kit-btn" id="bReset">Azzera tutti i filtri</button>
       </div>
     </div>
     <div id="chips"></div>
   </section>
 
-  <section class="card" id="stats"></section>
+  <section class="kit-card" id="stats"></section>
 
   <div id="split" class="kit-split-lg"><div id="left">
-  <div class="tabs" id="tabs">
-    <button class="tab on" data-t="fatt">Fatture</button>
-    <button class="tab" data-t="cp">Clienti / fornitori</button>
-    <button class="tab" data-t="mesi">Andamento mensile</button>
-    <button class="tab" data-t="rif" hidden>Rifornimenti</button>
+  <div class="kit-tabs" id="tabs">
+    <button class="kit-tab is-on" data-t="fatt">Fatture</button>
+    <button class="kit-tab" data-t="cp">Clienti / fornitori</button>
+    <button class="kit-tab" data-t="mesi">Andamento mensile</button>
+    <button class="kit-tab" data-t="rif" hidden>Rifornimenti</button>
     <span class="sp"></span>
-    <button class="btn ghost" id="bErr" style="display:none"></button>
-    <button class="btn" id="bCsv"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span class="lbl">Esporta CSV</span></button>
+    <button class="kit-btn kit-btn-ghost" id="bErr" style="display:none"></button>
+    <button class="kit-btn" id="bCsv"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span class="lbl">Esporta CSV</span></button>
   </div>
 
-  <section class="card" id="content">
+  <section class="kit-card" id="content">
     <div class="hello">
       <img class="hlogo" src="icon.svg" alt="" width="56" height="56">
       <h2>Esplora le tue fatture elettroniche</h2>
@@ -118,12 +118,12 @@
       <section class="hsec" aria-labelledby="hApri">
         <h3 id="hApri">Apri le tue fatture</h3>
         <p class="mute">Cartella con i file <code>.xml</code> e <code>.xml.p7m</code>, sottocartelle comprese, oppure una singola fattura.</p>
-        <div class="hbtns"><button class="btn primary" data-go="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg>Seleziona cartella…</button><button class="btn" data-go="bFile"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Apri una fattura…</button></div>
+        <div class="hbtns"><button class="kit-btn kit-btn-primary" data-go="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg>Seleziona cartella…</button><button class="kit-btn" data-go="bFile"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Apri una fattura…</button></div>
       </section>
       <section class="hsec" id="demoBox" aria-labelledby="hProva" hidden>
         <h3 id="hProva">Prova con fatture di esempio</h3>
         <p class="mute">Non hai fatture sotto mano? Carica alcune fatture fittizie incorporate nell'app.</p>
-        <div class="demo"><label class="demo-n">Quante fatture<select id="demoN"></select></label><button class="btn" data-act="demo"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Carica fatture di esempio</button></div>
+        <div class="demo"><label class="demo-n">Quante fatture<select id="demoN"></select></label><button class="kit-btn" data-act="demo"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Carica fatture di esempio</button></div>
       </section>
       <section class="hsec" id="recentHello" aria-label="Aperti di recente"></section>
     </div>
@@ -131,14 +131,14 @@
   </div>
 <aside id="drawer" class="kit-split-panel" aria-label="Dettaglio fattura">
   <div id="dhead" class="kit-split-head">
-    <button class="btn" id="dPrev" title="Precedente (←)" aria-label="Precedente"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg></button>
-    <button class="btn" id="dNext" title="Successiva (→)" aria-label="Successiva"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></button>
+    <button class="kit-btn" id="dPrev" title="Precedente (←)" aria-label="Precedente"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg></button>
+    <button class="kit-btn" id="dNext" title="Successiva (→)" aria-label="Successiva"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></button>
     <div class="t kit-split-title"><h2 id="dTitle"></h2><small id="dSub"></small></div>
-    <div class="seg"><button id="dTabD" class="on">Dettaglio</button><button id="dTabX">XML</button></div>
-    <button class="btn ghost no-print" id="dXml" title="Scarica il file XML della fattura" aria-label="Scarica il file XML"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg></button>
-    <button class="btn ghost no-print" id="dPrint" title="Esporta in PDF o stampa la copia di cortesia">PDF</button>
-    <button class="btn ghost no-print" id="dFull" title="A tutta larghezza / affianca alla lista" aria-label="A tutta larghezza"><svg class="i" aria-hidden="true"><use href="#i-expand"/></svg></button>
-    <button class="btn ghost no-print" id="dClose" title="Chiudi (Esc)" aria-label="Chiudi"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+    <div class="kit-seg"><button id="dTabD" class="is-on">Dettaglio</button><button id="dTabX">XML</button></div>
+    <button class="kit-btn kit-btn-ghost no-print" id="dXml" title="Scarica il file XML della fattura" aria-label="Scarica il file XML"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg></button>
+    <button class="kit-btn kit-btn-ghost no-print" id="dPrint" title="Esporta in PDF o stampa la copia di cortesia">PDF</button>
+    <button class="kit-btn kit-btn-ghost no-print" id="dFull" title="A tutta larghezza / affianca alla lista" aria-label="A tutta larghezza"><svg class="i" aria-hidden="true"><use href="#i-expand"/></svg></button>
+    <button class="kit-btn kit-btn-ghost no-print" id="dClose" title="Chiudi (Esc)" aria-label="Chiudi"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
   </div>
   <div id="dbody" class="kit-split-body"></div>
 </aside>
