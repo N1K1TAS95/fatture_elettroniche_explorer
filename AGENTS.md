@@ -27,7 +27,7 @@ I risultati attesi dell'app sulle fatture di prova sono in `tests/README.md` e `
 
 **Sicurezza**
 - Ogni campo di una fattura è **non fidato**: va mostrato sempre con `esc()`. Niente `innerHTML` con valori che non passano da lì, niente script o gestori di eventi inline.
-- **Nessuna richiesta di rete** e nessuna libreria, font o CDN esterni. Non aggiungere dipendenze.
+- **Nessuna richiesta di rete** e nessuna libreria, font o CDN esterni. Non aggiungere dipendenze. Fanno eccezione, perché copiati in `html/` e serviti dalla propria origine, Dashboard Kit (`kit.css`, `kit.js`) e il font Inter (`fonts/`).
 - La **Content-Security-Policy** è scritta in tre posti che devono restare identici: il `<meta>` di `html/index.html`, `nginx.conf` e `serve.py` (il `<meta>` non può avere `frame-ancestors`). `tests/check.py` lo verifica.
 - Le **GitHub Actions** si fissano all'**hash del commit**, non al tag (il repository lo impone). Dependabot propone gli aggiornamenti.
 

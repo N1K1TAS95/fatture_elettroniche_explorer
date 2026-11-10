@@ -4,7 +4,14 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+### Aggiunto
+- **Impostazioni dell'aspetto**: il pulsante *Impostazioni* nella barra in alto apre un pannello con il **tema** (automatico, chiaro, scuro), la **dimensione del testo** (normale, grande, molto grande) e la **larghezza della pagina** (centrata o tutta la pagina), più *Ripristina l'aspetto*. Le scelte restano nel browser. Dentro lo stesso pannello c'è il pulsante per **esportare e importare** alias, soglie e altro, che prima era un pulsante a parte. Il file esportato ora contiene anche dimensione del testo e larghezza (i file vecchi si importano ancora); i valori del file sono controllati come non fidati. Il tema già scelto si mantiene.
+- Il **font Inter** è incluso in `html/fonts/` (65 KB, licenza SIL OFL 1.1, `html/fonts/OFL.txt`) e usato in tutta l'app: lo zero è barrato, così non si confonde con la «O» nei codici fiscali e nelle partite IVA, e le cifre sono tabulari. La Content-Security-Policy ha ora `font-src 'self'` (negli stessi tre punti di sempre). Se il file non si carica resta il font di sistema.
+
 ### Modificato
+- I colori dell'app sono quelli del kit (un'unica definizione per tema chiaro e scuro); nel tema chiaro il testo secondario e i colori di stato sono un po' più scuri, per un contrasto migliore. Le dimensioni dei testi sono in `rem` e seguono la dimensione scelta nelle impostazioni.
+- Il campo *Cliente / fornitore* usa il combobox del kit (`Kit.combo`): l'elenco si apre scrivendo, con la freccia o con il pulsante, non più appena il campo prende il focus.
+- Corretto: le tab comparivano anche senza fatture caricate; sul telefono il menu dell'intestazione si chiudeva usando le impostazioni.
 - L'interfaccia comincia a usare [Dashboard Kit](https://github.com/N1K1TAS95/dashboard-kit) 0.6.0, incluso in `html/` (`kit.css`, `kit.js`) senza CDN né richieste di rete. Passano al kit gli avvisi temporanei (toast), i quattro dialoghi (alias, soglie, impostazioni, file non letti), la schermata di avanzamento durante la lettura (la barra scorre da sola quando non si sa quanto manca) e il pannello del dettaglio fattura, con lo stesso aspetto e gli stessi comandi di prima.
 - Bottoni, tab, controllo segmentato, pillole degli anni, chip dei filtri, schede, indicatori (KPI), badge ed elenchi chiave-valore usano le classi del kit (`kit-btn`, `kit-tab`, `kit-seg`, `kit-pill`, `kit-chip`, `kit-card`, `kit-stat`, `kit-badge`, `kit-kv`), senza cambiamenti di aspetto visibili (i numeri degli indicatori seguono ora la dimensione del testo del kit).
 - `tests/check.py` non considera più una richiesta esterna l'URI del namespace SVG (`http://www.w3.org/2000/svg`), che nel codice del kit serve solo a creare gli elementi SVG.

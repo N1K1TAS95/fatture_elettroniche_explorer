@@ -8,16 +8,6 @@ const ESI={I:'Immediata',D:'Differita',S:'Scissione dei pagamenti'};
 const COND={TP01:'Pagamento a rate',TP02:'Pagamento completo',TP03:'Anticipo'};
 [TD,MP,NAT,RF,ESI,COND].forEach(m=>Object.setPrototypeOf(m,null));
 
-/* ====================== Tema (auto / chiaro / scuro) ====================== */
-function setTheme(t){
-  if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);else{t='auto';document.documentElement.removeAttribute('data-theme')}
-  try{localStorage.setItem('fe_theme',t)}catch{}
-  document.querySelectorAll('#themeMenu .opt').forEach(b=>b.classList.toggle('on',b.dataset.th===t));
-  document.querySelector('#bTheme use').setAttribute('href','#i-'+{auto:'auto',light:'sun',dark:'moon'}[t]);
-  document.getElementById('themeLbl').textContent={auto:'Automatico',light:'Chiaro',dark:'Scuro'}[t];
-}
-(()=>{let t='auto';try{t=localStorage.getItem('fe_theme')||'auto'}catch{}setTheme(t)})();
-
 /* ====================== Utility ====================== */
 const $id=i=>document.getElementById(i);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1031,8 +1021,8 @@ addEventListener('drop',async e=>{
 });
 // stampa sempre in tema chiaro
 let _th='auto';
-addEventListener('beforeprint',()=>{try{_th=localStorage.getItem('fe_theme')||'auto'}catch{}document.documentElement.setAttribute('data-theme','light')});
-addEventListener('afterprint',()=>setTheme(_th));
+addEventListener('beforeprint',()=>{_th=Kit.theme.get();document.documentElement.setAttribute('data-theme','light')});
+addEventListener('afterprint',()=>Kit.theme.set(_th));
 
 /* ====================== Eventi ====================== */
 async function pick(handle){
@@ -1097,19 +1087,20 @@ $id('sogliaForm').onsubmit=()=>{
 };
 // Impostazioni dell'app (alias, soglie e controlli, fornitori di carburante, tema, azienda): esportazione e importazione in un file JSON.
 // Il file è non fidato: ogni parte passa dagli stessi controlli di quando si leggono dal browser e nulla viene mostrato se non come numero o etichetta.
-const IMP_APP='fatture-elettroniche-explorer',IMP_MAX=1024*1024,TEMI={auto:'Automatico',light:'Chiaro',dark:'Scuro'};
+const IMP_APP='fatture-elettroniche-explorer',IMP_MAX=1024*1024,TEMI={auto:'Automatico',light:'Chiaro',dark:'Scuro'},TESTI={md:'Normale',lg:'Grande',xl:'Molto grande'},LARGH={boxed:'Centrata',fluid:'Tutta la pagina'};
+const impOk=(m,v)=>typeof v==='string'&&Object.hasOwn(m,v);
 let impPend=null;
-function impAttuali(){let tema='auto';try{tema=localStorage.getItem('fe_theme')||'auto'}catch{}
-  return{alias:Object.assign({},ALIAS),soglie:Object.assign({},SOGLIE),carburante:CARB_UTENTE.slice(),tema:TEMI[tema]?tema:'auto',miaAzienda:myId||''}}
+function impAttuali(){
+  return{alias:Object.assign({},ALIAS),soglie:Object.assign({},SOGLIE),carburante:CARB_UTENTE.slice(),tema:Kit.theme.get(),testo:Kit.fontSize.get(),larghezza:Kit.layout.get(),miaAzienda:myId||''}}
 function impRiassunto(o){
   const ns=Object.keys(o.soglie).filter(k=>k!=='*').length,r=[['Alias dei veicoli',Object.keys(o.alias).length],
     ['Soglie e controlli',o.soglie['*']||ns?[o.soglie['*']?'generali':'',ns?`${ns} ${ns===1?'veicolo':'veicoli'}`:''].filter(Boolean).join(' + '):'—'],
-    ['Fornitori di carburante',o.carburante.length],['Tema',o.tema?TEMI[o.tema]:'—'],['La mia azienda',o.miaAzienda?'impostata':'—']];
+    ['Fornitori di carburante',o.carburante.length],['Tema',o.tema?TEMI[o.tema]:'—'],['Dimensione del testo',o.testo?TESTI[o.testo]:'—'],['Larghezza della pagina',o.larghezza?LARGH[o.larghezza]:'—'],['La mia azienda',o.miaAzienda?'impostata':'—']];
   return r.map(x=>`<div><dt>${x[0]}</dt><dd>${esc(x[1])}</dd></div>`).join('');
 }
 function impMsg(t){const m=$id('impMsg');m.hidden=!t;m.textContent=t||''}
 function impReset(){impPend=null;$id('impPrev').hidden=true;$id('impApplica').hidden=$id('impAnnulla').hidden=true;impMsg('')}
-function apriImp(){impReset();$id('impSum').innerHTML=impRiassunto(impAttuali());$id('impDlg').showModal()}
+function apriImp(){const sp=$id('settingsPop');sp.hidden=true;$id('bSet').setAttribute('aria-expanded','false');closeNav();impReset();$id('impSum').innerHTML=impRiassunto(impAttuali());$id('impDlg').showModal()}
 function impEsporta(){
   const o=impAttuali(),out={app:IMP_APP,formato:1,esportato:new Date().toISOString(),impostazioni:o};
   const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
@@ -1123,8 +1114,8 @@ async function impLeggi(file){
     let j;try{j=JSON.parse(await file.text())}catch{throw new Error('Il file non è un JSON valido.')}
     if(!j||typeof j!=='object'||j.app!==IMP_APP||j.formato!==1||!j.impostazioni||typeof j.impostazioni!=='object')throw new Error('Non è un file di impostazioni di questa app (o è di una versione più recente).');
     const s=j.impostazioni,o={alias:normAlias(s.alias),soglie:normSoglie(s.soglie),carburante:normCarb(s.carburante),
-      tema:TEMI[s.tema]?s.tema:'',miaAzienda:typeof s.miaAzienda==='string'&&s.miaAzienda.length<=120?s.miaAzienda:''};
-    if(!Object.keys(o.alias).length&&!Object.keys(o.soglie).length&&!o.carburante.length&&!o.tema&&!o.miaAzienda)throw new Error('Il file non contiene impostazioni riconosciute.');
+      tema:impOk(TEMI,s.tema)?s.tema:'',testo:impOk(TESTI,s.testo)?s.testo:'',larghezza:impOk(LARGH,s.larghezza)?s.larghezza:'',miaAzienda:typeof s.miaAzienda==='string'&&s.miaAzienda.length<=120?s.miaAzienda:''};
+    if(!Object.keys(o.alias).length&&!Object.keys(o.soglie).length&&!o.carburante.length&&!o.tema&&!o.testo&&!o.larghezza&&!o.miaAzienda)throw new Error('Il file non contiene impostazioni riconosciute.');
     impPend=o;$id('impPrevSum').innerHTML=impRiassunto(o);$id('impPrev').hidden=false;$id('impApplica').hidden=$id('impAnnulla').hidden=false;
   }catch(err){impMsg(err.message||String(err))}
 }
@@ -1133,7 +1124,7 @@ async function impApplica(){
   if(sost){for(const k of Object.keys(ALIAS))delete ALIAS[k];for(const k of Object.keys(SOGLIE))delete SOGLIE[k]}
   Object.assign(ALIAS,o.alias);Object.assign(SOGLIE,o.soglie);
   try{localStorage.setItem('fe_alias',JSON.stringify(ALIAS));localStorage.setItem('fe_soglie',JSON.stringify(SOGLIE))}catch{toast('Impossibile salvare le impostazioni in questo browser',4000)}
-  if(o.tema)setTheme(o.tema);
+  if(o.tema)Kit.theme.set(o.tema);if(o.testo)Kit.fontSize.set(o.testo);if(o.larghezza)Kit.layout.set(o.larghezza);
   if(o.miaAzienda){myId=o.miaAzienda;try{localStorage.setItem('fe_my',myId)}catch{}
     if(ALL.length&&[...$id('my').options].some(x=>x.value===myId)){$id('my').value=myId;SELS.forEach(f=>f());F.dir='';classify();apply()}}
   // fornitori di carburante: dove i file sono caricati si rileggono gli allegati, altrimenti si salva soltanto la scelta
@@ -1214,7 +1205,7 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
 const topBar=$id('top');
 const closeNav=()=>{topBar.classList.remove('open');$id('bMenu').setAttribute('aria-expanded','false')};
 $id('bMenu').onclick=()=>{const o=topBar.classList.toggle('open');$id('bMenu').setAttribute('aria-expanded',String(o));hideMenu()};
-$id('hActions').addEventListener('click',e=>{const b=e.target.closest('.kit-btn,.kit-seg button');if(b&&b.id!=='bRecent'&&innerWidth<=1100)closeNav()});
+$id('hActions').addEventListener('click',e=>{const b=e.target.closest('.kit-btn,.kit-seg button');if(b&&b.id!=='bRecent'&&!b.closest('#settingsDd')&&innerWidth<=1100)closeNav()});
 document.addEventListener('click',e=>{if(!e.target.closest('#top')&&!e.target.closest('#recentMenu'))closeNav()});
 addEventListener('resize',()=>{hideMenu();if(innerWidth>1100)closeNav()});
 function toTop(){scrollTo({top:0});const c=$id('content');if(c)c.scrollTop=0}
@@ -1308,48 +1299,11 @@ function enhanceSelect(sel){
   });
   SELS.push(sync);sync();
 }
-/* campo di testo con suggerimenti (cliente / fornitore) */
-function enhanceCombo(inp,getList){
-  const wrap=document.createElement('div');wrap.className='sel';
-  inp.parentNode.insertBefore(wrap,inp);wrap.appendChild(inp);
-  const chev=document.createElement('button');chev.type='button';chev.className='sel-chev';chev.tabIndex=-1;chev.setAttribute('aria-label','Mostra elenco');chev.innerHTML=ICO('chev');wrap.appendChild(chev);
-  const pop=document.createElement('div');pop.className='pop';pop.hidden=true;wrap.appendChild(pop);
-  const close=()=>{pop.hidden=true;inp.setAttribute('aria-expanded','false')};
-  const draw=()=>{
-    const qq=inp.value.toLowerCase().split(' — ')[0].trim(),all=getList();
-    const hit=(qq?all.filter(x=>x.toLowerCase().includes(qq)):all);
-    const part=hit.slice(0,60);
-    if(!part.length){close();return}
-    pop.innerHTML='<div class="plist" role="listbox">'+part.map(x=>{const i=x.lastIndexOf(' — ');const t=i>0?x.slice(0,i):x,s=i>0?x.slice(i+3):'';
-      return`<div class="opt" role="option" data-v="${esc(x)}"><span class="ot"><b>${esc(t)}</b>${s?`<small>${esc(s)}</small>`:''}</span></div>`}).join('')
-      +(hit.length>60?`<div class="pempty">Altri ${hit.length-60} risultati: continua a scrivere per restringere</div>`:'')+'</div>';
-    const f=pop.querySelector('.opt');if(f)f.classList.add('act');
-    if(pop.hidden){closePop();pop.hidden=false;inp.setAttribute('aria-expanded','true');openPop=close;popPlace(wrap,pop)}
-  };
-  chev.addEventListener('mousedown',e=>e.preventDefault());
-  chev.addEventListener('click',()=>{if(!pop.hidden){close();openPop=null}else{inp.focus();draw()}});
-  inp.addEventListener('input',draw);
-  inp.addEventListener('focus',draw);
-  inp.addEventListener('keydown',e=>{
-    if(pop.hidden){if(e.key==='ArrowDown')draw();return}
-    if(e.key==='ArrowDown'){e.preventDefault();moveAct(pop,1)}
-    else if(e.key==='ArrowUp'){e.preventDefault();moveAct(pop,-1)}
-    else if(e.key==='Enter'){const a=pop.querySelector('.opt.act');if(a){e.preventDefault();inp.value=a.dataset.v;close();openPop=null;inp.dispatchEvent(new Event('input',{bubbles:true}))}}
-    else if(e.key==='Tab')close();
-  });
-  pop.addEventListener('mousedown',e=>e.preventDefault());
-  pop.addEventListener('click',e=>{const o=e.target.closest('.opt');if(o){e.preventDefault();inp.value=o.dataset.v;close();openPop=null;inp.dispatchEvent(new Event('input',{bubbles:true}))}});
-  pop.addEventListener('mousemove',e=>{const o=e.target.closest('.opt');if(o&&!o.classList.contains('act')){const a=pop.querySelector('.opt.act');if(a)a.classList.remove('act');o.classList.add('act')}});
-}
 ['my','per','td','demoN','sgVei'].forEach(i=>enhanceSelect($id(i)));
-enhanceCombo($id('cp'),()=>CP_OPTS);
-/* tema: un solo pulsante con menu */
-(()=>{
-  const btn=$id('bTheme'),menu=$id('themeMenu');
-  const close=()=>{menu.hidden=true;btn.setAttribute('aria-expanded','false')};
-  btn.onclick=()=>{if(!menu.hidden){close();openPop=null;return}closePop();menu.hidden=false;btn.setAttribute('aria-expanded','true');openPop=close};
-  menu.onclick=e=>{const o=e.target.closest('[data-th]');if(o){setTheme(o.dataset.th);close();openPop=null}};
-})();
+/* campo «Cliente / fornitore»: Kit.combo. Le voci sono «Nome — P.IVA»; si cerca nel testo prima di « — » (così, scelta una voce, l'elenco resta quello) */
+Kit.combo($id('cp'),{filter:false,max:60,empty:'',autoActive:true,items:q=>{
+  const qq=q.split(' — ')[0].trim(),hit=qq?CP_OPTS.filter(x=>x.toLowerCase().includes(qq)):CP_OPTS;
+  return hit.map(x=>{const k=x.lastIndexOf(' — ');return k>0?{value:x,label:x.slice(0,k),hint:x.slice(k+3)}:{value:x,label:x}})}});
 /* il pannello dei filtri si chiude con un clic fuori */
 document.addEventListener('mousedown',e=>{
   if(!e.target.closest('#adv,#fbtn,#myBadge,.kit-chip'))$id('adv').classList.remove('open');

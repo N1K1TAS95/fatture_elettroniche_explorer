@@ -13,9 +13,9 @@
     --in: var(--sp);
     --row: 8px;
     --cell: 12px;
-    --rad: 12px;
-    --hh: 80px;
-    --ctl: 40px
+    --rad: var(--kit-rad);
+    --hh: var(--kit-hh);
+    --ctl: var(--kit-ctl)
 }
 
 @media (max-width: 760px) {
@@ -26,65 +26,23 @@
 
 /* ================================= */
 :root {
-    --bg: #f4f5f8;
-    --card: #fff;
-    --ink: #18202c;
-    --mute: #6a7587;
-    --line: #e4e8ee;
-    --line2: #eef1f5;
-    --acc: #2559d8;
-    --acc-ink: #fff;
-    --acc-soft: #e9effd;
-    --neg: #c0392b;
-    --pos: #17803f;
-    --warn: #b56a00;
-    --c1: #2f6fe4;
-    --c2: #e39320;
-    --hover: #f1f5ff;
-    --shadow: 0 1px 2px rgba(20, 30, 50, .05), 0 6px 20px rgba(20, 30, 50, .05);
-    color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-        --bg: #0f1319;
-        --card: #171d26;
-        --ink: #e8edf4;
-        --mute: #8d99ab;
-        --line: #262e3a;
-        --line2: #1f2630;
-        --acc: #6ea2ff;
-        --acc-ink: #0b1220;
-        --acc-soft: #1b2a45;
-        --neg: #ff7d6e;
-        --pos: #4fca8b;
-        --warn: #f0b04e;
-        --c1: #6ea2ff;
-        --c2: #f2a84c;
-        --hover: #1c2736;
-        --shadow: none;
-        color-scheme: dark
-    }
-}
-
-:root[data-theme="dark"] {
-    --bg: #0f1319;
-    --card: #171d26;
-    --ink: #e8edf4;
-    --mute: #8d99ab;
-    --line: #262e3a;
-    --line2: #1f2630;
-    --acc: #6ea2ff;
-    --acc-ink: #0b1220;
-    --acc-soft: #1b2a45;
-    --neg: #ff7d6e;
-    --pos: #4fca8b;
-    --warn: #f0b04e;
-    --c1: #6ea2ff;
-    --c2: #f2a84c;
-    --hover: #1c2736;
-    --shadow: none;
-    color-scheme: dark
+    /* i colori dell'app sono quelli del kit (tema chiaro/scuro: kit.css, impostazioni: Kit.theme) */
+    --bg: var(--kit-bg);
+    --card: var(--kit-card);
+    --ink: var(--kit-ink);
+    --mute: var(--kit-mute);
+    --line: var(--kit-line);
+    --line2: var(--kit-line-soft);
+    --acc: var(--kit-accent);
+    --acc-ink: var(--kit-accent-ink);
+    --acc-soft: var(--kit-accent-soft);
+    --neg: var(--kit-danger);
+    --pos: var(--kit-success);
+    --warn: var(--kit-warning);
+    --c1: var(--kit-c1);
+    --c2: var(--kit-c2);
+    --hover: var(--kit-hover);
+    --shadow: var(--kit-shadow)
 }
 
 * {
@@ -98,7 +56,7 @@ html, body {
 body {
     background: var(--bg);
     color: var(--ink);
-    font: 14px/1.45 system-ui, "Segoe UI", Roboto, sans-serif;
+    font: 1rem/1.45 var(--kit-font);
     -webkit-font-smoothing: antialiased
 }
 
@@ -126,7 +84,7 @@ header {
 }
 
 header h1 {
-    font-size: 16px;
+    font-size: 1.143rem;
     margin: 0 10px 0 0;
     font-weight: 700;
     letter-spacing: -.01em;
@@ -147,7 +105,7 @@ header h1 span {
 #status {
     color: var(--mute);
     margin-left: auto;
-    font-size: 12.5px;
+    font-size: 0.893rem;
     text-align: right;
     white-space: nowrap;
     overflow: hidden;
@@ -193,7 +151,7 @@ main {
     border: 1px solid var(--line);
     border-radius: 10px;
     background: var(--card);
-    font-size: 15px;
+    font-size: 1.071rem;
     box-shadow: var(--shadow)
 }
 
@@ -230,7 +188,7 @@ main {
 
 .years .lbl {
     color: var(--mute);
-    font-size: 12px;
+    font-size: 0.857rem;
     margin-right: 2px
 }
 
@@ -254,7 +212,7 @@ main {
     color: var(--acc-ink);
     border-radius: 99px;
     padding: 0 7px;
-    font-size: 11.5px;
+    font-size: 0.821rem;
     font-weight: 700
 }
 
@@ -278,7 +236,7 @@ main {
 
 
 .kit-stat b.sm {
-    font-size: 19px
+    font-size: 1.357rem
 }
 
 
@@ -286,6 +244,11 @@ main {
 
 
 
+
+/* le tab compaiono solo quando ci sono fatture (app.js imposta display: flex) */
+#tabs {
+    display: none
+}
 
 .kit-tabs .sp {
     flex: 1
@@ -319,7 +282,7 @@ th {
     top: var(--hh);
     background: var(--card);
     cursor: pointer;
-    font-size: 11.5px;
+    font-size: 0.821rem;
     font-weight: 600;
     color: var(--mute);
     text-transform: uppercase;
@@ -360,7 +323,7 @@ td.wrapc {
 
 td .sub {
     color: var(--mute);
-    font-size: 12px;
+    font-size: 0.857rem;
     font-variant-numeric: tabular-nums
 }
 
@@ -393,7 +356,7 @@ tbody tr.sel td {
     padding: 16px;
     text-align: center;
     color: var(--mute);
-    font-size: 13px
+    font-size: 0.929rem
 }
 
 .empty {
@@ -405,11 +368,11 @@ tbody tr.sel td {
 .empty h2 {
     color: var(--ink);
     margin: 0 0 8px;
-    font-size: 20px
+    font-size: 1.429rem
 }
 
 .empty .ico {
-    font-size: 44px;
+    font-size: 3.143rem;
     margin-bottom: 6px
 }
 
@@ -427,13 +390,13 @@ tbody tr.sel td {
 }
 
 .hello h2 {
-    font-size: 22px;
+    font-size: 1.571rem;
     margin: 6px 0 8px;
     color: var(--ink)
 }
 
 .hello .kit-btn {
-    font-size: 15px;
+    font-size: 1.071rem;
     padding: 10px 20px;
     margin-top: 10px
 }
@@ -467,7 +430,7 @@ tbody tr.sel td {
 }
 
 #dhead h2 {
-    font-size: 16px;
+    font-size: 1.143rem;
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -509,11 +472,11 @@ tbody tr.sel td {
 }
 
 .summary .kit-stat b {
-    font-size: 18px
+    font-size: 1.286rem
 }
 
 .summary .kit-stat.big b {
-    font-size: 24px;
+    font-size: 1.714rem;
     color: var(--acc)
 }
 
@@ -540,7 +503,7 @@ tbody tr.sel td {
 
 .box2 h3 {
     margin: 0 0 8px;
-    font-size: 11.5px;
+    font-size: 0.821rem;
     text-transform: uppercase;
     letter-spacing: .05em;
     color: var(--mute);
@@ -549,7 +512,7 @@ tbody tr.sel td {
 
 .box2 h4 {
     margin: 0 0 4px;
-    font-size: 15px
+    font-size: 1.071rem
 }
 
 .box2 tbody tr {
@@ -586,7 +549,7 @@ pre.xml {
     border-radius: 10px;
     padding: 12px;
     overflow: auto;
-    font: 12px/1.55 ui-monospace, Consolas, monospace;
+    font: 0.857rem/1.55 ui-monospace, Consolas, monospace;
     white-space: pre
 }
 
@@ -598,7 +561,7 @@ pre.xml {
 .legend {
     display: flex;
     gap: 14px;
-    font-size: 12px;
+    font-size: 0.857rem;
     color: var(--mute);
     padding: var(--sp) var(--sp) 0;
     flex-wrap: wrap
@@ -706,7 +669,7 @@ rect.mbar:hover {
 }
 
 @media (min-width: 1101px) and (max-width: 1500px) {
-    #bImp .lbl {
+    #bSet .lbl {
         display: none
     }
 }
@@ -812,7 +775,7 @@ rect.mbar:hover {
     }
 
     .kit-stat b {
-        font-size: 16px
+        font-size: 1.143rem
     }
 
     .kit-stat:nth-child(odd) {
@@ -924,7 +887,7 @@ rect.mbar:hover {
 }
 
 .mf {
-    font-size: 12px;
+    font-size: 0.857rem;
     color: var(--mute);
     margin: 6px 8px 4px;
     line-height: 1.4
@@ -945,7 +908,7 @@ rect.mbar:hover {
 }
 
 .rec .ri {
-    font-size: 22px
+    font-size: 1.571rem
 }
 
 .rec .rt {
@@ -989,7 +952,7 @@ rect.mbar:hover {
 }
 
 .hello .hbtns .kit-btn {
-    font-size: 15px;
+    font-size: 1.071rem;
     padding: 10px 20px
 }
 
@@ -999,7 +962,7 @@ rect.mbar:hover {
 }
 
 #recentHello h3 {
-    font-size: 12px;
+    font-size: 0.857rem;
     text-transform: uppercase;
     letter-spacing: .05em;
     color: var(--mute);
@@ -1023,7 +986,7 @@ body.drag::after {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    font-size: 1.571rem;
     font-weight: 650;
     color: var(--acc);
     z-index: 90;
@@ -1307,7 +1270,7 @@ header h1 {
     align-items: center;
     gap: 10px;
     margin: 0;
-    font-size: 17px;
+    font-size: 1.214rem;
     flex: none
 }
 
@@ -1338,7 +1301,7 @@ header h1 b {
     color: var(--acc);
     border-radius: 99px;
     font-weight: 600;
-    font-size: 13.5px;
+    font-size: 0.964rem;
     cursor: pointer;
     min-width: 0;
     max-width: 340px
@@ -1421,7 +1384,7 @@ header h1 b {
 .hello .kit-btn, .hello .hbtns .kit-btn {
     height: 44px;
     padding: 0 20px;
-    font-size: 15px;
+    font-size: 1.071rem;
     margin-top: 10px
 }
 
@@ -1489,7 +1452,7 @@ td.c-att .kit-badge {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    font-size: 13px;
+    font-size: 0.929rem;
     font-weight: 550;
     color: var(--mute);
     min-width: 0
@@ -1501,7 +1464,7 @@ td.c-att .kit-badge {
 
 .f small {
     font-weight: 400;
-    font-size: 12.5px;
+    font-size: 0.893rem;
     line-height: 1.4
 }
 
@@ -1512,7 +1475,7 @@ td.c-att .kit-badge {
     background: var(--bg);
     border-radius: 10px;
     padding: 0 12px;
-    font-size: 14.5px;
+    font-size: 1.036rem;
     font-weight: 400;
     color: var(--ink)
 }
@@ -1548,7 +1511,7 @@ td.c-att .kit-badge {
     align-items: center;
     gap: 8px;
     color: var(--ink);
-    font-size: 14px;
+    font-size: 1rem;
     cursor: pointer
 }
 
@@ -1663,7 +1626,7 @@ td.c-att .kit-badge {
 }
 
 .pg {
-    font-size: 11px;
+    font-size: 0.786rem;
     text-transform: uppercase;
     letter-spacing: .05em;
     color: var(--mute);
@@ -1680,7 +1643,7 @@ td.c-att .kit-badge {
     cursor: pointer;
     color: var(--ink);
     font-weight: 400;
-    font-size: 14px
+    font-size: 1rem
 }
 
 .opt .ot {
@@ -1700,7 +1663,7 @@ td.c-att .kit-badge {
 
 .opt small {
     color: var(--mute);
-    font-size: 12px;
+    font-size: 0.857rem;
     font-weight: 400
 }
 
@@ -1725,7 +1688,7 @@ td.c-att .kit-badge {
 .pempty {
     padding: 12px;
     color: var(--mute);
-    font-size: 13px;
+    font-size: 0.929rem;
     text-align: center;
     font-weight: 400
 }
@@ -1819,7 +1782,7 @@ td.c-att .kit-badge {
         margin: 0;
         text-align: left;
         white-space: normal;
-        font-size: 12.5px
+        font-size: 0.893rem
     }
 
     #status:empty {
@@ -1856,7 +1819,7 @@ td.c-att .kit-badge {
     }
 
     #adv input:not([type=checkbox]), .sel-btn {
-        font-size: 16px
+        font-size: 1.143rem
     }
 
     .ffoot .kit-btn {
@@ -1878,7 +1841,7 @@ td.c-att .kit-badge {
 
     .kit-tab {
         padding: 0 9px;
-        font-size: 13px
+        font-size: 0.929rem
     }
 
     .kit-tabs .kit-btn {
@@ -1962,41 +1925,23 @@ td.c-att .kit-badge {
     max-width: none
 }
 
-#themeMenu {
-    width: 230px;
-    min-width: 0
-}
-
-#themeMenu .opt > svg:first-child {
-    color: var(--mute);
-    width: 18px;
-    height: 18px
-}
-
-#themeMenu .opt > svg:last-child {
-    visibility: hidden
-}
-
-#themeMenu .opt.on > svg:last-child {
-    visibility: visible
-}
-
-#bTheme .lbl {
+/* impostazioni (tema, testo, larghezza): pannello del kit nell'intestazione */
+#bSet .lbl {
     display: none
 }
 
 @media (max-width: 1100px) {
-    #bTheme .lbl {
+    #bSet .lbl {
         display: inline;
         flex: 1;
         text-align: left
     }
 
-    #bTheme {
+    #settingsDd, #bSet {
         width: 100%
     }
 
-    #themeMenu {
+    #settingsPop {
         position: static;
         width: 100%;
         margin-top: 6px;
@@ -2099,7 +2044,7 @@ td.c-att .kit-badge {
 
     #dhead h2 {
         white-space: normal;
-        font-size: 15px
+        font-size: 1.071rem
     }
 
     #dhead .t small {
@@ -2191,34 +2136,9 @@ td.c-att .kit-badge {
 }
 
 /* campo con suggerimenti: freccia come negli altri menu */
-#adv .sel > input {
-    padding-right: 38px
-}
 
-.sel-chev {
-    position: absolute;
-    right: 1px;
-    top: 1px;
-    width: 36px;
-    height: calc(var(--ctl) - 2px);
-    display: grid;
-    place-items: center;
-    border: 0;
-    background: none;
-    color: var(--mute);
-    cursor: pointer;
-    border-radius: 0 9px 9px 0
-}
 
-.sel-chev svg {
-    width: 16px;
-    height: 16px;
-    transition: transform .15s
-}
 
-.sel > input[aria-expanded=true] ~ .sel-chev svg {
-    transform: rotate(180deg)
-}
 
 /* scrollbar sottili, nei colori del tema */
 :root {
@@ -2248,7 +2168,7 @@ td.c-att .kit-badge {
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    font-size: 12px;
+    font-size: 0.857rem;
     line-height: 1;
     font-variant-numeric: tabular-nums
 }
@@ -2310,7 +2230,7 @@ td.c-att .kit-badge {
 
 #content>.hello>.hsec>h3 {
     margin: 0 0 4px;
-    font-size: 12px;
+    font-size: 0.857rem;
     text-transform: uppercase;
     letter-spacing: .05em;
     color: var(--mute);
@@ -2415,7 +2335,7 @@ td.c-att .kit-badge {
 
 .rf-wrap .rf-note {
     margin: 0 0 var(--sp);
-    font-size: 12.5px
+    font-size: 0.893rem
 }
 
 .rf-wrap table + .rf-note {
@@ -2483,7 +2403,7 @@ td.c-att .kit-badge {
 
 .rf-wrap tr.rf-subh td {
     padding-top: calc(var(--row) * 3);
-    font-size: 11.5px;
+    font-size: 0.821rem;
     font-weight: 600;
     letter-spacing: .05em;
     text-transform: uppercase;
@@ -2499,7 +2419,7 @@ td.c-att .kit-badge {
     display: inline-block;
     min-width: 40px;
     text-align: right;
-    font-size: 12.5px;
+    font-size: 0.893rem;
     color: var(--mute)
 }
 
@@ -2522,7 +2442,7 @@ td.c-att .kit-badge {
 
 .rf-wrap .rf-sub {
     margin: calc(var(--sp) * 2) 0 var(--sp);
-    font-size: 14px
+    font-size: 1rem
 }
 
 .rf-wrap .rf-steps {
@@ -2567,7 +2487,7 @@ td.c-att .kit-badge {
     margin-top: var(--sp);
     padding-top: var(--sp);
     border-top: 1px solid var(--line);
-    font-size: 13px
+    font-size: 0.929rem
 }
 
 .rf-cfg .sp {
@@ -2595,4 +2515,19 @@ body.on-rif #dirSeg {
 .rf-wrap .rf-w {
     white-space: normal;
     overflow-wrap: anywhere
+}
+
+/* larghezza del contenuto: «Centrata» limita intestazione e pagina alla larghezza del kit; «Tutta la pagina» (base) no */
+:root[data-layout="boxed"] header {
+    padding-inline: max(20px, calc((100% - var(--kit-container-w)) / 2 + 4px))
+}
+
+:root[data-layout="boxed"] main {
+    max-width: var(--kit-container-w);
+    margin-inline: auto
+}
+
+/* campo «Cliente / fornitore» (Kit.combo): spazio per la freccia */
+#adv .kit-combo > input {
+    padding-right: 2.5rem
 }

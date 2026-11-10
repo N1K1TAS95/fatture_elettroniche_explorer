@@ -20,6 +20,7 @@ const ASSETS = [
   'app.js',
   'theme.js',
   'esempi.js',
+  'fonts/inter-var.woff2',
   'icon.svg',
   'manifest.webmanifest',
   'icons/icon-192.png',

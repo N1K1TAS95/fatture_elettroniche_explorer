@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="it">
+<html lang="it" data-layout="fluid">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; object-src blob:; frame-src blob:; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; font-src 'self'; img-src 'self' data:; object-src blob:; frame-src blob:; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="Esplora e consulta le fatture elettroniche italiane (FatturaPA) direttamente nel browser, senza caricare nulla online.">
@@ -51,10 +51,42 @@
     <button class="kit-btn" id="bRecent" style="display:none" title="Cartelle e fatture aperte di recente"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span class="lbl">Recenti</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
     <input type="file" id="fFiles" accept=".xml,.p7m" multiple hidden>
     <button class="kit-btn" id="bRescan" disabled title="Rilegge la cartella e importa i file nuovi"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span class="lbl">Aggiorna</span></button>
-    <button class="kit-btn" id="bImp" title="Impostazioni: esporta o importa alias, soglie e altro" aria-label="Impostazioni"><svg class="i" aria-hidden="true"><use href="#i-gear"/></svg><span class="lbl">Impostazioni</span></button>
     <label class="kit-btn" id="bFallback" style="display:none">Scegli cartella (modalità compatibile)
       <input type="file" id="fFallback" webkitdirectory multiple hidden></label>
-    <div class="sel" id="themeSeg"><button class="kit-btn" id="bTheme" aria-haspopup="menu" aria-expanded="false" title="Tema"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="lbl" id="themeLbl">Automatico</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button><div class="pop r" id="themeMenu" role="menu" hidden><div class="opt" role="menuitemradio" data-th="auto"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="ot"><b>Automatico</b><small>Segue il sistema</small></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span class="ot"><b>Chiaro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg><span class="ot"><b>Scuro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div></div></div>
+    <div class="kit-dropdown" id="settingsDd">
+      <button class="kit-btn" id="bSet" data-kit-toggle="#settingsPop" aria-haspopup="true" aria-expanded="false" title="Impostazioni: tema, testo, larghezza, alias e soglie"><svg class="i" aria-hidden="true"><use href="#i-gear"/></svg><span class="lbl">Impostazioni</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
+      <div class="kit-pop kit-pop-right kit-settings" id="settingsPop" role="group" aria-label="Impostazioni" hidden>
+        <div class="kit-settings-row">
+          <span class="kit-settings-label">Tema</span>
+          <div class="kit-seg" role="group" aria-label="Tema">
+            <button type="button" data-kit-theme-set="auto"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg>Auto</button>
+            <button type="button" data-kit-theme-set="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg>Chiaro</button>
+            <button type="button" data-kit-theme-set="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg>Scuro</button>
+          </div>
+        </div>
+        <div class="kit-settings-row">
+          <span class="kit-settings-label">Dimensione del testo</span>
+          <div class="kit-seg" role="group" aria-label="Dimensione del testo">
+            <button type="button" data-kit-fs-set="md" aria-label="Normale" title="Normale">A</button>
+            <button type="button" data-kit-fs-set="lg" aria-label="Grande" title="Grande">A</button>
+            <button type="button" data-kit-fs-set="xl" aria-label="Molto grande" title="Molto grande">A</button>
+          </div>
+        </div>
+        <div class="kit-settings-row">
+          <span class="kit-settings-label">Larghezza della pagina</span>
+          <div class="kit-seg" role="group" aria-label="Larghezza della pagina">
+            <button type="button" data-kit-layout-set="boxed">Centrata</button>
+            <button type="button" data-kit-layout-set="fluid">Tutta la pagina</button>
+          </div>
+          <small>Si nota sugli schermi più larghi.</small>
+        </div>
+        <div class="kit-settings-row">
+          <span class="kit-settings-label">Alias, soglie e altro</span>
+          <button class="kit-btn" id="bImp" type="button" title="Esporta o importa alias, soglie, fornitori di carburante e aspetto"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Esporta o importa…</button>
+        </div>
+        <div class="kit-settings-foot"><button type="button" class="kit-btn kit-btn-ghost" data-kit-reset>Ripristina l'aspetto</button></div>
+      </div>
+    </div>
   </div>
 </header>
 <div id="recentMenu" class="menu"></div>
@@ -169,7 +201,7 @@
 <dialog class="kit-dialog" id="impDlg" aria-labelledby="impTit" style="--kit-dialog-w:520px"><div id="impForm">
   <div class="kit-card-head"><span id="impTit">Impostazioni</span></div>
   <div class="kit-card-body kit-stack">
-    <p class="imp-p">Alias dei veicoli, soglie e controlli, fornitori di carburante, tema e azienda scelta restano in questo browser. Salvali in un file per usarli su un altro browser o come copia di sicurezza.</p>
+    <p class="imp-p">Alias dei veicoli, soglie e controlli, fornitori di carburante, aspetto (tema, testo e larghezza) e azienda scelta restano in questo browser. Salvali in un file per usarli su un altro browser o come copia di sicurezza.</p>
     <dl class="imp-sum" id="impSum"></dl>
     <div class="imp-act">
       <button class="kit-btn" type="button" id="impEsporta"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Esporta in un file</button>

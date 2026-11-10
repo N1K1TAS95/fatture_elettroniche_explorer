@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent / "html"
 
 # Content-Security-Policy dell'app. Tienila allineata a nginx.conf e al <meta> di html/index.html.
 CSP_PAGE = (
-    "default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; "
+    "default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; font-src 'self'; "
     "img-src 'self' data:; object-src blob:; frame-src blob:; manifest-src 'self'; "
     "worker-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
 )
