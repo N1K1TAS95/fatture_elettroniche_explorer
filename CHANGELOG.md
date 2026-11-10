@@ -4,6 +4,10 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+### Modificato
+- L'interfaccia comincia a usare [Dashboard Kit](https://github.com/N1K1TAS95/dashboard-kit) 0.6.0, incluso in `html/` (`kit.css`, `kit.js`) senza CDN né richieste di rete. Passano al kit gli avvisi temporanei (toast), i quattro dialoghi (alias, soglie, impostazioni, file non letti), la schermata di avanzamento durante la lettura (la barra scorre da sola quando non si sa quanto manca) e il pannello del dettaglio fattura, con lo stesso aspetto e gli stessi comandi di prima.
+- `tests/check.py` non considera più una richiesta esterna l'URI del namespace SVG (`http://www.w3.org/2000/svg`), che nel codice del kit serve solo a creare gli elementi SVG.
+
 ## [1.6.0] - 2026-11-01
 
 Controlli sui rifornimenti ed esportazione delle impostazioni.

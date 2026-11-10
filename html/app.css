@@ -626,111 +626,18 @@ tbody tr.sel td {
     margin-top: 10px
 }
 
-/* overlay */
-#overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 15, 25, .5);
-    backdrop-filter: blur(2px);
-    z-index: 60;
-    display: none;
-    align-items: center;
-    justify-content: center
-}
-
-#overlay .box {
-    background: var(--card);
-    padding: 24px 28px;
-    border-radius: 14px;
-    min-width: 340px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, .35)
-}
-
-.bar {
-    height: 6px;
-    background: var(--line);
-    border-radius: 9px;
-    overflow: hidden;
-    margin-top: 12px
-}
-
-.bar i {
-    display: block;
-    height: 100%;
-    background: var(--acc);
-    width: 0;
-    transition: width .15s
-}
-
-/* dettaglio: pannello affiancato alla lista (overlay solo su schermi stretti) */
+/* dettaglio: pannello affiancato alla lista. Struttura, velo e passaggio a pannello sovrapposto sotto i 1250px
+   sono del kit (kit-split-lg, kit-split-panel, kit-split-head, kit-split-body); qui solo le misure dell'app. */
 #split {
-    display: block
+    --kit-hh: var(--hh)
 }
 
-#split.open {
-    display: grid;
-    grid-template-columns:minmax(0, 1fr) minmax(640px, var(--dw, 50%));
-    gap: 16px;
-    align-items: start
+#split.is-open {
+    grid-template-columns: minmax(0, 1fr) minmax(640px, var(--dw, 50%))
 }
 
 #left {
     min-width: 0
-}
-
-#drawer {
-    display: none
-}
-
-#split.open #drawer {
-    display: flex;
-    flex-direction: column;
-    position: sticky;
-    top: calc(var(--hh) + 10px);
-    height: calc(100vh - var(--hh) - 22px);
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    overflow: hidden
-}
-
-#scrim {
-    display: none
-}
-
-@media (max-width: 1250px) {
-    #split.open {
-        display: block
-    }
-
-    #split.open #drawer {
-        position: fixed;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        height: auto;
-        width: min(860px, 100%);
-        z-index: 45;
-        border-radius: 0;
-        box-shadow: -10px 0 40px rgba(0, 0, 0, .3)
-    }
-
-    #scrim {
-        display: block;
-        position: fixed;
-        inset: 0;
-        background: rgba(10, 15, 25, .35);
-        z-index: 44;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity .2s
-    }
-
-    #scrim.on {
-        opacity: 1;
-        pointer-events: auto
-    }
 }
 
 #dhead {
@@ -913,93 +820,52 @@ rect.mbar:hover {
     opacity: .75
 }
 
-dialog {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: var(--card);
-    color: var(--ink);
-    max-width: 700px
+/* Dialog: la struttura (riquadro, testata, corpo, piè di pagina, sfondo, animazione) è del kit (kit-dialog);
+   qui solo i contenuti propri dell'app. */
+#aliasForm, #sogliaForm {
+    display: contents
 }
 
-/* dialogo dell'alias: stessi colori, raggio, campi e piè di pagina del pannello dei filtri */
-#aliasDlg, #sogliaDlg , #impDlg {
-    width: min(440px, calc(100vw - 2 * var(--sp)));
-    padding: 20px;
-    border-radius: var(--rad);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, .4)
+.kit-dialog [hidden] {
+    display: none !important
 }
 
-#aliasForm, #sogliaForm, #impForm {
-    display: flex;
-    flex-direction: column;
-    gap: 18px
+.kit-card-foot .sp {
+    flex: 1
 }
 
-#aliasDlg .dlg-t, #sogliaDlg .dlg-t , #impDlg .dlg-t {
+.dlg-t {
     margin: 0;
-    font-size: 11.5px;
+    font-size: .82rem;
     text-transform: uppercase;
     letter-spacing: .05em;
-    color: var(--mute);
+    color: var(--kit-mute);
     font-weight: 600
 }
 
-#aliasDlg .dlg-veh, #sogliaDlg .dlg-veh , #impDlg .dlg-veh {
+.dlg-veh {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    margin-top: -10px
+    gap: 2px
 }
 
-#aliasDlg .dlg-veh span, #sogliaDlg .dlg-veh span , #impDlg .dlg-veh span {
-    font-size: 13px;
+.dlg-veh span {
+    font-size: .93rem;
     font-weight: 550;
-    color: var(--mute)
+    color: var(--kit-mute)
 }
 
-#aliasDlg .dlg-veh b, #sogliaDlg .dlg-veh b , #impDlg .dlg-veh b {
-    font-size: 20px
+.dlg-veh b {
+    font-size: 1.4rem
 }
 
-#aliasDlg input:not([type=checkbox]), #sogliaDlg input:not([type=checkbox]) , #impDlg input:not([type=checkbox]) {
-    height: var(--ctl);
-    width: 100%;
-    border: 1px solid var(--line);
-    background: var(--bg);
-    border-radius: 10px;
-    padding: 0 12px;
-    font-size: 14.5px;
-    font-weight: 400;
-    color: var(--ink)
+#errList div {
+    margin-bottom: 6px;
+    font-size: .93rem
 }
 
-#aliasDlg input:not([type=checkbox])::placeholder, #sogliaDlg input:not([type=checkbox])::placeholder , #impDlg input:not([type=checkbox])::placeholder {
-    color: var(--mute);
-    opacity: .8
-}
-
-#aliasDlg input:not([type=checkbox]):focus, #sogliaDlg input:not([type=checkbox]):focus , #impDlg input:not([type=checkbox]):focus {
-    border-color: var(--acc);
-    box-shadow: 0 0 0 3px var(--acc-soft);
-    outline: none
-}
-
-#aliasDlg .dlg-foot, #sogliaDlg .dlg-foot , #impDlg .dlg-foot {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    border-top: 1px solid var(--line2);
-    padding-top: var(--sp)
-}
-
-#aliasDlg .dlg-foot .btn, #sogliaDlg .dlg-foot .btn , #impDlg .dlg-foot .btn {
-    height: var(--ctl);
-    padding: 0 18px;
-    border-radius: 10px;
-    justify-content: center
-}
-
-#sogliaDlg {
+/* il menu del select dell'app sta dentro il dialog: non va tagliato */
+#sogliaDlg, #sogliaDlg > .kit-card-body {
     overflow: visible
 }
 
@@ -1014,29 +880,25 @@ dialog {
     grid-template-columns: 1fr 92px 52px;
     align-items: center;
     gap: 10px;
-    min-height: var(--ctl)
+    min-height: var(--kit-ctl)
 }
 
-#sogliaDlg .sg-row .chk {
+#sogliaDlg .sg-row .kit-check {
     grid-column: 1
 }
 
-#sogliaDlg .sg-row .chk:only-child {
+#sogliaDlg .sg-row .kit-check:only-child {
     grid-column: 1/-1
 }
 
-#sogliaDlg .sg-u {
-    font-size: 12.5px;
-    color: var(--mute)
+.sg-u {
+    font-size: .89rem;
+    color: var(--kit-mute)
 }
 
 #sogliaDlg input:disabled {
     opacity: .45;
     cursor: not-allowed
-}
-
-#sogliaDlg .dlg-foot .sp {
-    flex: 1
 }
 
 #sogliaDlg .f small {
@@ -1049,120 +911,55 @@ dialog {
     }
 }
 
-#impDlg {
-    width: min(520px, calc(100vw - 2 * var(--sp)))
-}
-
-#impDlg .imp-p, #impDlg .imp-note, #impDlg .imp-msg {
+.imp-p, .imp-note, .imp-msg {
     margin: 0;
-    font-size: 13px;
+    font-size: .93rem;
     line-height: 1.5;
-    color: var(--mute)
+    color: var(--kit-mute)
 }
 
-#impDlg .imp-msg {
-    color: var(--neg)
+.imp-msg {
+    color: var(--kit-danger)
 }
 
-#impDlg .imp-sum {
+.imp-sum {
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 0;
     margin: 0;
-    border: 1px solid var(--line);
+    border: 1px solid var(--kit-line);
     border-radius: 10px;
     overflow: hidden
 }
 
-#impDlg .imp-sum div {
+.imp-sum div {
     display: contents
 }
 
-#impDlg .imp-sum dt, #impDlg .imp-sum dd {
+.imp-sum dt, .imp-sum dd {
     margin: 0;
     padding: 8px 12px;
-    border-bottom: 1px solid var(--line2);
-    font-size: 13.5px
+    border-bottom: 1px solid var(--kit-line);
+    font-size: .96rem
 }
 
-#impDlg .imp-sum dt {
-    color: var(--mute)
+.imp-sum dt {
+    color: var(--kit-mute)
 }
 
-#impDlg .imp-sum dd {
+.imp-sum dd {
     text-align: right;
     font-weight: 600
 }
 
-#impDlg .imp-sum div:last-child dt, #impDlg .imp-sum div:last-child dd {
+.imp-sum div:last-child dt, .imp-sum div:last-child dd {
     border-bottom: 0
 }
 
-#impDlg .imp-act {
+.imp-act {
     display: flex;
     flex-wrap: wrap;
     gap: 10px
-}
-
-#impDlg .imp-act .btn {
-    height: var(--ctl);
-    border-radius: 10px;
-    padding: 0 14px
-}
-
-#impDlg #impPrev {
-    display: flex;
-    flex-direction: column;
-    gap: 14px
-}
-
-#impDlg #impPrev[hidden], #impDlg [hidden] {
-    display: none
-}
-
-#impDlg input[type=radio] {
-    appearance: auto;
-    width: 18px;
-    height: 18px;
-    padding: 0;
-    margin: 0;
-    border: 0;
-    background: none;
-    box-shadow: none;
-    accent-color: var(--acc)
-}
-
-#impDlg .imp-mode {
-    display: flex;
-    flex-direction: column;
-    gap: 10px
-}
-
-#impDlg .dlg-foot .sp {
-    flex: 1
-}
-
-dialog::backdrop {
-    background: rgba(0, 0, 0, .4)
-}
-
-#toast {
-    position: fixed;
-    left: 50%;
-    bottom: 24px;
-    transform: translateX(-50%);
-    background: var(--ink);
-    color: var(--bg);
-    padding: 8px 16px;
-    border-radius: 8px;
-    z-index: 70;
-    opacity: 0;
-    transition: opacity .2s;
-    pointer-events: none
-}
-
-#toast.on {
-    opacity: 1
 }
 
 /* responsive & filtri (in coda per vincere sulle regole base) */
@@ -1433,35 +1230,16 @@ body.drag::after {
     pointer-events: none
 }
 
-#split.full {
-    display: block
-}
-
-#split.full #left {
+/* #left ha display:flex con un id: la regola del kit (classi) non basterebbe */
+#split.is-full #left {
     display: none
 }
 
-#split.full #drawer {
-    display: flex;
-    position: static;
-    height: auto;
-    width: auto;
-    max-width: none;
-    margin: 0;
-    overflow: visible;
-    z-index: auto;
-    border-radius: 12px;
-    box-shadow: var(--shadow)
-}
-
-#split.full #dhead {
-    position: sticky;
-    top: var(--hh);
-    z-index: 6;
+#split.is-full #dhead {
     border-radius: var(--rad) var(--rad) 0 0
 }
 
-#split.full #dbody {
+#split.is-full #dbody {
     overflow: visible
 }
 
@@ -1492,7 +1270,7 @@ body.single #toolbar, body.single #stats, body.single #tabs, body.single #left, 
         color: #000
     }
 
-    header, #toolbar, #stats, #tabs, #left, #scrim, #toast, #overlay, .no-print, .menu {
+    header, #toolbar, #stats, #tabs, #left, .no-print, .menu {
         display: none !important
     }
 
@@ -1505,11 +1283,11 @@ body.single #toolbar, body.single #stats, body.single #tabs, body.single #left, 
         max-width: none
     }
 
-    #split, #split.open {
+    #split, #split.is-open {
         display: block !important
     }
 
-    #split #drawer, #split.open #drawer, #split.full #drawer {
+    #split #drawer, #split.is-open #drawer, #split.is-full #drawer {
         display: block !important;
         position: static !important;
         height: auto !important;
@@ -2466,17 +2244,17 @@ td.c-att .badge {
         grid-template-rows:minmax(0, 1fr)
     }
 
-    body.fixed:not(.single) #split.open {
+    body.fixed:not(.single) #split.is-open {
         grid-template-columns:minmax(0, 1fr) minmax(640px, var(--dw, 50%));
         align-items: stretch
     }
 
-    body.fixed:not(.single) #split.full {
+    body.fixed:not(.single) #split.is-full {
         display: block;
         overflow: auto
     }
 
-    body.fixed:not(.single) #split.full #dhead {
+    body.fixed:not(.single) #split.is-full #dhead {
         top: 0
     }
 
@@ -2500,7 +2278,7 @@ td.c-att .badge {
 }
 
 @media screen and (min-width: 1251px) {
-    body.fixed:not(.single) #split.open #drawer {
+    body.fixed:not(.single) #split.is-open #drawer {
         position: static;
         height: auto;
         min-height: 0

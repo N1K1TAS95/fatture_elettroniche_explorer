@@ -9,11 +9,13 @@
  * Funziona solo su HTTPS (o su localhost): vedi il README.
  * Dopo aver modificato i file dell'app, aumenta VERSION per ripulire la cache dei client.
  */
-const VERSION = '32';
+const VERSION = '33';
 const CACHE = 'fatture-elettroniche-explorer-v' + VERSION;
 const ASSETS = [
   './',
   'index.html',
+  'kit.css',
+  'kit.js',
   'app.css',
   'app.js',
   'theme.js',

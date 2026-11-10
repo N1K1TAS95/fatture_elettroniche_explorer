@@ -230,14 +230,18 @@ let ALL=[],view=[],ERR=[],entriesCur=null,rootName='',dirHandle=null;
 let CP_OPTS=[];
 let myId=localStorage.getItem('fe_my')||'';
 const F={q:'',dir:'',cp:'',anno:'',per:'',dal:'',al:'',td:'',min:'',max:'',dup:true};
+const SP=Kit.split('#split');
 let tab='fatt',sortF={k:'data',d:-1},shown=0,drawerIdx=-1,canon=new Map(),maxTot=1;
 const PAGE=200;
 const nm=p=>canon.get(p.id)||p.nome;
-function toast(t,ms=2200){const e=$id('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),ms)}
+function toast(t,ms=2200){Kit.toast(t,{duration:ms})}
 const META=/_(MT|NS|RC|NE|DT|AT|EC|MC|SE)_\d+/i;
 
 /* ====================== Scansione cartella ====================== */
-function progress(txt,frac){$id('overlay').style.display='flex';$id('ovText').textContent=txt;$id('ovBar').style.width=Math.round((frac||0)*100)+'%'}
+/* avanzamento a pieno schermo (Kit.progress): senza frazione la barra scorre da sola. progressEnd() lo chiude. */
+let PG=null;
+function progress(txt,frac){const v=frac==null?null:frac;if(PG)PG.update(txt,v);else PG=Kit.progress(txt,{value:v,delay:150})}
+function progressEnd(){if(PG){PG.close();PG=null}}
 async function walk(dir,prefix,out){
   for await(const[name,h]of dir.entries()){
     if(h.kind==='directory'){if(/^[.@#$]/.test(name))continue;await walk(h,prefix+name+'/',out)}
@@ -267,7 +271,7 @@ async function loadEntries(entries,root,key=root){
   // duplicati
   const seen=new Set();ALL.sort((a,b)=>a.path<b.path?-1:1);
   for(const d of ALL){const k=[d.ced.id,d.td,d.numero,d.data].join('|');d.dup=seen.has(k);seen.add(k)}
-  $id('overlay').style.display='none';
+  progressEnd();
   setupAfterLoad(entries.length,reused);
 }
 function setupAfterLoad(nFiles,reused){
@@ -732,7 +736,7 @@ async function applicaCarb(piva,on,quiet){
         }catch{falliti++}
         fatti++;
       }
-    }finally{$id('overlay').style.display='none'}
+    }finally{progressEnd()}
     const righe=docs.reduce((a,d)=>a+(d.car?d.car.rows.length:0),0);
     if(!righe&&!quiet){ // formato diverso: si torna come prima
       CARB_UTENTE=CARB_UTENTE.filter(x=>x!==piva);for(const d of docs)delete d.car;
@@ -740,7 +744,7 @@ async function applicaCarb(piva,on,quiet){
     }else if(righe&&!quiet)toast(`Letti ${righe.toLocaleString('it-IT')} rifornimenti da ${nome}`,3500);
   }else{for(const d of docs)delete d.car;if(!quiet)toast(`${nome} non viene più letto come carta carburante`,3500)}
   try{localStorage.setItem('fe_carb',JSON.stringify(CARB_UTENTE))}catch{}
-  syncRifTab();render();if(drawerIdx>=0&&$id('split').classList.contains('open'))loadDetail();
+  syncRifTab();render();if(drawerIdx>=0&&SP.isOpen())loadDetail();
 }
 function syncRifTab(){
   const has=ALL.length>0&&!single;
@@ -761,9 +765,9 @@ let dMode='d';
 function kv(rows){return`<div class="kv">`+rows.filter(r=>r[1]!==''&&r[1]!=null).map(r=>`<span>${r[0]}</span><span>${r[1]}</span>`).join('')+'</div>'}
 function partyBox(title,p){return`<div class="card box2"><h3>${title}</h3><h4>${esc(nm(p))}</h4>${kv([['P.IVA',esc(p.piva)],['Cod. fiscale',esc(p.cf)],['Indirizzo',esc(p.ind)],['Regime fiscale',p.rf?esc(p.rf+' · '+(RF[p.rf]||'')):''],['REA',esc(p.rea.trim())],['Telefono',esc(p.tel)],['Email',esc(p.mail)]])}</div>`}
 function openDrawer(i){
-  drawerIdx=i;$id('split').classList.add('open');$id('scrim').classList.add('on');loadDetail();
+  drawerIdx=i;SP.open();loadDetail();
 }
-function closeDrawer(){$id('split').classList.remove('open','full');$id('scrim').classList.remove('on');markSel(-1);drawerIdx=-1}
+function closeDrawer(){SP.close();markSel(-1);drawerIdx=-1}
 function markSel(i){
   document.querySelectorAll('#tb tr.sel').forEach(r=>r.classList.remove('sel'));
   const r=document.querySelector(`#tb tr[data-i="${i}"]`);if(r){r.classList.add('sel');
@@ -965,13 +969,13 @@ document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.tar
 /* ====================== Fattura singola ====================== */
 function leaveSingle(){
   if(!single)return;single=false;document.body.classList.remove('single');
-  $id('split').classList.remove('open','full');$id('scrim').classList.remove('on');drawerIdx=-1;
+  SP.close();drawerIdx=-1;
 }
 function enterSingle(docs,label){
   if(!single)snap=ALL.length?{ALL,ERR,rootName,entriesCur,dirHandle,nFiles:(entriesCur||[]).length||ALL.length,myId}:null;
   single=true;ALL=docs;ERR=[];buildCanon();classify();view=docs.slice();
   document.body.classList.add('single');
-  $id('split').classList.add('open','full');$id('scrim').classList.remove('on');
+  SP.full();
   $id('status').textContent=label;$id('bRescan').disabled=true;
   dMode='d';drawerIdx=0;loadDetail();toTop();
 }
@@ -985,10 +989,10 @@ async function openSingleFile(file,name){
   try{
     progress('Lettura fattura…');
     const docs=(await parseFile(file)).map(d=>Object.assign({},d,{path:name,e:{path:name,getFile:async()=>file}}));
-    $id('overlay').style.display='none';
+    progressEnd();
     if(!docs.length){toast('Il file non è una fattura elettronica FatturaPA');return null}
     enterSingle(docs,name);return docs;
-  }catch(e){$id('overlay').style.display='none';toast('Impossibile leggere «'+name+'»: '+(e.message||e));return null}
+  }catch(e){progressEnd();toast('Impossibile leggere «'+name+'»: '+(e.message||e));return null}
 }
 const descOf=d=>`${d.td} n. ${d.numero} · ${nm(d.ced)}`;
 async function openFileHandles(hs){
@@ -1038,12 +1042,12 @@ async function pick(handle){
     const old=await recents.find(handle,'dir');curKey=old?old.id:uid();
     await scan();
     if(ALL.length)await recents.upsert(handle,'dir',{id:curKey,n:ALL.length});
-  }catch(e){if(e.name!=='AbortError'){$id('overlay').style.display='none';toast('Errore: '+(e.message||e))}}
+  }catch(e){if(e.name!=='AbortError'){progressEnd();toast('Errore: '+(e.message||e))}}
 }
 async function scan(){
   progress('Scansione cartelle…');const out=[];
   await walk(dirHandle,'',out);
-  if(!out.length){leaveSingle();$id('overlay').style.display='none';ALL=[];view=[];$id('toolbar').style.display='none';$id('tabs').style.display='none';$id('stats').style.display='none';$id('content').innerHTML='<div class="empty"><div class="ico">📭</div><h2>Nessun file .xml / .p7m trovato</h2><p>La cartella «'+esc(dirHandle.name)+'» non contiene fatture elettroniche.</p></div>';return}
+  if(!out.length){leaveSingle();progressEnd();ALL=[];view=[];$id('toolbar').style.display='none';$id('tabs').style.display='none';$id('stats').style.display='none';$id('content').innerHTML='<div class="empty"><div class="ico">📭</div><h2>Nessun file .xml / .p7m trovato</h2><p>La cartella «'+esc(dirHandle.name)+'» non contiene fatture elettroniche.</p></div>';return}
   await loadEntries(out,dirHandle.name,curKey);
 }
 $id('bPick').onclick=()=>{if('showDirectoryPicker' in window)pick();else toast('Usa Chrome o Edge, oppure il pulsante modalità compatibile')};
@@ -1185,7 +1189,9 @@ $id('content').addEventListener('click',e=>{
 $id('dClose').onclick=()=>single?exitSingle():closeDrawer();
 $id('dPrint').onclick=printCourtesy;
 $id('dXml').onclick=exportXml;
-$id('dFull').onclick=()=>{const f=$id('split').classList.toggle('full');if(f)$id('scrim').classList.remove('on');else if(innerWidth<=1250)$id('scrim').classList.add('on')};$id('scrim').onclick=closeDrawer;
+$id('dFull').onclick=()=>SP.full(!SP.isFull());
+/* il velo dietro il pannello (quando copre la lista) è il ::after di #split: un click lì lo chiude */
+$id('split').addEventListener('click',e=>{if(e.target===e.currentTarget&&SP.isOpen()&&!SP.isFull()&&!single)closeDrawer()});
 $id('dPrev').onclick=()=>stepDrawer(-1);
 $id('dNext').onclick=()=>stepDrawer(1);
 $id('dTabD').onclick=()=>{dMode='d';loadDetail()};
@@ -1193,8 +1199,8 @@ $id('dTabX').onclick=()=>{dMode='x';loadDetail()};
 document.addEventListener('keydown',e=>{
   const typing=/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
   if(e.key==='/'&&!typing&&ALL.length&&!single){e.preventDefault();$id('q').focus();$id('q').select();return}
-  if(e.key==='Escape'){if(single)exitSingle();else if($id('split').classList.contains('full'))$id('dFull').click();else if($id('split').classList.contains('open'))closeDrawer();else if(typing)document.activeElement.blur();return}
-  if($id('split').classList.contains('open')&&!typing){if(e.key==='ArrowLeft'||e.key==='k')stepDrawer(-1);else if(e.key==='ArrowRight'||e.key==='j')stepDrawer(1)}
+  if(e.key==='Escape'){if(single)exitSingle();else if(SP.isFull())$id('dFull').click();else if(SP.isOpen())closeDrawer();else if(typing)document.activeElement.blur();return}
+  if(SP.isOpen()&&!typing){if(e.key==='ArrowLeft'||e.key==='k')stepDrawer(-1);else if(e.key==='ArrowRight'||e.key==='j')stepDrawer(1)}
 });
 
 /* ====================== PWA ====================== */

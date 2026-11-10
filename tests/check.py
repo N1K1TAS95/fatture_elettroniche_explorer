@@ -55,6 +55,7 @@ print("Nessuna risorsa esterna né codice inline in html/")
 for f in sorted(HTML.rglob("*")):
     if f.suffix in {".html", ".js", ".css", ".webmanifest", ".svg"}:
         testo = re.sub(r'xmlns(:\w+)?=\\?"[^"]*"', "", leggi(f))  # gli URI dei namespace non sono richieste
+        testo = testo.replace("http://www.w3.org/2000/svg", "")  # idem nel JS: createElementNS(NS_SVG, …)
         for m in re.finditer(r"https?://[^\s\"'<>)]+", testo):
             ko(f"{f.relative_to(ROOT)}: riferimento esterno {m.group(0)}")
 
