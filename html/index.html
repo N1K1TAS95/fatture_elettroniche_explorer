@@ -47,12 +47,12 @@
   <div id="hActions">
     <span id="status"></span>
     <button class="kit-btn kit-btn-primary" id="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span class="lbl">Seleziona cartella…</span></button>
+    <label class="kit-btn kit-btn-primary" id="bFallback" style="display:none" title="Scegli la cartella con le fatture (modalità compatibile: la cartella non viene ricordata)"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span class="lbl">Seleziona cartella…</span>
+      <input type="file" id="fFallback" webkitdirectory multiple hidden></label>
     <button class="kit-btn" id="bFile" title="Apri una singola fattura (.xml / .p7m)"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg><span class="lbl">Apri fattura…</span></button>
     <button class="kit-btn" id="bRecent" style="display:none" title="Cartelle e fatture aperte di recente"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span class="lbl">Recenti</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
     <input type="file" id="fFiles" accept=".xml,.p7m" multiple hidden>
     <button class="kit-btn" id="bRescan" disabled title="Rilegge la cartella e importa i file nuovi"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span class="lbl">Aggiorna</span></button>
-    <label class="kit-btn" id="bFallback" style="display:none">Scegli cartella (modalità compatibile)
-      <input type="file" id="fFallback" webkitdirectory multiple hidden></label>
     <div class="kit-dropdown" id="settingsDd">
       <button class="kit-btn" id="bSet" data-kit-toggle="#settingsPop" aria-haspopup="true" aria-expanded="false" title="Impostazioni: tema, testo, larghezza, alias e soglie"><svg class="i" aria-hidden="true"><use href="#i-gear"/></svg><span class="lbl">Impostazioni</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
       <div class="kit-pop kit-pop-right kit-settings" id="settingsPop" role="group" aria-label="Impostazioni" hidden>

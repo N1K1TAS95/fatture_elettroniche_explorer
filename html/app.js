@@ -1042,7 +1042,8 @@ async function scan(){
 }
 $id('bPick').onclick=()=>{if('showDirectoryPicker' in window)pick();else toast('Usa Chrome o Edge, oppure il pulsante modalità compatibile')};
 $id('bRescan').onclick=async()=>{if(dirHandle)await pick(dirHandle);else if(entriesCur)await loadEntries(entriesCur,rootName)};
-if(!('showDirectoryPicker' in window)){$id('bFallback').style.display='';}
+/* senza showDirectoryPicker (Safari, Firefox) un solo pulsante: il selettore standard, al posto di quello che non potrebbe funzionare */
+if(!('showDirectoryPicker' in window)){$id('bPick').style.display='none';$id('bFallback').style.display=''}
 $id('fFallback').onchange=async e=>{
   const files=[...e.target.files].filter(f=>/\.(xml|p7m)$/i.test(f.name)&&!META.test(f.name));if(!files.length)return;
   const root=(files[0].webkitRelativePath||'').split('/')[0]||'cartella';dirHandle=null;
