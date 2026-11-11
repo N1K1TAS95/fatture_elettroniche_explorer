@@ -271,7 +271,7 @@ function setupAfterLoad(nFiles,reused){
   for(const d of ALL)for(const p of[d.ced,d.ces]){const x=cnt.get(p.id)||{id:p.id,nome:p.nome,piva:p.piva,n:0};x.n++;cnt.set(p.id,x)}
   const parties=[...cnt.values()].sort((a,b)=>b.n-a.n);
   if(!myId||!cnt.has(myId))myId=parties.length&&ALL.length>1?parties[0].id:'';
-  $id('my').innerHTML='<option value="">(nessuna)</option>'+parties.slice(0,300).map(p=>`<option value="${esc(p.id)}" data-name="${esc(nm(p))}" data-sub="${esc(p.piva||p.id)} · ${p.n} fatture">${esc(nm(p))} — ${esc(p.piva||p.id)} (${p.n} fatture)</option>`).join('');
+  $id('my').innerHTML='<option value="">(nessuna)</option>'+parties.slice(0,300).map(p=>`<option value="${esc(p.id)}" data-kit-hint="${esc(p.piva||p.id)} · ${p.n} fatture">${esc(nm(p))}</option>`).join('');
   $id('my').value=myId;
   const yc=Object.create(null);for(const d of ALL)if(d.data&&!(F.dup&&d.dup))yc[d.data.slice(0,4)]=(yc[d.data.slice(0,4)]||0)+1;
   const years=Object.keys(yc).sort().reverse();
@@ -914,7 +914,7 @@ async function loadDemo(){
 /* ====================== Recenti (cartelle e fatture) ====================== */
 const WELCOME=$id('content').innerHTML;
 // la schermata iniziale si ricrea da WELCOME: il select va rifatto ogni volta
-function showWelcome(){$id('content').innerHTML=WELCOME;enhanceSelect($id('demoN'))}
+function showWelcome(){$id('content').innerHTML=WELCOME;Kit.select($id('demoN'))}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 let RECENTS=[],curKey='',single=false,snap=null;
 const recents={
@@ -1074,7 +1074,7 @@ function sgCarica(t){
 }
 function apriSoglie(){
   $id('sgVei').innerHTML='<option value="*">Tutti i veicoli</option>'+rfVeic.map(t=>`<option value="${esc(t)}">${esc(ALIAS[t]?`${ALIAS[t]} (${t})`:t)}</option>`).join('');
-  $id('sgVei').value='*';SELS.forEach(f=>f());sgCarica('*');$id('sogliaDlg').showModal();
+  $id('sgVei').value='*';syncSels();sgCarica('*');$id('sogliaDlg').showModal();
 }
 $id('sgVei').addEventListener('change',()=>sgCarica($id('sgVei').value));
 $id('sgNo').onclick=()=>$id('sogliaDlg').close();
@@ -1126,7 +1126,7 @@ async function impApplica(){
   try{localStorage.setItem('fe_alias',JSON.stringify(ALIAS));localStorage.setItem('fe_soglie',JSON.stringify(SOGLIE))}catch{toast('Impossibile salvare le impostazioni in questo browser',4000)}
   if(o.tema)Kit.theme.set(o.tema);if(o.testo)Kit.fontSize.set(o.testo);if(o.larghezza)Kit.layout.set(o.larghezza);
   if(o.miaAzienda){myId=o.miaAzienda;try{localStorage.setItem('fe_my',myId)}catch{}
-    if(ALL.length&&[...$id('my').options].some(x=>x.value===myId)){$id('my').value=myId;SELS.forEach(f=>f());F.dir='';classify();apply()}}
+    if(ALL.length&&[...$id('my').options].some(x=>x.value===myId)){$id('my').value=myId;syncSels();F.dir='';classify();apply()}}
   // fornitori di carburante: dove i file sono caricati si rileggono gli allegati, altrimenti si salva soltanto la scelta
   const nuovi=sost?o.carburante:[...new Set([...CARB_UTENTE,...o.carburante])],agg=nuovi.filter(x=>!CARB_UTENTE.includes(x)),tol=CARB_UTENTE.filter(x=>!nuovi.includes(x));
   $id('impDlg').close();
@@ -1216,90 +1216,16 @@ function placeRecent(){
   m.style.top=Math.round(r.bottom+8)+'px';
   m.style.left=Math.round(Math.max(12,Math.min(r.right-w,innerWidth-w-12)))+'px';
 }
-$id('myBadge').onclick=()=>{$id('adv').classList.add('open');const b=$id('my').parentNode.querySelector('.sel-btn');if(b)b.focus()};
-var SELS=[];
+$id('myBadge').onclick=()=>{$id('adv').classList.add('open');const b=$id('my').parentNode.querySelector('.kit-select-btn');if(b)b.focus()};
+/* select del kit: dopo un .value da codice il bottone si aggiorna con sync() */
+function syncSels(){for(const i of['my','per','td','demoN','sgVei']){const e=$id(i);if(e)Kit.select(e).sync()}}
 function refreshUI(){
-  for(const f of SELS||[])f();
-  const o=$id('my').selectedOptions[0],name=myId&&o&&o.dataset.name,b=$id('myBadge');
+  syncSels();
+  const o=$id('my').selectedOptions[0],name=myId&&o&&o.textContent.trim(),b=$id('myBadge');
   b.hidden=!name;
   if(name){$id('myName').textContent=name;b.title='La mia azienda: '+name+' (clicca per cambiarla)'}
 }
-const ICO=n=>`<svg class="i" aria-hidden="true"><use href="#i-${n}"/></svg>`;
-function popPlace(wrap,pop){
-  pop.classList.remove('r');
-  const r=pop.getBoundingClientRect();
-  if(r.right>innerWidth-8)pop.classList.add('r');
-  pop.scrollIntoView({block:'nearest'});
-}
-let openPop=null;
-function closePop(){if(openPop){openPop();openPop=null}}
-document.addEventListener('mousedown',e=>{if(openPop&&!e.target.closest('.sel'))closePop()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&openPop){e.stopPropagation();closePop()}},true);
-function moveAct(pop,d){
-  const L=[...pop.querySelectorAll('.opt')];if(!L.length)return;
-  let i=L.findIndex(x=>x.classList.contains('act'));
-  if(i>=0)L[i].classList.remove('act');
-  i=i<0?(d>0?0:L.length-1):Math.max(0,Math.min(L.length-1,i+d));
-  L[i].classList.add('act');L[i].scrollIntoView({block:'nearest'});
-}
-/* select nativo -> menu personalizzato (il <select> resta la fonte dei dati ed emette 'change') */
-function enhanceSelect(sel){
-  const wrap=document.createElement('div');wrap.className='sel';
-  sel.parentNode.insertBefore(wrap,sel);wrap.appendChild(sel);
-  sel.classList.add('sr');sel.tabIndex=-1;sel.setAttribute('aria-hidden','true');
-  const btn=document.createElement('button');btn.type='button';btn.className='sel-btn';
-  btn.setAttribute('aria-haspopup','listbox');btn.setAttribute('aria-expanded','false');
-  btn.innerHTML='<span class="sel-v"></span>'+ICO('chev');
-  const pop=document.createElement('div');pop.className='pop';pop.hidden=true;
-  wrap.append(btn,pop);
-  const label=o=>o.dataset.name||o.textContent;
-  const sync=()=>{const o=sel.selectedOptions[0];btn.querySelector('.sel-v').textContent=o?label(o):''};
-  const items=()=>{
-    const out=[],one=o=>({v:o.value,t:label(o),s:o.dataset.sub||''});
-    for(const c of sel.children){if(c.tagName==='OPTGROUP'){out.push({g:c.label});for(const o of c.children)out.push(one(o))}else out.push(one(c))}
-    return out;
-  };
-  let q='';
-  const draw=()=>{
-    const all=items(),n=all.filter(x=>!x.g).length,qq=q.trim().toLowerCase();
-    let html='';
-    if(n>20)html+=`<div class="psearch">${ICO('search')}<input type="search" placeholder="Cerca…" autocomplete="off" value="${esc(q)}" aria-label="Cerca nell'elenco"></div>`;
-    let g='',shown=0,gh='';
-    html+='<div class="plist" role="listbox">';
-    for(const x of all){
-      if(x.g){gh=`<div class="pg">${esc(x.g)}</div>`;continue}
-      if(qq&&!(x.t+' '+x.s).toLowerCase().includes(qq))continue;
-      html+=gh;gh='';shown++;
-      html+=`<div class="opt${x.v===sel.value?' on':''}" role="option" data-v="${esc(x.v)}"><span class="ot"><b>${esc(x.t)}</b>${x.s?`<small>${esc(x.s)}</small>`:''}</span>${x.v===sel.value?ICO('check'):''}</div>`;
-    }
-    if(!shown)html+='<div class="pempty">Nessun risultato</div>';
-    html+='</div>';
-    pop.innerHTML=html;
-    const on=pop.querySelector('.opt.on')||pop.querySelector('.opt');if(on)on.classList.add('act');
-  };
-  const close=()=>{pop.hidden=true;btn.setAttribute('aria-expanded','false')};
-  const open=()=>{
-    closePop();q='';draw();pop.hidden=false;btn.setAttribute('aria-expanded','true');openPop=close;popPlace(wrap,pop);
-    const i=pop.querySelector('input');if(i)i.focus();else pop.focus();
-    const on=pop.querySelector('.opt.on');if(on)on.scrollIntoView({block:'nearest'});
-  };
-  const pick=v=>{close();openPop=null;sel.value=v;sync();btn.focus();sel.dispatchEvent(new Event('change',{bubbles:true}))};
-  pop.tabIndex=-1;
-  btn.onclick=()=>pop.hidden?open():close();
-  btn.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(pop.hidden)open()}});
-  sel.addEventListener('focus',()=>btn.focus());
-  pop.addEventListener('input',e=>{if(e.target.matches('input')){q=e.target.value;draw();const i=pop.querySelector('input');i.focus();i.setSelectionRange(q.length,q.length)}});
-  pop.addEventListener('click',e=>{const o=e.target.closest('.opt');if(o){e.preventDefault();pick(o.dataset.v)}});
-  pop.addEventListener('mousemove',e=>{const o=e.target.closest('.opt');if(o&&!o.classList.contains('act')){const a=pop.querySelector('.opt.act');if(a)a.classList.remove('act');o.classList.add('act')}});
-  pop.addEventListener('keydown',e=>{
-    if(e.key==='ArrowDown'){e.preventDefault();moveAct(pop,1)}
-    else if(e.key==='ArrowUp'){e.preventDefault();moveAct(pop,-1)}
-    else if(e.key==='Enter'){e.preventDefault();const a=pop.querySelector('.opt.act');if(a)pick(a.dataset.v)}
-    else if(e.key==='Tab')close();
-  });
-  SELS.push(sync);sync();
-}
-['my','per','td','demoN','sgVei'].forEach(i=>enhanceSelect($id(i)));
+['my','per','td','demoN','sgVei'].forEach(i=>Kit.select($id(i)));
 /* campo «Cliente / fornitore»: Kit.combo. Le voci sono «Nome — P.IVA»; si cerca nel testo prima di « — » (così, scelta una voce, l'elenco resta quello) */
 Kit.combo($id('cp'),{filter:false,max:60,empty:'',autoActive:true,items:q=>{
   const qq=q.split(' — ')[0].trim(),hit=qq?CP_OPTS.filter(x=>x.toLowerCase().includes(qq)):CP_OPTS;

@@ -1404,6 +1404,14 @@ button.kit-donut-row:hover { background: var(--kit-hover); }
 .kit-select-value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kit-select-btn .kit-icon { width: 1.067rem; height: 1.067rem; color: var(--kit-mute); transition: transform .15s; }
 .kit-select-btn[aria-expanded="true"] .kit-icon { transform: rotate(180deg); }
+.kit-select-btn:disabled { opacity: .55; cursor: not-allowed; }
+.kit-select-btn:disabled:hover { border-color: var(--kit-line); }
+.kit-select-btn.is-empty .kit-select-value { color: var(--kit-mute); }
+/* Menu con campo di ricerca (select nativo con molte voci): il campo resta fermo, scorre solo l'elenco. */
+.kit-pop:has(> .kit-pop-search) { overflow: hidden; }
+.kit-pop-search { flex: none; padding-bottom: 6px; }
+.kit-pop-search .kit-input { width: 100%; }
+.kit-pop-list { display: flex; flex-direction: column; min-height: 0; overflow: auto; }
 
 /* Combobox: campo di testo (.kit-input) con il bottone che apre l'elenco; l'elenco è un .kit-pop con voci .kit-opt. */
 .kit-combo { position: relative; min-width: 0; }

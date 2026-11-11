@@ -10,7 +10,7 @@
  *   data-kit-layout-set="boxed|fluid"        bottone che sceglie contenuto centrato o a tutta larghezza
  *   data-kit-layout-toggle                   bottone che alterna le due larghezze
  *   data-kit-toggle="#id"                    bottone che apre/chiude un .kit-pop
- *   data-kit-select                          su .kit-select: scelta di un valore
+ *   data-kit-select                          su .kit-select: scelta di un valore; su un <select>: lo sostituisce con il menu del kit (opzioni: data-kit-search, -empty, -placeholder)
  *   data-kit-combo                           su .kit-combo: campo di testo con elenco di suggerimenti (opzioni: data-kit-combo-max, -empty, -more)
  *   data-kit-split                           su .kit-split: Esc lo chiude; con data-kit-split-open="#id" (bottone fuori), data-kit-split-close e
  *                                            data-kit-split-full (dentro) si apre, chiude e porta a tutta larghezza il pannello
@@ -26,7 +26,7 @@
  *   data-kit-tip="testo"                     tooltip (solo CSS; con kit.js Esc lo nasconde)
  *   data-kit-dismiss                         dentro un .kit-alert, lo rimuove (evento "kit:dismiss")
  *
- * API: window.Kit.theme.get()/set(), Kit.layout.get()/set()/toggle(), Kit.fontSize.get()/set()/step(), Kit.reset(), Kit.toast(testo, opzioni), Kit.toast.clear(), Kit.confirm(domanda, opzioni), Kit.undo(testo, opzioni), Kit.split(elemento), Kit.file(elemento, opzioni), Kit.progress(testo, opzioni), Kit.combo(elemento, opzioni), Kit.code(elemento, opzioni), Kit.highlight(testo, lingua), Kit.barChart(elemento, opzioni), Kit.lineChart(…), Kit.donut(…), Kit.sparkline(…), Kit.init(radice)
+ * API: window.Kit.theme.get()/set(), Kit.layout.get()/set()/toggle(), Kit.fontSize.get()/set()/step(), Kit.reset(), Kit.toast(testo, opzioni), Kit.toast.clear(), Kit.confirm(domanda, opzioni), Kit.undo(testo, opzioni), Kit.split(elemento), Kit.file(elemento, opzioni), Kit.progress(testo, opzioni), Kit.combo(elemento, opzioni), Kit.select(elemento, opzioni), Kit.code(elemento, opzioni), Kit.highlight(testo, lingua), Kit.barChart(elemento, opzioni), Kit.lineChart(…), Kit.donut(…), Kit.sparkline(…), Kit.init(radice)
  * Eventi: "kit:change" (select, combobox), "kit:select" (barra, punto o fetta di un grafico), "kit:tab" (tab), "kit:files" (file scelti o rilasciati), "kit:copy" (codice copiato), "kit:split" (pannello aperto, chiuso o a tutta larghezza), "kit:theme" (tema), "kit:layout" (larghezza), "kit:fs" (dimensione del testo), "kit:reset" (impostazioni ripristinate), "kit:dismiss" (avviso chiuso)
  */
 (function () {
@@ -539,6 +539,8 @@
 
     function chooseOption(opt) {
         var pop = opt.closest(".kit-pop");
+        var ns = selByWrap.get(opt.closest("[data-kit-native]"));
+        if (ns) { nativeChoose(ns, opt); return; }
         var cb = opt.closest("[data-kit-combo]");
         if (cb) { comboChoose(cb, opt); closePop(true); return; }
         var sel = opt.closest("[data-kit-select]");
@@ -701,6 +703,183 @@
         wrap.addEventListener("focusout", function (e) {
             if (!wrap.contains(e.relatedTarget) && openPop && openPop.pop === pop) closePop(false);
         });
+        return st.api;
+    }
+
+    /* ---------- Select nativo: <select data-kit-select> con il menu del kit ----------
+       Il <select> resta la fonte dei dati (valore, form, required, 'change'); il kit gli mette accanto bottone e menu.
+       Gruppi (<optgroup>), sottotesto (data-kit-hint) e, oltre 20 voci, un campo di ricerca nel menu.
+       Dopo aver cambiato a mano value, voci o disabled: api.sync(). Kit.select(el, { search, empty, placeholder }) fa lo stesso da JavaScript. */
+    var selByWrap = new WeakMap();
+    var selByNative = new WeakMap();
+    var selUid = 0;
+
+    function mkIcon(name, cls) {
+        var svg = document.createElementNS(SVG_NS, "svg");
+        svg.setAttribute("class", cls || "kit-icon");
+        svg.setAttribute("aria-hidden", "true");
+        var use = document.createElementNS(SVG_NS, "use");
+        use.setAttribute("href", "#i-" + name);
+        svg.appendChild(use);
+        return svg;
+    }
+
+    function nativeItems(sel) {
+        var out = [];
+        function one(o, off) {
+            if (o.hidden) return;
+            out.push({ value: o.value, label: o.textContent.trim(), short: o.getAttribute("data-kit-short") || "", hint: o.getAttribute("data-kit-hint") || "", disabled: off || o.disabled });
+        }
+        Array.prototype.forEach.call(sel.children, function (c) {
+            if (c.tagName === "OPTGROUP") {
+                out.push({ group: c.label });
+                Array.prototype.forEach.call(c.children, function (o) { one(o, c.disabled); });
+            } else if (c.tagName === "OPTION") one(c, false);
+        });
+        return out;
+    }
+
+    function nativeSync(st) {
+        var o = st.sel.selectedOptions[0];
+        var t = o ? (o.getAttribute("data-kit-short") || o.textContent.trim()) : "";
+        st.value.textContent = t;
+        st.btn.classList.toggle("is-empty", !o || o.value === "");
+        st.btn.disabled = st.sel.disabled;
+    }
+
+    function nativeList(st) {
+        var q = st.q.trim().toLowerCase(), cur = st.sel.value, head = null, shown = 0, n = 0;
+        st.list.textContent = "";
+        nativeItems(st.sel).forEach(function (x) {
+            if (x.group !== undefined) { head = x.group; return; }
+            if (q && (x.label + " " + x.hint).toLowerCase().indexOf(q) < 0) return;
+            if (head !== null) { st.list.appendChild(mkEl("div", "kit-pop-group", head)); head = null; }
+            var on = x.value === cur;
+            var o = mkEl("div", "kit-opt" + (on ? " is-on" : ""));
+            o.id = st.id + "-" + (n++);
+            o.setAttribute("role", "option");
+            o.setAttribute("aria-selected", String(on));
+            if (x.disabled) o.setAttribute("aria-disabled", "true");
+            o.dataset.value = x.value;
+            var box = mkEl("span", "kit-opt-text");
+            box.appendChild(mkEl("b", "", x.label));
+            if (x.hint) box.appendChild(mkEl("small", "", x.hint));
+            o.appendChild(box);
+            o.appendChild(mkIcon("check", "kit-icon kit-opt-check"));
+            st.list.appendChild(o);
+            shown++;
+        });
+        if (!shown) st.list.appendChild(mkEl("div", "kit-pop-empty", st.empty));
+        var a = st.list.querySelector(".kit-opt.is-on:not([aria-disabled='true'])") || st.list.querySelector(".kit-opt:not([aria-disabled='true'])");
+        if (a) { a.classList.add("is-active"); if (!q) a.scrollIntoView({ block: "nearest" }); }
+    }
+
+    function nativeOpen(st) {
+        closePop(false);
+        st.q = "";
+        var count = nativeItems(st.sel).filter(function (x) { return x.group === undefined; }).length;
+        var withSearch = st.search === true || (typeof st.search === "number" && count > st.search);
+        st.pop.textContent = "";
+        st.input = null;
+        if (withSearch) {
+            var box = mkEl("div", "kit-pop-search");
+            var inp = mkEl("input", "kit-input");
+            inp.type = "search";
+            inp.placeholder = st.placeholder;
+            inp.setAttribute("autocomplete", "off");
+            inp.setAttribute("aria-label", st.placeholder.replace(/…$/, ""));
+            inp.addEventListener("input", function () { st.q = inp.value; nativeList(st); });
+            box.appendChild(inp);
+            st.pop.appendChild(box);
+            st.input = inp;
+        }
+        st.list = mkEl("div", "kit-pop-list");
+        st.list.setAttribute("role", "listbox");
+        st.pop.appendChild(st.list);
+        nativeList(st);
+        st.pop.classList.remove("kit-pop-right");
+        setPop(st.pop, st.btn, true);
+        if (st.pop.getBoundingClientRect().right > window.innerWidth - 8) st.pop.classList.add("kit-pop-right");
+        st.pop.tabIndex = -1;
+        (st.input || st.pop).focus({ preventScroll: true });
+        st.pop.scrollIntoView({ block: "nearest" });
+    }
+
+    function nativeChoose(st, opt) {
+        var v = opt.dataset.value || "";
+        var changed = st.sel.value !== v;
+        st.sel.value = v;
+        nativeSync(st);
+        closePop(true);
+        if (!changed) return;
+        st.sel.dispatchEvent(new Event("change", { bubbles: true }));
+        var o = st.sel.selectedOptions[0];
+        st.wrap.dispatchEvent(new CustomEvent("kit:change", { bubbles: true, detail: { value: v, label: o ? o.textContent.trim() : "" } }));
+    }
+
+    function nativeSelect(target, opts) {
+        var sel = typeof target === "string" ? document.querySelector(target) : target;
+        if (!sel || sel.tagName !== "SELECT") return null;
+        var old = selByNative.get(sel);
+        if (old) return old.api;
+        opts = opts || {};
+        var d = sel.dataset;
+        var search = opts.search !== undefined ? opts.search : (d.kitSearch !== undefined ? (d.kitSearch === "off" ? false : d.kitSearch === "" ? true : parseInt(d.kitSearch, 10)) : 20);
+        var wrap = mkEl("div", "kit-select");
+        wrap.setAttribute("data-kit-select", "");
+        wrap.setAttribute("data-kit-native", "");
+        sel.parentNode.insertBefore(wrap, sel);
+        wrap.appendChild(sel);
+        sel.removeAttribute("data-kit-select");
+        sel.classList.add("kit-sr");
+        sel.tabIndex = -1;
+        sel.setAttribute("aria-hidden", "true");
+        var id = "kit-sel-" + (++selUid);
+        var btn = mkEl("button", "kit-select-btn");
+        btn.type = "button";
+        btn.setAttribute("aria-haspopup", "listbox");
+        btn.setAttribute("aria-expanded", "false");
+        var value = mkEl("span", "kit-select-value");
+        value.id = id + "-v";
+        btn.appendChild(value);
+        btn.appendChild(mkIcon("chev"));
+        var lab = sel.labels && sel.labels[0];
+        if (sel.getAttribute("aria-label")) btn.setAttribute("aria-label", sel.getAttribute("aria-label"));
+        else if (lab) { lab.id = lab.id || id + "-l"; btn.setAttribute("aria-labelledby", lab.id + " " + value.id); }
+        var pop = mkEl("div", "kit-pop");
+        pop.hidden = true;
+        wrap.appendChild(btn);
+        wrap.appendChild(pop);
+        var st = {
+            sel: sel, wrap: wrap, btn: btn, value: value, pop: pop, id: id, q: "", input: null, list: null, search: search,
+            empty: opts.empty !== undefined ? opts.empty : (d.kitEmpty || "Nessun risultato"),
+            placeholder: opts.placeholder || d.kitPlaceholder || "Cerca…"
+        };
+        st.api = {
+            sync: function () { nativeSync(st); if (!pop.hidden) nativeList(st); },
+            open: function () { if (pop.hidden && !btn.disabled) nativeOpen(st); },
+            close: function () { if (!pop.hidden) closePop(false); }
+        };
+        selByWrap.set(wrap, st);
+        selByNative.set(sel, st);
+        nativeSync(st);
+
+        btn.addEventListener("keydown", function (e) {
+            if ((e.key === "ArrowDown" || e.key === "ArrowUp") && pop.hidden) {
+                e.preventDefault();
+                e.stopPropagation();   // altrimenti la freccia varrebbe due volte (apre e sposta)
+                nativeOpen(st);
+            }
+        });
+        // il mouse sulle voci non deve togliere il focus al menu (il campo di ricerca invece lo riceve)
+        pop.addEventListener("mousedown", function (e) { if (!(e.target instanceof Element && e.target.closest("input"))) e.preventDefault(); });
+        wrap.addEventListener("focusout", function (e) {
+            if (!wrap.contains(e.relatedTarget) && openPop && openPop.pop === pop) closePop(false);
+        });
+        sel.addEventListener("focus", function () { btn.focus(); });   // un <label for> o focus() sul select vanno al bottone
+        sel.addEventListener("change", function () { nativeSync(st); });
+        if (sel.form) sel.form.addEventListener("reset", function () { setTimeout(function () { st.api.sync(); }, 0); });
+        if (window.MutationObserver) new MutationObserver(function () { st.api.sync(); }).observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled", "label", "hidden", "data-kit-hint", "data-kit-short"], characterData: true });
         return st.api;
     }
 
@@ -1405,6 +1584,8 @@
 
         var selBtn = t.closest("[data-kit-select] .kit-select-btn");
         if (selBtn) {
+            var nst = selByWrap.get(selBtn.closest("[data-kit-select]"));
+            if (nst) { if (!nst.pop.hidden) closePop(false); else nativeOpen(nst); return; }
             var p = selBtn.closest("[data-kit-select]").querySelector(".kit-pop");
             if (p) togglePop(selBtn, p);
             return;
@@ -1487,10 +1668,11 @@
 
         if (openPop) {
             if (e.key === "Escape") { e.preventDefault(); closePop(true); return; }
+            if (e.key === "Tab" && openPop.pop.querySelector(".kit-pop-search")) closePop(false);
             if (e.key === "ArrowDown") { e.preventDefault(); moveActive(openPop.pop, 1); return; }
             if (e.key === "ArrowUp") { e.preventDefault(); moveActive(openPop.pop, -1); return; }
-            // nel campo di un combobox lo spazio è un carattere come gli altri
-            if (e.key === "Enter" || (e.key === " " && !(e.target instanceof Element && e.target.closest("[data-kit-combo]")))) {
+            // nel campo di un combobox o di ricerca lo spazio è un carattere come gli altri
+            if (e.key === "Enter" || (e.key === " " && !(e.target instanceof Element && e.target.closest("[data-kit-combo], .kit-pop-search")))) {
                 var a = openPop.pop.querySelector(".kit-opt.is-active");
                 // click() attiva la voce come un click vero: partono anche i suoi gestori e i link
                 if (a) { e.preventDefault(); a.click(); return; }
@@ -1756,7 +1938,8 @@
 
     function init(scope) {
         scope = scope || document;
-        scope.querySelectorAll("[data-kit-select]").forEach(function (sel) {
+        scope.querySelectorAll("select[data-kit-select]").forEach(function (s) { nativeSelect(s); });
+        scope.querySelectorAll("[data-kit-select]:not(select):not([data-kit-native])").forEach(function (sel) {
             var btn = sel.querySelector(".kit-select-btn");
             var pop = sel.querySelector(".kit-pop");
             if (btn) { btn.setAttribute("aria-haspopup", "listbox"); btn.setAttribute("aria-expanded", "false"); }
@@ -1831,5 +2014,5 @@
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { init(); });
     else init();
 
-    window.Kit = { theme: theme, layout: layout, fontSize: fontSize, reset: reset, toast: toast, undo: undo, confirm: confirmDialog, split: split, file: fileField, progress: progressDialog, combo: combo, code: code, highlight: highlight, barChart: barChart, lineChart: lineChart, donut: donut, sparkline: sparkline, init: init };
+    window.Kit = { theme: theme, layout: layout, fontSize: fontSize, reset: reset, toast: toast, undo: undo, confirm: confirmDialog, split: split, file: fileField, progress: progressDialog, combo: combo, select: nativeSelect, code: code, highlight: highlight, barChart: barChart, lineChart: lineChart, donut: donut, sparkline: sparkline, init: init };
 })();
