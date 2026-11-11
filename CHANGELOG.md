@@ -4,6 +4,10 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+## [1.7.0] - 2026-11-11
+
+Impostazioni dell'aspetto (tema, testo, larghezza), font Inter e interfaccia basata su Dashboard Kit.
+
 ### Aggiunto
 - **Impostazioni dell'aspetto**: il pulsante *Impostazioni* nella barra in alto apre un pannello con il **tema** (automatico, chiaro, scuro), la **dimensione del testo** (normale, grande, molto grande) e la **larghezza della pagina** (centrata o tutta la pagina), più *Ripristina l'aspetto*. Le scelte restano nel browser. Dentro lo stesso pannello c'è il pulsante per **esportare e importare** alias, soglie e altro, che prima era un pulsante a parte. Il file esportato ora contiene anche dimensione del testo e larghezza (i file vecchi si importano ancora); i valori del file sono controllati come non fidati. Il tema già scelto si mantiene.
 - Il **font Inter** è incluso in `html/fonts/` (65 KB, licenza SIL OFL 1.1, `html/fonts/OFL.txt`) e usato in tutta l'app: lo zero è barrato, così non si confonde con la «O» nei codici fiscali e nelle partite IVA, e le cifre sono tabulari. La Content-Security-Policy ha ora `font-src 'self'` (negli stessi tre punti di sempre). Se il file non si carica resta il font di sistema.
@@ -143,7 +147,8 @@ Prima versione pubblica.
 - Firefox e Safari usano la modalità compatibile, senza cartelle recenti né installazione come app.
 - Il foglio di stile Assosoftware non è incluso per via della sua licenza.
 
-[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.6.0...HEAD
+[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.3.0...v1.4.0
