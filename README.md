@@ -113,7 +113,7 @@ Clicca **Seleziona cartella…**, scegli quella delle fatture e inizia a cercare
 - **Recenti**: le ultime cartelle e fatture aperte si riaprono con un clic. Le fatture già lette sono tenute in cache, quindi la seconda apertura è molto più veloce, anche su NAS.
 - **PDF della fattura** (copia di cortesia): il pulsante **PDF** del dettaglio apre un layout fattura pronto per la stampa su A4; nel dialogo di stampa del browser scegli *Salva come PDF*. Il nome del file proposto è `Fattura_numero_data_cedente`. Non ha valore fiscale: l'originale resta l'XML.
 - **Esportazione CSV** di quanto filtrato (separatore `;`, decimali con la virgola, pronto per Excel).
-- **Tema** automatico, chiaro o scuro. Interfaccia adattata a telefono, tablet, laptop e monitor molto larghi.
+- **Aspetto**: dal pulsante *Impostazioni* si scelgono il tema (automatico, chiaro o scuro), la dimensione del testo (normale, grande, molto grande) e la larghezza della pagina (centrata o tutta la pagina). Restano salvati nel browser e fanno parte del file delle impostazioni. Interfaccia adattata a telefono, tablet, laptop e monitor molto larghi.
 - Scorciatoie: `/` cerca, `←` `→` fattura precedente/successiva, `Esc` chiude.
 
 ### Browser supportati
@@ -373,3 +373,5 @@ Segnalazioni, idee e pull request sono benvenute: leggi [CONTRIBUTING.md](CONTRI
 ## Licenza
 
 [MIT](LICENSE).
+
+L'interfaccia usa [Dashboard Kit](https://github.com/N1K1TAS95/dashboard-kit) (MIT, copiato in `html/kit.css` e `html/kit.js`) e il font [Inter](https://rsms.me/inter/) (The Inter Project Authors), copiato in `html/fonts/` insieme alla sua licenza SIL Open Font License 1.1 (`html/fonts/OFL.txt`).

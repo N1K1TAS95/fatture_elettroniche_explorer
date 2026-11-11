@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="it">
+<html lang="it" data-layout="fluid">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; object-src blob:; frame-src blob:; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; font-src 'self'; img-src 'self' data:; object-src blob:; frame-src blob:; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="Esplora e consulta le fatture elettroniche italiane (FatturaPA) direttamente nel browser, senza caricare nulla online.">
@@ -13,6 +13,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fatture Elettroniche Explorer</title>
 <script src="theme.js"></script>
+<link rel="stylesheet" href="kit.css">
 <link rel="stylesheet" href="app.css">
 </head>
 <body class="fixed">
@@ -42,18 +43,50 @@
 <header id="top">
   <h1><img class="logo" src="icon.svg" alt="" width="34" height="34"><span class="lbl2">Fatture </span><span class="lbl3">Elettroniche </span><b>Explorer</b></h1>
   <button type="button" class="co" id="myBadge" hidden title="La mia azienda: clicca per cambiarla"><svg class="i" aria-hidden="true"><use href="#i-building"/></svg><span id="myName"></span></button>
-  <button type="button" class="btn ghost icon" id="bMenu" aria-label="Menu" aria-expanded="false" aria-controls="hActions"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg></button>
+  <button type="button" class="kit-btn kit-btn-ghost kit-btn-icon" id="bMenu" aria-label="Menu" aria-expanded="false" aria-controls="hActions"><svg class="i" aria-hidden="true"><use href="#i-menu"/></svg></button>
   <div id="hActions">
     <span id="status"></span>
-    <button class="btn primary" id="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span class="lbl">Seleziona cartella…</span></button>
-    <button class="btn" id="bFile" title="Apri una singola fattura (.xml / .p7m)"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg><span class="lbl">Apri fattura…</span></button>
-    <button class="btn" id="bRecent" style="display:none" title="Cartelle e fatture aperte di recente"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span class="lbl">Recenti</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
-    <input type="file" id="fFiles" accept=".xml,.p7m" multiple hidden>
-    <button class="btn" id="bRescan" disabled title="Rilegge la cartella e importa i file nuovi"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span class="lbl">Aggiorna</span></button>
-    <button class="btn" id="bImp" title="Impostazioni: esporta o importa alias, soglie e altro" aria-label="Impostazioni"><svg class="i" aria-hidden="true"><use href="#i-gear"/></svg><span class="lbl">Impostazioni</span></button>
-    <label class="btn" id="bFallback" style="display:none">Scegli cartella (modalità compatibile)
+    <button class="kit-btn kit-btn-primary" id="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span class="lbl">Seleziona cartella…</span></button>
+    <label class="kit-btn kit-btn-primary" id="bFallback" style="display:none" title="Scegli la cartella con le fatture (modalità compatibile: la cartella non viene ricordata)"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span class="lbl">Seleziona cartella…</span>
       <input type="file" id="fFallback" webkitdirectory multiple hidden></label>
-    <div class="sel" id="themeSeg"><button class="btn" id="bTheme" aria-haspopup="menu" aria-expanded="false" title="Tema"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="lbl" id="themeLbl">Automatico</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button><div class="pop r" id="themeMenu" role="menu" hidden><div class="opt" role="menuitemradio" data-th="auto"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg><span class="ot"><b>Automatico</b><small>Segue il sistema</small></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg><span class="ot"><b>Chiaro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div><div class="opt" role="menuitemradio" data-th="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg><span class="ot"><b>Scuro</b></span><svg class="i" aria-hidden="true"><use href="#i-check"/></svg></div></div></div>
+    <button class="kit-btn" id="bFile" title="Apri una singola fattura (.xml / .p7m)"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg><span class="lbl">Apri fattura…</span></button>
+    <button class="kit-btn" id="bRecent" style="display:none" title="Cartelle e fatture aperte di recente"><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span class="lbl">Recenti</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
+    <input type="file" id="fFiles" accept=".xml,.p7m" multiple hidden>
+    <button class="kit-btn" id="bRescan" disabled title="Rilegge la cartella e importa i file nuovi"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span class="lbl">Aggiorna</span></button>
+    <div class="kit-dropdown" id="settingsDd">
+      <button class="kit-btn" id="bSet" data-kit-toggle="#settingsPop" aria-haspopup="true" aria-expanded="false" title="Impostazioni: tema, testo, larghezza, alias e soglie"><svg class="i" aria-hidden="true"><use href="#i-gear"/></svg><span class="lbl">Impostazioni</span><svg class="i" aria-hidden="true"><use href="#i-chev"/></svg></button>
+      <div class="kit-pop kit-pop-right kit-settings" id="settingsPop" role="group" aria-label="Impostazioni" hidden>
+        <div class="kit-settings-row">
+          <span class="kit-settings-label">Tema</span>
+          <div class="kit-seg" role="group" aria-label="Tema">
+            <button type="button" data-kit-theme-set="auto"><svg class="i" aria-hidden="true"><use href="#i-auto"/></svg>Auto</button>
+            <button type="button" data-kit-theme-set="light"><svg class="i" aria-hidden="true"><use href="#i-sun"/></svg>Chiaro</button>
+            <button type="button" data-kit-theme-set="dark"><svg class="i" aria-hidden="true"><use href="#i-moon"/></svg>Scuro</button>
+          </div>
+        </div>
+        <div class="kit-settings-row">
+          <span class="kit-settings-label">Dimensione del testo</span>
+          <div class="kit-seg" role="group" aria-label="Dimensione del testo">
+            <button type="button" data-kit-fs-set="md" aria-label="Normale" title="Normale">A</button>
+            <button type="button" data-kit-fs-set="lg" aria-label="Grande" title="Grande">A</button>
+            <button type="button" data-kit-fs-set="xl" aria-label="Molto grande" title="Molto grande">A</button>
+          </div>
+        </div>
+        <div class="kit-settings-row">
+          <span class="kit-settings-label">Larghezza della pagina</span>
+          <div class="kit-seg" role="group" aria-label="Larghezza della pagina">
+            <button type="button" data-kit-layout-set="boxed">Centrata</button>
+            <button type="button" data-kit-layout-set="fluid">Tutta la pagina</button>
+          </div>
+          <small>Si nota sugli schermi più larghi.</small>
+        </div>
+        <div class="kit-settings-row">
+          <span class="kit-settings-label">Alias, soglie e altro</span>
+          <button class="kit-btn" id="bImp" type="button" title="Esporta o importa alias, soglie, fornitori di carburante e aspetto"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Esporta o importa…</button>
+        </div>
+        <div class="kit-settings-foot"><button type="button" class="kit-btn kit-btn-ghost" data-kit-reset>Ripristina l'aspetto</button></div>
+      </div>
+    </div>
   </div>
 </header>
 <div id="recentMenu" class="menu"></div>
@@ -66,13 +99,13 @@
         <input id="q" type="search" autocomplete="off" placeholder="Cerca per numero, fornitore, P.IVA, descrizione, importo…" aria-label="Cerca">
         <kbd>/</kbd>
       </label>
-      <div class="seg" id="dirSeg" role="group" aria-label="Direzione">
-        <button data-dir="" class="on">Tutte</button><button data-dir="ricevuta">Ricevute</button><button data-dir="emessa">Emesse</button>
+      <div class="kit-seg" id="dirSeg" role="group" aria-label="Direzione">
+        <button data-dir="" class="is-on">Tutte</button><button data-dir="ricevuta">Ricevute</button><button data-dir="emessa">Emesse</button>
       </div>
-      <button class="btn" id="fbtn"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg><span>Filtri</span> <span class="n" id="fcount" style="display:none"></span></button>
+      <button class="kit-btn" id="fbtn"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg><span>Filtri</span> <span class="n" id="fcount" style="display:none"></span></button>
     </div>
     <div class="years" id="years"></div>
-    <div id="adv" class="card">
+    <div id="adv" class="kit-card">
       <div class="fgrid">
         <label class="f f2">La mia azienda <select id="my"></select><small>Serve a distinguere le fatture emesse (tu sei il cedente) da quelle ricevute (tu sei il cessionario).</small></label>
         <label class="f f2">Cliente / fornitore
@@ -90,26 +123,26 @@
       </div>
       <div class="ffoot">
         <label class="chk"><input id="dup" type="checkbox" checked> Nascondi duplicati <span id="dupN" class="mute"></span></label>
-        <button class="btn" id="bReset">Azzera tutti i filtri</button>
+        <button class="kit-btn" id="bReset">Azzera tutti i filtri</button>
       </div>
     </div>
     <div id="chips"></div>
   </section>
 
-  <section class="card" id="stats"></section>
+  <section class="kit-card" id="stats"></section>
 
-  <div id="split"><div id="left">
-  <div class="tabs" id="tabs">
-    <button class="tab on" data-t="fatt">Fatture</button>
-    <button class="tab" data-t="cp">Clienti / fornitori</button>
-    <button class="tab" data-t="mesi">Andamento mensile</button>
-    <button class="tab" data-t="rif" hidden>Rifornimenti</button>
+  <div id="split" class="kit-split-lg"><div id="left">
+  <div class="kit-tabs" id="tabs">
+    <button class="kit-tab is-on" data-t="fatt">Fatture</button>
+    <button class="kit-tab" data-t="cp">Clienti / fornitori</button>
+    <button class="kit-tab" data-t="mesi">Andamento mensile</button>
+    <button class="kit-tab" data-t="rif" hidden>Rifornimenti</button>
     <span class="sp"></span>
-    <button class="btn ghost" id="bErr" style="display:none"></button>
-    <button class="btn" id="bCsv"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span class="lbl">Esporta CSV</span></button>
+    <button class="kit-btn kit-btn-ghost" id="bErr" style="display:none"></button>
+    <button class="kit-btn" id="bCsv"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span class="lbl">Esporta CSV</span></button>
   </div>
 
-  <section class="card" id="content">
+  <section class="kit-card" id="content">
     <div class="hello">
       <img class="hlogo" src="icon.svg" alt="" width="56" height="56">
       <h2>Esplora le tue fatture elettroniche</h2>
@@ -117,90 +150,97 @@
       <section class="hsec" aria-labelledby="hApri">
         <h3 id="hApri">Apri le tue fatture</h3>
         <p class="mute">Cartella con i file <code>.xml</code> e <code>.xml.p7m</code>, sottocartelle comprese, oppure una singola fattura.</p>
-        <div class="hbtns"><button class="btn primary" data-go="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg>Seleziona cartella…</button><button class="btn" data-go="bFile"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Apri una fattura…</button></div>
+        <div class="hbtns"><button class="kit-btn kit-btn-primary" data-go="bPick"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg>Seleziona cartella…</button><button class="kit-btn" data-go="bFile"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Apri una fattura…</button></div>
       </section>
       <section class="hsec" id="demoBox" aria-labelledby="hProva" hidden>
         <h3 id="hProva">Prova con fatture di esempio</h3>
         <p class="mute">Non hai fatture sotto mano? Carica alcune fatture fittizie incorporate nell'app.</p>
-        <div class="demo"><label class="demo-n">Quante fatture<select id="demoN"></select></label><button class="btn" data-act="demo"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Carica fatture di esempio</button></div>
+        <div class="demo"><label class="demo-n">Quante fatture<select id="demoN"></select></label><button class="kit-btn" data-act="demo"><svg class="i" aria-hidden="true"><use href="#i-file"/></svg>Carica fatture di esempio</button></div>
       </section>
       <section class="hsec" id="recentHello" aria-label="Aperti di recente"></section>
     </div>
   </section>
   </div>
-<aside id="drawer" aria-label="Dettaglio fattura">
-  <div id="dhead">
-    <button class="btn" id="dPrev" title="Precedente (←)" aria-label="Precedente"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg></button>
-    <button class="btn" id="dNext" title="Successiva (→)" aria-label="Successiva"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></button>
-    <div class="t"><h2 id="dTitle"></h2><small id="dSub"></small></div>
-    <div class="seg"><button id="dTabD" class="on">Dettaglio</button><button id="dTabX">XML</button></div>
-    <button class="btn ghost no-print" id="dXml" title="Scarica il file XML della fattura" aria-label="Scarica il file XML"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg></button>
-    <button class="btn ghost no-print" id="dPrint" title="Esporta in PDF o stampa la copia di cortesia">PDF</button>
-    <button class="btn ghost no-print" id="dFull" title="A tutta larghezza / affianca alla lista" aria-label="A tutta larghezza"><svg class="i" aria-hidden="true"><use href="#i-expand"/></svg></button>
-    <button class="btn ghost no-print" id="dClose" title="Chiudi (Esc)" aria-label="Chiudi"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+<aside id="drawer" class="kit-split-panel" aria-label="Dettaglio fattura">
+  <div id="dhead" class="kit-split-head">
+    <button class="kit-btn" id="dPrev" title="Precedente (←)" aria-label="Precedente"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg></button>
+    <button class="kit-btn" id="dNext" title="Successiva (→)" aria-label="Successiva"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></button>
+    <div class="t kit-split-title"><h2 id="dTitle"></h2><small id="dSub"></small></div>
+    <div class="kit-seg"><button id="dTabD" class="is-on">Dettaglio</button><button id="dTabX">XML</button></div>
+    <button class="kit-btn kit-btn-ghost no-print" id="dXml" title="Scarica il file XML della fattura" aria-label="Scarica il file XML"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg></button>
+    <button class="kit-btn kit-btn-ghost no-print" id="dPrint" title="Esporta in PDF o stampa la copia di cortesia">PDF</button>
+    <button class="kit-btn kit-btn-ghost no-print" id="dFull" title="A tutta larghezza / affianca alla lista" aria-label="A tutta larghezza"><svg class="i" aria-hidden="true"><use href="#i-expand"/></svg></button>
+    <button class="kit-btn kit-btn-ghost no-print" id="dClose" title="Chiudi (Esc)" aria-label="Chiudi"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
   </div>
-  <div id="dbody"></div>
+  <div id="dbody" class="kit-split-body"></div>
 </aside>
   </div>
 </main>
 
-<div id="overlay"><div class="box"><div id="ovText">Lettura…</div><div class="bar"><i id="ovBar"></i></div></div></div>
-<div id="scrim"></div>
 <div id="printDoc" aria-hidden="true"></div>
-<div id="toast"></div>
 
 
 
-<dialog id="errDlg"><h3 style="margin-top:0">File non letti</h3><div id="errList" style="max-height:50vh;overflow:auto;font-size:13px"></div>
-  <p style="text-align:right"><button class="btn" id="errClose">Chiudi</button></p></dialog>
+<dialog class="kit-dialog" id="errDlg" aria-labelledby="errTit">
+  <div class="kit-card-head"><span id="errTit">File non letti</span></div>
+  <div class="kit-card-body" id="errList"></div>
+  <div class="kit-card-foot"><button class="kit-btn" id="errClose">Chiudi</button></div>
+</dialog>
 
-<dialog id="aliasDlg" aria-labelledby="aliasTit"><form id="aliasForm" method="dialog">
-  <h3 id="aliasTit" class="dlg-t">Alias del veicolo</h3>
-  <div class="dlg-veh"><span>Targa</span><b id="aliasTarga"></b></div>
-  <label class="f" for="aliasIn">Nome da mostrare al posto della targa
-    <input id="aliasIn" type="text" maxlength="40" autocomplete="off" placeholder="Es. Furgone di Mario">
-    <small>Resta salvato solo in questo browser. Lascia vuoto per togliere l'alias.</small></label>
-  <div class="dlg-foot"><button class="btn" type="button" id="aliasNo">Annulla</button><button class="btn primary" type="submit">Salva</button></div>
+<dialog class="kit-dialog" id="aliasDlg" aria-labelledby="aliasTit"><form id="aliasForm" method="dialog">
+  <div class="kit-card-head"><span id="aliasTit">Alias del veicolo</span></div>
+  <div class="kit-card-body kit-stack">
+    <div class="dlg-veh"><span>Targa</span><b id="aliasTarga"></b></div>
+    <label class="kit-field" for="aliasIn">Nome da mostrare al posto della targa
+      <input class="kit-input" id="aliasIn" type="text" maxlength="40" autocomplete="off" placeholder="Es. Furgone di Mario">
+      <small>Resta salvato solo in questo browser. Lascia vuoto per togliere l'alias.</small></label>
+  </div>
+  <div class="kit-card-foot"><button class="kit-btn" type="button" id="aliasNo">Annulla</button><button class="kit-btn kit-btn-primary" type="submit">Salva</button></div>
 </form></dialog>
 
-<dialog id="impDlg" aria-labelledby="impTit"><div id="impForm">
-  <h3 id="impTit" class="dlg-t">Impostazioni</h3>
-  <p class="imp-p">Alias dei veicoli, soglie e controlli, fornitori di carburante, tema e azienda scelta restano in questo browser. Salvali in un file per usarli su un altro browser o come copia di sicurezza.</p>
-  <dl class="imp-sum" id="impSum"></dl>
-  <div class="imp-act">
-    <button class="btn" type="button" id="impEsporta"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Esporta in un file</button>
-    <button class="btn" type="button" id="impImporta"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg>Importa da un file…</button>
-    <input type="file" id="impFile" accept=".json,application/json" hidden>
-  </div>
-  <p class="imp-msg" id="impMsg" role="alert" hidden></p>
-  <div id="impPrev" hidden>
-    <h3 class="dlg-t">Contenuto del file</h3>
-    <dl class="imp-sum" id="impPrevSum"></dl>
-    <div class="imp-mode">
-      <label class="chk"><input type="radio" name="impMode" value="unisci" checked> Unisci alle impostazioni attuali (quelle del file prevalgono)</label>
-      <label class="chk"><input type="radio" name="impMode" value="sostituisci"> Sostituisci alias, soglie e fornitori attuali</label>
+<dialog class="kit-dialog" id="impDlg" aria-labelledby="impTit" style="--kit-dialog-w:520px"><div id="impForm">
+  <div class="kit-card-head"><span id="impTit">Impostazioni</span></div>
+  <div class="kit-card-body kit-stack">
+    <p class="imp-p">Alias dei veicoli, soglie e controlli, fornitori di carburante, aspetto (tema, testo e larghezza) e azienda scelta restano in questo browser. Salvali in un file per usarli su un altro browser o come copia di sicurezza.</p>
+    <dl class="imp-sum" id="impSum"></dl>
+    <div class="imp-act">
+      <button class="kit-btn" type="button" id="impEsporta"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Esporta in un file</button>
+      <button class="kit-btn" type="button" id="impImporta"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg>Importa da un file…</button>
+      <input type="file" id="impFile" accept=".json,application/json" hidden>
     </div>
+    <p class="imp-msg" id="impMsg" role="alert" hidden></p>
+    <div id="impPrev" class="kit-stack" hidden>
+      <h3 class="dlg-t">Contenuto del file</h3>
+      <dl class="imp-sum" id="impPrevSum"></dl>
+      <div class="kit-stack">
+        <label class="kit-check"><input type="radio" name="impMode" value="unisci" checked> Unisci alle impostazioni attuali (quelle del file prevalgono)</label>
+        <label class="kit-check"><input type="radio" name="impMode" value="sostituisci"> Sostituisci alias, soglie e fornitori attuali</label>
+      </div>
+    </div>
+    <p class="imp-note">Il file contiene targhe, alias e l'identificativo della tua azienda, ma nessun dato delle fatture. Conservalo con cura.</p>
   </div>
-  <p class="imp-note">Il file contiene targhe, alias e l'identificativo della tua azienda, ma nessun dato delle fatture. Conservalo con cura.</p>
-  <div class="dlg-foot"><button class="btn" type="button" id="impAnnulla" hidden>Annulla importazione</button><span class="sp"></span><button class="btn" type="button" id="impChiudi">Chiudi</button><button class="btn primary" type="button" id="impApplica" hidden>Importa</button></div>
+  <div class="kit-card-foot"><button class="kit-btn" type="button" id="impAnnulla" hidden>Annulla importazione</button><span class="sp"></span><button class="kit-btn" type="button" id="impChiudi">Chiudi</button><button class="kit-btn kit-btn-primary" type="button" id="impApplica" hidden>Importa</button></div>
 </div></dialog>
 
-<dialog id="sogliaDlg" aria-labelledby="sgTit"><form id="sogliaForm" method="dialog">
-  <h3 id="sgTit" class="dlg-t">Soglie di controllo</h3>
-  <label class="f" for="sgVei">Veicolo
-    <select id="sgVei"></select>
-    <small id="sgHint"></small></label>
-  <div class="sg-list" role="group" aria-label="Controlli">
-    <div class="sg-row"><label class="chk"><input id="sgOnLitri" type="checkbox"> Litri sopra la soglia</label><input id="sgLitri" type="number" min="1" max="2000" step="1" inputmode="numeric" required aria-label="Litri massimi per rifornimento"><span class="sg-u">l max</span></div>
-    <div class="sg-row"><label class="chk"><input id="sgOnOre" type="checkbox"> Rifornimenti ravvicinati</label><input id="sgOre" type="number" min="1" max="168" step="1" inputmode="numeric" required aria-label="Ore minime tra due rifornimenti"><span class="sg-u">ore min</span></div>
-    <div class="sg-row"><label class="chk"><input id="sgOnCarb" type="checkbox"> Carburante insolito per il veicolo</label></div>
-    <div class="sg-row"><label class="chk"><input id="sgOnCarta" type="checkbox"> Carta usata su targhe diverse</label></div>
-    <div class="sg-row"><label class="chk"><input id="sgOrari" type="checkbox"> Di notte (22–06) e di domenica</label></div>
+<dialog class="kit-dialog" id="sogliaDlg" aria-labelledby="sgTit"><form id="sogliaForm" method="dialog">
+  <div class="kit-card-head"><span id="sgTit">Soglie di controllo</span></div>
+  <div class="kit-card-body kit-stack">
+    <label class="f" for="sgVei">Veicolo
+      <select id="sgVei"></select>
+      <small id="sgHint"></small></label>
+    <div class="sg-list" role="group" aria-label="Controlli">
+      <div class="sg-row"><label class="kit-check"><input id="sgOnLitri" type="checkbox"> Litri sopra la soglia</label><input class="kit-input" id="sgLitri" type="number" min="1" max="2000" step="1" inputmode="numeric" required aria-label="Litri massimi per rifornimento"><span class="sg-u">l max</span></div>
+      <div class="sg-row"><label class="kit-check"><input id="sgOnOre" type="checkbox"> Rifornimenti ravvicinati</label><input class="kit-input" id="sgOre" type="number" min="1" max="168" step="1" inputmode="numeric" required aria-label="Ore minime tra due rifornimenti"><span class="sg-u">ore min</span></div>
+      <div class="sg-row"><label class="kit-check"><input id="sgOnCarb" type="checkbox"> Carburante insolito per il veicolo</label></div>
+      <div class="sg-row"><label class="kit-check"><input id="sgOnCarta" type="checkbox"> Carta usata su targhe diverse</label></div>
+      <div class="sg-row"><label class="kit-check"><input id="sgOrari" type="checkbox"> Di notte (22–06) e di domenica</label></div>
+    </div>
   </div>
-  <div class="dlg-foot"><button class="btn" type="button" id="sgReset">Ripristina</button><span class="sp"></span><button class="btn" type="button" id="sgNo">Annulla</button><button class="btn primary" type="submit">Salva</button></div>
+  <div class="kit-card-foot"><button class="kit-btn" type="button" id="sgReset">Ripristina</button><span class="sp"></span><button class="kit-btn" type="button" id="sgNo">Annulla</button><button class="kit-btn kit-btn-primary" type="submit">Salva</button></div>
 </form></dialog>
 
 <script src="esempi.js"></script>
+<script src="kit.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -8,16 +8,6 @@ const ESI={I:'Immediata',D:'Differita',S:'Scissione dei pagamenti'};
 const COND={TP01:'Pagamento a rate',TP02:'Pagamento completo',TP03:'Anticipo'};
 [TD,MP,NAT,RF,ESI,COND].forEach(m=>Object.setPrototypeOf(m,null));
 
-/* ====================== Tema (auto / chiaro / scuro) ====================== */
-function setTheme(t){
-  if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);else{t='auto';document.documentElement.removeAttribute('data-theme')}
-  try{localStorage.setItem('fe_theme',t)}catch{}
-  document.querySelectorAll('#themeMenu .opt').forEach(b=>b.classList.toggle('on',b.dataset.th===t));
-  document.querySelector('#bTheme use').setAttribute('href','#i-'+{auto:'auto',light:'sun',dark:'moon'}[t]);
-  document.getElementById('themeLbl').textContent={auto:'Automatico',light:'Chiaro',dark:'Scuro'}[t];
-}
-(()=>{let t='auto';try{t=localStorage.getItem('fe_theme')||'auto'}catch{}setTheme(t)})();
-
 /* ====================== Utility ====================== */
 const $id=i=>document.getElementById(i);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -230,14 +220,18 @@ let ALL=[],view=[],ERR=[],entriesCur=null,rootName='',dirHandle=null;
 let CP_OPTS=[];
 let myId=localStorage.getItem('fe_my')||'';
 const F={q:'',dir:'',cp:'',anno:'',per:'',dal:'',al:'',td:'',min:'',max:'',dup:true};
+const SP=Kit.split('#split');
 let tab='fatt',sortF={k:'data',d:-1},shown=0,drawerIdx=-1,canon=new Map(),maxTot=1;
 const PAGE=200;
 const nm=p=>canon.get(p.id)||p.nome;
-function toast(t,ms=2200){const e=$id('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),ms)}
+function toast(t,ms=2200){Kit.toast(t,{duration:ms})}
 const META=/_(MT|NS|RC|NE|DT|AT|EC|MC|SE)_\d+/i;
 
 /* ====================== Scansione cartella ====================== */
-function progress(txt,frac){$id('overlay').style.display='flex';$id('ovText').textContent=txt;$id('ovBar').style.width=Math.round((frac||0)*100)+'%'}
+/* avanzamento a pieno schermo (Kit.progress): senza frazione la barra scorre da sola. progressEnd() lo chiude. */
+let PG=null;
+function progress(txt,frac){const v=frac==null?null:frac;if(PG)PG.update(txt,v);else PG=Kit.progress(txt,{value:v,delay:150})}
+function progressEnd(){if(PG){PG.close();PG=null}}
 async function walk(dir,prefix,out){
   for await(const[name,h]of dir.entries()){
     if(h.kind==='directory'){if(/^[.@#$]/.test(name))continue;await walk(h,prefix+name+'/',out)}
@@ -267,7 +261,7 @@ async function loadEntries(entries,root,key=root){
   // duplicati
   const seen=new Set();ALL.sort((a,b)=>a.path<b.path?-1:1);
   for(const d of ALL){const k=[d.ced.id,d.td,d.numero,d.data].join('|');d.dup=seen.has(k);seen.add(k)}
-  $id('overlay').style.display='none';
+  progressEnd();
   setupAfterLoad(entries.length,reused);
 }
 function setupAfterLoad(nFiles,reused){
@@ -277,12 +271,12 @@ function setupAfterLoad(nFiles,reused){
   for(const d of ALL)for(const p of[d.ced,d.ces]){const x=cnt.get(p.id)||{id:p.id,nome:p.nome,piva:p.piva,n:0};x.n++;cnt.set(p.id,x)}
   const parties=[...cnt.values()].sort((a,b)=>b.n-a.n);
   if(!myId||!cnt.has(myId))myId=parties.length&&ALL.length>1?parties[0].id:'';
-  $id('my').innerHTML='<option value="">(nessuna)</option>'+parties.slice(0,300).map(p=>`<option value="${esc(p.id)}" data-name="${esc(nm(p))}" data-sub="${esc(p.piva||p.id)} · ${p.n} fatture">${esc(nm(p))} — ${esc(p.piva||p.id)} (${p.n} fatture)</option>`).join('');
+  $id('my').innerHTML='<option value="">(nessuna)</option>'+parties.slice(0,300).map(p=>`<option value="${esc(p.id)}" data-kit-hint="${esc(p.piva||p.id)} · ${p.n} fatture">${esc(nm(p))}</option>`).join('');
   $id('my').value=myId;
   const yc=Object.create(null);for(const d of ALL)if(d.data&&!(F.dup&&d.dup))yc[d.data.slice(0,4)]=(yc[d.data.slice(0,4)]||0)+1;
   const years=Object.keys(yc).sort().reverse();
   if(!years.includes(F.anno))F.anno='';
-  $id('years').innerHTML='<span class="lbl">Anno</span><button class="pill" data-y="">Tutti</button>'+years.map(y=>`<button class="pill" data-y="${esc(y)}">${esc(y)}<small>${yc[y]}</small></button>`).join('');
+  $id('years').innerHTML='<span class="lbl">Anno</span><button class="kit-pill" data-y="">Tutti</button>'+years.map(y=>`<button class="kit-pill" data-y="${esc(y)}">${esc(y)}<small>${yc[y]}</small></button>`).join('');
   const tds=[...new Set(ALL.map(d=>d.td))].sort();
   $id('td').innerHTML='<option value="">Tutti</option>'+tds.map(t=>`<option value="${esc(t)}">${esc(t)} · ${esc(TD[t]||'')}</option>`).join('');
   $id('toolbar').style.display='block';document.body.classList.add('fixed');$id('tabs').style.display='flex';
@@ -334,8 +328,8 @@ function readFilters(){
   F.td=$id('td').value;F.min=$id('min').value;F.max=$id('max').value;F.dup=$id('dup').checked;apply();
 }
 function syncUI(){
-  document.querySelectorAll('#years .pill').forEach(b=>b.classList.toggle('on',b.dataset.y===F.anno));
-  document.querySelectorAll('#dirSeg button').forEach(b=>b.classList.toggle('on',b.dataset.dir===F.dir));
+  document.querySelectorAll('#years .kit-pill').forEach(b=>b.classList.toggle('is-on',b.dataset.y===F.anno));
+  document.querySelectorAll('#dirSeg button').forEach(b=>b.classList.toggle('is-on',b.dataset.dir===F.dir));
   const ch=[];
   if(F.cp)ch.push(['cp','Cliente/fornitore',F.cp.split(' — ')[0]]);
   if(F.per)ch.push(['per','Periodo',$id('per').selectedOptions[0].text]);
@@ -345,7 +339,7 @@ function syncUI(){
   if(F.min!=='')ch.push(['min','Da',EUR.format(+F.min)]);
   if(F.max!=='')ch.push(['max','Fino a',EUR.format(+F.max)]);
   if(!F.dup)ch.push(['dup','Duplicati','inclusi']);
-  $id('chips').innerHTML=ch.map(c=>`<button class="chip" data-clr="${c[0]}" title="Rimuovi filtro">${c[1]}: <b>${esc(c[2])}</b><i>✕</i></button>`).join('');
+  $id('chips').innerHTML=ch.map(c=>`<button class="kit-chip" data-clr="${c[0]}" title="Rimuovi filtro">${c[1]}: <b>${esc(c[2])}</b><i>✕</i></button>`).join('');
   const n=$id('fcount');n.style.display=ch.length?'':'none';n.textContent=ch.length;
   if(typeof refreshUI==='function')refreshUI();
 }
@@ -365,27 +359,27 @@ function render(){
   const c=[['Fatture',view.length.toLocaleString('it-IT')+(view.length!==ALL.length?`<em>su ${ALL.length.toLocaleString('it-IT')}</em>`:'')],['Imponibile',EUR.format(imp)],['IVA',EUR.format(iva)],['Totale',EUR.format(tot)]];
   if(em.length&&ri.length){c.push(['Emesso',EUR.format(sumBy(em,d=>d.totS))]);c.push(['Ricevuto',EUR.format(sumBy(ri,d=>d.totS))])}
   st.style.display='grid';
-  st.innerHTML=c.map(x=>`<div class="stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.t===tab));
+  st.innerHTML=c.map(x=>`<div class="kit-stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
+  document.querySelectorAll('.kit-tab').forEach(t=>t.classList.toggle('is-on',t.dataset.t===tab));
   document.body.classList.toggle('on-rif',tab==='rif');
   if(!ALL.length)return;
   if(tab==='fatt')renderList();else if(tab==='cp')renderCp();else if(tab==='rif')renderRif();else renderMesi();
 }
-function th(k,label,cls,st){const on=st.k===k;return`<th class="${cls||''}${on?' on':''}" data-k="${k}">${label}${on?(st.d>0?' ▲':' ▼'):''}</th>`}
-const noRes=()=>`<div class="empty"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></div><h2>Nessun risultato</h2><p>Nessuna fattura corrisponde ai filtri attuali.</p><button class="btn" data-act="reset">Azzera i filtri</button></div>`;
+function th(k,label,cls,st){const on=st.k===k;return`<th class="${cls||''}" data-k="${k}" aria-sort="${on?(st.d>0?'ascending':'descending'):'none'}">${label}${on?(st.d>0?' ▲':' ▼'):''}</th>`}
+const noRes=()=>`<div class="empty"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></div><h2>Nessun risultato</h2><p>Nessuna fattura corrisponde ai filtri attuali.</p><button class="kit-btn" data-act="reset">Azzera i filtri</button></div>`;
 let two=false,showDir=false;
 function rowHtml(d,i){
   const neg=d.sg<0,p=two?null:(d.cp||d.ced);
   const desc=(d.righe[0]&&d.righe[0].d)||d.caus[0]||'';
   const sub=(p?(p.piva||p.cf):'')+(desc?(p?' · ':'')+desc.slice(0,80):'');
   const party=q=>`${esc(nm(q))}<div class="sub">${esc(q.piva||q.cf)}</div>`;
-  return`<tr data-i="${i}"${i===drawerIdx?' class="sel"':''}><td>${fdate(d.data)}</td><td class="c-num">${esc(d.numero)}</td>
-  <td class="c-tipo"><span class="badge${neg?' cr':''}" title="${esc(TD[d.td]||'')}">${esc(d.td)}</span></td>
-  ${two?`<td class="wrapc">${party(d.ced)}<div class="sub only-sm">${esc(d.td)} n. ${esc(d.numero)}${showDir&&d.dir?' · '+(d.dir==='emessa'?'Emessa':'Ricevuta'):''}</div></td><td class="wrapc c-ces">${party(d.ces)}</td>`:`<td class="wrapc">${esc(nm(p))}<div class="sub only-sm">${esc(d.td)} n. ${esc(d.numero)}${showDir&&d.dir?' · '+(d.dir==='emessa'?'Emessa':'Ricevuta'):''}</div><div class="sub">${esc(sub)}</div></td>`}
-  ${showDir?`<td class="c-dir">${d.dir?`<span class="badge ${d.dir==='emessa'?'em':'ri'}">${d.dir==='emessa'?'Emessa':'Ricevuta'}</span>`:''}</td>`:''}
-  <td class="n c-imp ${sgn(d.sg)}">${money(d.impS,d.divisa)}</td><td class="n c-iva ${sgn(d.sg)}">${money(d.ivaS,d.divisa)}</td>
-  <td class="n ${sgn(d.sg)}"><b>${money(d.totS,d.divisa)}</b></td>
-  <td class="c-att">${d.all.length?'<span class="att" title="Allegati"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg></span>':''}${d.dup?' <span class="badge gr" title="Duplicato di un\'altra fattura">dup</span>':''}</td></tr>`;
+  return`<tr data-i="${i}"${i===drawerIdx?' class="is-selected"':''}><td>${fdate(d.data)}</td><td class="c-num">${esc(d.numero)}</td>
+  <td class="c-tipo"><span class="kit-badge${neg?' kit-badge-danger':''}" title="${esc(TD[d.td]||'')}">${esc(d.td)}</span></td>
+  ${two?`<td class="kit-wrap">${party(d.ced)}<div class="sub only-sm">${esc(d.td)} n. ${esc(d.numero)}${showDir&&d.dir?' · '+(d.dir==='emessa'?'Emessa':'Ricevuta'):''}</div></td><td class="kit-wrap c-ces">${party(d.ces)}</td>`:`<td class="kit-wrap">${esc(nm(p))}<div class="sub only-sm">${esc(d.td)} n. ${esc(d.numero)}${showDir&&d.dir?' · '+(d.dir==='emessa'?'Emessa':'Ricevuta'):''}</div><div class="sub">${esc(sub)}</div></td>`}
+  ${showDir?`<td class="c-dir">${d.dir?`<span class="kit-badge ${d.dir==='emessa'?'kit-badge-success':'kit-badge-warning'}">${d.dir==='emessa'?'Emessa':'Ricevuta'}</span>`:''}</td>`:''}
+  <td class="kit-num c-imp ${sgn(d.sg)}">${money(d.impS,d.divisa)}</td><td class="kit-num c-iva ${sgn(d.sg)}">${money(d.ivaS,d.divisa)}</td>
+  <td class="kit-num ${sgn(d.sg)}"><b>${money(d.totS,d.divisa)}</b></td>
+  <td class="c-att">${d.all.length?'<span class="att" title="Allegati"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg></span>':''}${d.dup?' <span class="kit-badge kit-badge-neutral" title="Duplicato di un\'altra fattura">dup</span>':''}</td></tr>`;
 }
 const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))fill()},{rootMargin:'600px'});
 function fill(){
@@ -401,7 +395,7 @@ function appendRows(){
 function renderList(){
   if(!view.length){$id('content').innerHTML=noRes();return}
   two=!myId;showDir=!!myId&&view.some(d=>d.dir==='emessa');
-  $id('content').innerHTML=`<table><thead><tr>${th('data','Data','',sortF)}${th('numero','Numero','c-num',sortF)}${th('td','Tipo','c-tipo',sortF)}${two?th('ced','Cedente / fornitore','',sortF)+th('ces','Cessionario / cliente','c-ces',sortF):th('cp','Controparte','',sortF)}${showDir?th('dir','Direzione','c-dir',sortF):''}${th('imp','Imponibile','n c-imp',sortF)}${th('iva','IVA','n c-iva',sortF)}${th('tot','Totale','n',sortF)}<th class="c-att" style="cursor:default"></th></tr></thead><tbody id="tb"></tbody></table><div class="more" id="sent"></div>`;
+  $id('content').innerHTML=`<table class="kit-table kit-table-hover"><thead><tr>${th('data','Data','',sortF)}${th('numero','Numero','c-num',sortF)}${th('td','Tipo','c-tipo',sortF)}${two?th('ced','Cedente / fornitore','',sortF)+th('ces','Cessionario / cliente','c-ces',sortF):th('cp','Controparte','',sortF)}${showDir?th('dir','Direzione','c-dir',sortF):''}${th('imp','Imponibile','kit-num c-imp',sortF)}${th('iva','IVA','kit-num c-iva',sortF)}${th('tot','Totale','kit-num',sortF)}<th class="c-att"></th></tr></thead><tbody id="tb"></tbody></table><div class="more" id="sent"></div>`;
   shown=0;appendRows();io.disconnect();io.observe($id('sent'));fill();
 }
 let cpSort={k:'tot',d:-1},cpRows=[];
@@ -413,8 +407,8 @@ function renderCp(){
   cpRows.sort((a,b)=>(val[k](a)<val[k](b)?-1:1)*s);
   if(!cpRows.length){$id('content').innerHTML=noRes();return}
   const mx=Math.max(1,...cpRows.map(x=>Math.abs(x.tot)));
-  $id('content').innerHTML=`<table><thead><tr>${th('nome',myId?'Cliente / fornitore':'Cedente','',cpSort)}<th class="c-num" style="cursor:default">P.IVA / CF</th>${th('n','Fatture','n',cpSort)}${th('imp','Imponibile','n c-imp',cpSort)}${th('iva','IVA','n c-iva',cpSort)}${th('tot','Totale','n',cpSort)}${th('last','Ultima fattura','c-tipo',cpSort)}</tr></thead><tbody id="tbcp">`+
-   cpRows.map((x,i)=>`<tr data-i="${i}" title="Mostra le fatture di ${esc(nm(x.p))}"><td class="wrapc">${esc(nm(x.p))}${isCarb(x.p.piva)?' <span class="badge gr" title="Gli allegati di questo fornitore sono letti come rifornimenti (scheda Rifornimenti)">carburante</span>':''}</td><td class="mute c-num">${esc(x.p.piva||x.p.cf)}</td><td class="n">${x.n}</td><td class="n c-imp">${EUR.format(x.imp)}</td><td class="n c-iva">${EUR.format(x.iva)}</td><td class="n"><b>${EUR.format(x.tot)}</b></td><td class="c-tipo">${fdate(x.last)}</td></tr>`).join('')+'</tbody></table>';
+  $id('content').innerHTML=`<table class="kit-table kit-table-hover"><thead><tr>${th('nome',myId?'Cliente / fornitore':'Cedente','',cpSort)}<th class="c-num">P.IVA / CF</th>${th('n','Fatture','kit-num',cpSort)}${th('imp','Imponibile','kit-num c-imp',cpSort)}${th('iva','IVA','kit-num c-iva',cpSort)}${th('tot','Totale','kit-num',cpSort)}${th('last','Ultima fattura','c-tipo',cpSort)}</tr></thead><tbody id="tbcp">`+
+   cpRows.map((x,i)=>`<tr data-i="${i}" title="Mostra le fatture di ${esc(nm(x.p))}"><td class="kit-wrap">${esc(nm(x.p))}${isCarb(x.p.piva)?' <span class="kit-badge kit-badge-neutral" title="Gli allegati di questo fornitore sono letti come rifornimenti (scheda Rifornimenti)">carburante</span>':''}</td><td class="mute c-num">${esc(x.p.piva||x.p.cf)}</td><td class="kit-num">${x.n}</td><td class="kit-num c-imp">${EUR.format(x.imp)}</td><td class="kit-num c-iva">${EUR.format(x.iva)}</td><td class="kit-num"><b>${EUR.format(x.tot)}</b></td><td class="c-tipo">${fdate(x.last)}</td></tr>`).join('')+'</tbody></table>';
 }
 let mesiRows=[];
 function renderMesi(){
@@ -439,8 +433,8 @@ function renderMesi(){
   });
   svg+='</svg>';
   const leg=`<div class="legend">${series.map(s=>`<span><i style="background:${s[2]}"></i>${s[1]}</span>`).join('')}<span>· clicca una barra o una riga per vedere le fatture di quel mese</span></div>`;
-  $id('content').innerHTML=leg+`<div class="chartwrap">${svg}</div><table><thead><tr><th style="cursor:default">Mese</th><th class="n" style="cursor:default">Fatture</th>${two2?'<th class="n" style="cursor:default">Emesso</th><th class="n" style="cursor:default">Ricevuto</th>':''}<th class="n c-imp" style="cursor:default">Imponibile</th><th class="n" style="cursor:default">Totale</th></tr></thead><tbody id="tbm">`+
-   [...mesiRows].reverse().map(r=>`<tr data-m="${r.k}"><td>${MESI[+r.k.slice(5)-1]} ${r.k.slice(0,4)}</td><td class="n">${r.n}</td>${two2?`<td class="n">${EUR.format(r.em)}</td><td class="n">${EUR.format(r.ri)}</td>`:''}<td class="n c-imp">${EUR.format(r.imp)}</td><td class="n"><b>${EUR.format(r.tot)}</b></td></tr>`).join('')+'</tbody></table>';
+  $id('content').innerHTML=leg+`<div class="chartwrap">${svg}</div><table class="kit-table kit-table-hover"><thead><tr><th>Mese</th><th class="kit-num">Fatture</th>${two2?'<th class="kit-num">Emesso</th><th class="kit-num">Ricevuto</th>':''}<th class="kit-num c-imp">Imponibile</th><th class="kit-num">Totale</th></tr></thead><tbody id="tbm">`+
+   [...mesiRows].reverse().map(r=>`<tr data-m="${r.k}"><td>${MESI[+r.k.slice(5)-1]} ${r.k.slice(0,4)}</td><td class="kit-num">${r.n}</td>${two2?`<td class="kit-num">${EUR.format(r.em)}</td><td class="kit-num">${EUR.format(r.ri)}</td>`:''}<td class="kit-num c-imp">${EUR.format(r.imp)}</td><td class="kit-num"><b>${EUR.format(r.tot)}</b></td></tr>`).join('')+'</tbody></table>';
 }
 function filterMonth(k){
   const[y,mo]=k.split('-');const last=new Date(+y,+mo,0).getDate();
@@ -612,13 +606,13 @@ function scelta(conIntro){
     const x=m.get(d.ced.piva)||{p:d.ced,n:0};x.n++;m.set(d.ced.piva,x);
   }
   if(!m.size)return conIntro?'':'<p class="mute rf-note">Nessuna delle fatture caricate ha allegati CSV o ZIP, quindi non ci sono fornitori da proporre.</p>';
-  return`<h3 class="rf-sub">Fornitori con allegati CSV o ZIP</h3><table><thead><tr><th>Fornitore</th><th class="c-num">P.IVA</th><th class="n c-xs">Fatture</th><th></th></tr></thead><tbody>`+
-    [...m.values()].sort((a,b)=>b.n-a.n).map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n c-xs">${x.n}</td><td class="n"><button class="btn" data-carbon="${esc(x.p.piva)}">Leggi come carta carburante</button></td></tr>`).join('')+'</tbody></table>';
+  return`<h3 class="rf-sub">Fornitori con allegati CSV o ZIP</h3><table class="kit-table"><thead><tr><th>Fornitore</th><th class="c-num">P.IVA</th><th class="kit-num c-xs">Fatture</th><th></th></tr></thead><tbody>`+
+    [...m.values()].sort((a,b)=>b.n-a.n).map(x=>`<tr><td class="kit-wrap">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="kit-num c-xs">${x.n}</td><td class="kit-num"><button class="kit-btn" data-carbon="${esc(x.p.piva)}">Leggi come carta carburante</button></td></tr>`).join('')+'</tbody></table>';
 }
 function renderRif(){
   if(!CARB_UTENTE.length){
     rfRows=[];$id('stats').style.display='none';
-    $id('content').innerHTML=`<div class="rf-wrap"><section class="card box2"><h3>Fornitore non selezionato</h3>
+    $id('content').innerHTML=`<div class="rf-wrap"><section class="kit-card box2"><h3>Fornitore non selezionato</h3>
       <p>Per vedere i rifornimenti scegli quale fornitore di carburante leggere. Non ce n'è uno predefinito: l'app non sa quali delle tue fatture riguardano una carta carburante.</p>
       <ol class="rf-steps"><li>Scegli il fornitore dall'elenco qui sotto. Sono quelli che allegano file CSV o ZIP; in alternativa apri una sua fattura dall'elenco e usa «Leggi come carta carburante Q8» tra gli allegati.</li>
       <li>L'app legge gli allegati e mostra spesa, litri, consumi e stazioni.</li>
@@ -639,47 +633,47 @@ function renderRif(){
   const c=[['Rifornimenti',tot.n.toLocaleString('it-IT')],['Spesa',EUR.format(tot.imp)],['Litri',LIT.format(tot.vol)],['Prezzo medio al litro',tot.vol>0?PRZ.format(ppl(tot))+' €/l':'—'],['Veicoli',aggRif(rows,r=>r.targa).length]];
   if(cTot.km>0)c.push(['Consumo medio',KML.format(kml(cTot))+' km/l']);
   if(RF_T===null&&D.fee>0)c.push(['Spese delle carte',EUR.format(D.fee)]);
-  st.style.display='grid';st.innerHTML=c.map(x=>`<div class="stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
-  if(!rows.length){$id('content').innerHTML=`<div class="empty"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></div><h2>Nessun rifornimento</h2><p>Nessun rifornimento corrisponde ai filtri attuali.</p><button class="btn" data-act="reset">Azzera i filtri</button></div>`;return}
+  st.style.display='grid';st.innerHTML=c.map(x=>`<div class="kit-stat"><small>${x[0]}</small><b>${x[1]}</b></div>`).join('');
+  if(!rows.length){$id('content').innerHTML=`<div class="empty"><div class="ico"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></div><h2>Nessun rifornimento</h2><p>Nessun rifornimento corrisponde ai filtri attuali.</p><button class="kit-btn" data-act="reset">Azzera i filtri</button></div>`;return}
   let h='',hi='';
   const ds=rows.map(r=>r.data).sort(),na=[F.dir&&'direzione',F.cp&&'cliente/fornitore',F.td&&'tipo documento',(F.min!==''||F.max!=='')&&'importo'].filter(Boolean);
   const fn=[...new Map(ALL.filter(d=>d.car&&!(F.dup&&d.dup)).map(d=>[d.ced.id,nm(d.ced)])).values()];
   const per=`Fornitore: ${fn.slice(0,3).map(esc).join(', ')}${fn.length>3?` e altri ${fn.length-3}`:''} (elenco in fondo). Rifornimenti dal ${fdate(ds[0])} al ${fdate(ds[ds.length-1])}. Si applicano anno, periodo, date e ricerca${na.length?`; non si applicano: ${na.join(', ')}`:''}.`;
-  if(RF_T!==null)hi+=`<div class="card rf-bar">Veicolo: <b>${esc(vlab(RF_T))}</b>${ALIAS[RF_T]?` <span class="mute">${esc(RF_T)}</span>`:''} <button class="btn" data-rfclr="1">Mostra tutti i veicoli</button></div>`;
-  if(segn.length)hi+=`<div class="card rf-bar rf-warn"><b>${segn.length}</b> ${segn.length===1?'rifornimento':'rifornimenti'} da controllare <button class="btn" data-goctrl="1">Vedi</button></div>`;
-  if(D.err||D.diff)hi+=`<div class="card rf-bar rf-warn">${D.err?`${D.err} fatture con allegati non leggibili. `:''}${D.diff?`${D.diff} fatture in cui il totale dei rifornimenti non coincide con il riepilogo del fornitore.`:''}</div>`;
+  if(RF_T!==null)hi+=`<div class="kit-card rf-bar">Veicolo: <b>${esc(vlab(RF_T))}</b>${ALIAS[RF_T]?` <span class="mute">${esc(RF_T)}</span>`:''} <button class="kit-btn" data-rfclr="1">Mostra tutti i veicoli</button></div>`;
+  if(segn.length)hi+=`<div class="kit-card rf-bar rf-warn"><b>${segn.length}</b> ${segn.length===1?'rifornimento':'rifornimenti'} da controllare <button class="kit-btn" data-goctrl="1">Vedi</button></div>`;
+  if(D.err||D.diff)hi+=`<div class="kit-card rf-bar rf-warn">${D.err?`${D.err} fatture con allegati non leggibili. `:''}${D.diff?`${D.diff} fatture in cui il totale dei rifornimenti non coincide con il riepilogo del fornitore.`:''}</div>`;
   // andamento mensile della spesa (disegnato dopo, sulla larghezza disponibile)
   rfMm=aggRif(rows,r=>r.data.slice(0,7)).sort((a,b)=>a.k<b.k?-1:1);
-  h+=`<section class="card box2"><h3>Spesa mensile</h3><p class="mute rf-note">${per}</p><div class="legend"><span><i style="background:var(--c1)"></i>Spesa</span><span>· clicca una barra per vedere solo quel mese</span></div><div class="chartwrap" id="rfChart"></div></section>`;
+  h+=`<section class="kit-card box2"><h3>Spesa mensile</h3><p class="mute rf-note">${per}</p><div class="legend"><span><i style="background:var(--c1)"></i>Spesa</span><span>· clicca una barra per vedere solo quel mese</span></div><div class="chartwrap" id="rfChart"></div></section>`;
   // prezzo medio al litro per mese e carburante
   {const fm=new Map();
     for(const r of rows)if(r.vol>0){const f=fm.get(r.prod)||{k:r.prod,imp:0,pts:new Map()},m=r.data.slice(0,7),p=f.pts.get(m)||{imp:0,vol:0};f.imp+=r.importo;p.imp+=r.importo;p.vol+=r.vol;f.pts.set(m,p);fm.set(r.prod,f)}
     const tutti=[...fm.values()].sort((a,b)=>b.imp-a.imp),ser=tutti.slice(0,3);
     rfPr=ser.length?{mm:rfMm.map(x=>x.k),ser}:null;
-    if(rfPr)h+=`<section class="card box2"><h3>Prezzo al litro nel tempo</h3><p class="mute rf-note">Prezzo medio pagato (spesa ÷ litri) in ogni mese, per carburante${tutti.length>3?`: mostrati i 3 con più spesa su ${tutti.length}`:''}. Passa il mouse su un punto per i dettagli.</p><div class="legend">${ser.map((s,j)=>`<span><i style="background:${['var(--c1)','var(--c2)','var(--pos)'][j]};${j===0?'border-radius:50%':j===2?'clip-path:polygon(50% 0,100% 100%,0 100%)':''}"></i>${esc(carb(s.k))}</span>`).join('')}</div><div class="chartwrap" id="rfPrice"></div></section>`}
-  const tb=(cols,body,click,tbl)=>`<table${click?' class="rf-click"':''}><thead><tr>${cols.map(x=>{
+    if(rfPr)h+=`<section class="kit-card box2"><h3>Prezzo al litro nel tempo</h3><p class="mute rf-note">Prezzo medio pagato (spesa ÷ litri) in ogni mese, per carburante${tutti.length>3?`: mostrati i 3 con più spesa su ${tutti.length}`:''}. Passa il mouse su un punto per i dettagli.</p><div class="legend">${ser.map((s,j)=>`<span><i style="background:${['var(--c1)','var(--c2)','var(--pos)'][j]};${j===0?'border-radius:50%':j===2?'clip-path:polygon(50% 0,100% 100%,0 100%)':''}"></i>${esc(carb(s.k))}</span>`).join('')}</div><div class="chartwrap" id="rfPrice"></div></section>`}
+  const tb=(cols,body,click,tbl)=>`<table class="kit-table${click?' kit-table-hover rf-click':''}"><thead><tr>${cols.map(x=>{
     if(!tbl||!x[2])return`<th class="${x[1]||''}">${x[0]}</th>`;
     const on=RF_S[tbl].k===x[2];
-    return`<th class="${x[1]||''}${on?' on':''}" data-rs="${tbl}:${x[2]}" tabindex="0" title="Ordina per ${esc(x[0].toLowerCase())}"${on?` aria-sort="${RF_S[tbl].d>0?'ascending':'descending'}"`:''}>${x[0]}${on?(RF_S[tbl].d>0?' ▲':' ▼'):''}</th>`}).join('')}</tr></thead><tbody>${body}</tbody></table>`;
-  const nums=x=>`<td class="n c-xs">${x.n}</td><td class="n c-xs">${LIT.format(x.vol)}</td><td class="n"><b>${EUR.format(x.imp)}</b></td><td class="n">${PRZ.format(ppl(x))}</td>`;
+    return`<th class="${x[1]||''}" data-rs="${tbl}:${x[2]}" tabindex="0" title="Ordina per ${esc(x[0].toLowerCase())}" aria-sort="${on?(RF_S[tbl].d>0?'ascending':'descending'):'none'}">${x[0]}${on?(RF_S[tbl].d>0?' ▲':' ▼'):''}</th>`}).join('')}</tr></thead><tbody>${body}</tbody></table>`;
+  const nums=x=>`<td class="kit-num c-xs">${x.n}</td><td class="kit-num c-xs">${LIT.format(x.vol)}</td><td class="kit-num"><b>${EUR.format(x.imp)}</b></td><td class="kit-num">${PRZ.format(ppl(x))}</td>`;
   // per veicolo: sempre tutti, per poterne scegliere un altro
-  h+=`<section class="card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti. «Litri al mese» si calcola sui mesi dal primo all'ultimo rifornimento. Il consumo in km/l si calcola dai chilometri del contachilometri indicati nei rifornimenti, presumendo il pieno a ogni rifornimento: compare solo per i veicoli che li hanno.</p>`+tb([['Veicolo','','t'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl'],['Litri al mese','n c-xs','lm'],['Consumo','n c-xs','cons'],['Carburante prevalente','c-tipo','pv'],['Ultimo','c-tipo','last'],['','rf-act']],
-    rfSort(tutte.sort((a,b)=>b.imp-a.imp).map(x=>{x.pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];x.rt=ritmo(x.ds,x.vol);return x}),'veic',{t:x=>vlab(x.k),n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl,lm:x=>x.rt.lm,cons:x=>cons.has(x.k)?kml(cons.get(x.k)):null,pv:x=>carb(x.pv&&x.pv[0]),last:x=>x.last}).map(x=>{const pv=x.pv;return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w">${vhtml(x.k)}</td>${nums(x)}<td class="n c-xs">${(rt=>`${LIT.format(rt.lm)}${rt.gg!=null?`<div class="sub">un pieno ogni ${Math.round(rt.gg)} giorni</div>`:''}`)(x.rt)}</td><td class="n c-xs">${cons.has(x.k)?`<b title="${KMF.format(cons.get(x.k).km)} km su ${LIT.format(cons.get(x.k).vol)} l · ${PRZ.format(cons.get(x.k).imp/cons.get(x.k).km*100)} € ogni 100 km">${KML.format(kml(cons.get(x.k)))} km/l</b><div class="sub">${KML.format(100/kml(cons.get(x.k)))} l/100 km</div>`:'<span class="mute">—</span>'}</td><td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td><td class="rf-act">${x.k?`<button class="btn ghost ibtn" data-alias="${esc(x.k)}" title="${ALIAS[x.k]?'Cambia o togli l\'alias':'Imposta un alias'} per ${esc(x.k)}" aria-label="Alias per ${esc(x.k)}"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></button>`:''}</td></tr>`}).join(''),1,'veic')+'</section>';
+  h+=`<section class="kit-card box2"><h3>Per veicolo</h3><p class="mute rf-note">Clicca un veicolo per vedere solo i suoi rifornimenti. «Litri al mese» si calcola sui mesi dal primo all'ultimo rifornimento. Il consumo in km/l si calcola dai chilometri del contachilometri indicati nei rifornimenti, presumendo il pieno a ogni rifornimento: compare solo per i veicoli che li hanno.</p>`+tb([['Veicolo','','t'],['Rifornimenti','kit-num c-xs','n'],['Litri','kit-num c-xs','vol'],['Spesa','kit-num','imp'],['€/l medio','kit-num','ppl'],['Litri al mese','kit-num c-xs','lm'],['Consumo','kit-num c-xs','cons'],['Carburante prevalente','c-tipo','pv'],['Ultimo','c-tipo','last'],['','rf-act']],
+    rfSort(tutte.sort((a,b)=>b.imp-a.imp).map(x=>{x.pv=[...x.prod.entries()].sort((a,b)=>b[1]-a[1])[0];x.rt=ritmo(x.ds,x.vol);return x}),'veic',{t:x=>vlab(x.k),n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl,lm:x=>x.rt.lm,cons:x=>cons.has(x.k)?kml(cons.get(x.k)):null,pv:x=>carb(x.pv&&x.pv[0]),last:x=>x.last}).map(x=>{const pv=x.pv;return`<tr data-t="${esc(x.k)}"${x.k===RF_T?' class="sel"':''} title="Mostra solo questo veicolo"><td class="rf-w">${vhtml(x.k)}</td>${nums(x)}<td class="kit-num c-xs">${(rt=>`${LIT.format(rt.lm)}${rt.gg!=null?`<div class="sub">un pieno ogni ${Math.round(rt.gg)} giorni</div>`:''}`)(x.rt)}</td><td class="kit-num c-xs">${cons.has(x.k)?`<b title="${KMF.format(cons.get(x.k).km)} km su ${LIT.format(cons.get(x.k).vol)} l · ${PRZ.format(cons.get(x.k).imp/cons.get(x.k).km*100)} € ogni 100 km">${KML.format(kml(cons.get(x.k)))} km/l</b><div class="sub">${KML.format(100/kml(cons.get(x.k)))} l/100 km</div>`:'<span class="mute">—</span>'}</td><td class="c-tipo">${esc(carb(pv&&pv[0]))}</td><td class="c-tipo">${fdate(x.last)}</td><td class="rf-act">${x.k?`<button class="kit-btn kit-btn-ghost ibtn" data-alias="${esc(x.k)}" title="${ALIAS[x.k]?'Cambia o togli l\'alias':'Imposta un alias'} per ${esc(x.k)}" aria-label="Alias per ${esc(x.k)}"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg></button>`:''}</td></tr>`}).join(''),1,'veic')+'</section>';
   // spesa per veicolo e mese; la media considera i mesi di calendario dal primo all'ultimo rifornimento, la proiezione annua serve da 3 mesi in su
   {const mk=rfMm.map(x=>x.k),vm=new Map();
     for(const r of rows){const x=vm.get(r.targa)||{k:r.targa,m:new Map(),tot:0};x.m.set(r.data.slice(0,7),(x.m.get(r.data.slice(0,7))||0)+r.importo);x.tot+=r.importo;vm.set(r.targa,x)}
     const vr=[...vm.values()].map(x=>{const ks=[...x.m.keys()].sort(),n=(+ks[ks.length-1].slice(0,4)-+ks[0].slice(0,4))*12+(+ks[ks.length-1].slice(5,7)-+ks[0].slice(5,7))+1;x.med=x.tot/n;x.prj=n>=3?x.med*12:null;return x});
     const cell=v=>v?EUR.format(v):'<span class="mute">—</span>',mt=k=>`${MESI[+k.slice(5)-1]} ${k.slice(2,4)}`;
     const tot=mk.map(k=>vr.reduce((a,x)=>a+(x.m.get(k)||0),0));
-    h+=`<section class="card box2"><h3>Spesa mensile per veicolo</h3><p class="mute rf-note">Quanto costa ogni veicolo al mese. «Media» divide per i mesi dal primo all'ultimo rifornimento (compresi quelli senza); «Proiezione annua» è la media per 12 e compare da 3 mesi di storia. Le spese delle carte non sono attribuite ai veicoli.</p><div class="rf-scroll">`+
-      tb([['Veicolo','','vt'],...mk.map(k=>[mt(k),'n']),['Totale','n','tot'],['Media al mese','n','med'],['Proiezione annua','n c-xs','prj']],
-        rfSort(vr.sort((a,b)=>b.tot-a.tot),'vmese',{vt:x=>vlab(x.k),tot:x=>x.tot,med:x=>x.med,prj:x=>x.prj}).map(x=>`<tr><td class="rf-w">${vhtml(x.k)}</td>${mk.map(k=>`<td class="n">${cell(x.m.get(k))}</td>`).join('')}<td class="n"><b>${EUR.format(x.tot)}</b></td><td class="n">${EUR.format(x.med)}</td><td class="n c-xs">${x.prj==null?'<span class="mute">—</span>':EUR.format(x.prj)}</td></tr>`).join('')+
-          (vr.length>1?`<tr class="rf-tot"><td><b>Tutti</b></td>${tot.map(v=>`<td class="n">${cell(v)}</td>`).join('')}<td class="n"><b>${EUR.format(tot.reduce((a,b)=>a+b,0))}</b></td><td></td><td class="c-xs"></td></tr>`:''),0,'vmese')+'</div></section>';}
-  h+=`<section class="card box2"><h3>Per carburante</h3>`+tb([['Carburante','','prod'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl']],
+    h+=`<section class="kit-card box2"><h3>Spesa mensile per veicolo</h3><p class="mute rf-note">Quanto costa ogni veicolo al mese. «Media» divide per i mesi dal primo all'ultimo rifornimento (compresi quelli senza); «Proiezione annua» è la media per 12 e compare da 3 mesi di storia. Le spese delle carte non sono attribuite ai veicoli.</p><div class="rf-scroll">`+
+      tb([['Veicolo','','vt'],...mk.map(k=>[mt(k),'kit-num']),['Totale','kit-num','tot'],['Media al mese','kit-num','med'],['Proiezione annua','kit-num c-xs','prj']],
+        rfSort(vr.sort((a,b)=>b.tot-a.tot),'vmese',{vt:x=>vlab(x.k),tot:x=>x.tot,med:x=>x.med,prj:x=>x.prj}).map(x=>`<tr><td class="rf-w">${vhtml(x.k)}</td>${mk.map(k=>`<td class="kit-num">${cell(x.m.get(k))}</td>`).join('')}<td class="kit-num"><b>${EUR.format(x.tot)}</b></td><td class="kit-num">${EUR.format(x.med)}</td><td class="kit-num c-xs">${x.prj==null?'<span class="mute">—</span>':EUR.format(x.prj)}</td></tr>`).join('')+
+          (vr.length>1?`<tr class="rf-tot"><td><b>Tutti</b></td>${tot.map(v=>`<td class="kit-num">${cell(v)}</td>`).join('')}<td class="kit-num"><b>${EUR.format(tot.reduce((a,b)=>a+b,0))}</b></td><td></td><td class="c-xs"></td></tr>`:''),0,'vmese')+'</div></section>';}
+  h+=`<section class="kit-card box2"><h3>Per carburante</h3>`+tb([['Carburante','','prod'],['Rifornimenti','kit-num c-xs','n'],['Litri','kit-num c-xs','vol'],['Spesa','kit-num','imp'],['€/l medio','kit-num','ppl']],
     rfSort(aggRif(rows,r=>r.prod).sort((a,b)=>b.imp-a.imp),'carb',{prod:x=>carb(x.k),n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl}).map(x=>`<tr><td>${esc(carb(x.k))}</td>${nums(x)}</tr>`).join(''),0,'carb')+'</section>';
   const stz=aggRif(rows,stazione).sort((a,b)=>b.imp-a.imp);
-  h+=`<section class="card box2"><h3>Per stazione${stz.length>10?' (le 10 principali)':''}</h3>`+tb([['Stazione','','staz'],['Rifornimenti','n c-xs','n'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l medio','n','ppl']],
-    rfSort(stz.slice(0,10),'staz',{staz:x=>x.k,n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl}).map(x=>`<tr><td class="wrapc">${esc(x.k)}</td>${nums(x)}</tr>`).join(''),0,'staz')+'</section>';
+  h+=`<section class="kit-card box2"><h3>Per stazione${stz.length>10?' (le 10 principali)':''}</h3>`+tb([['Stazione','','staz'],['Rifornimenti','kit-num c-xs','n'],['Litri','kit-num c-xs','vol'],['Spesa','kit-num','imp'],['€/l medio','kit-num','ppl']],
+    rfSort(stz.slice(0,10),'staz',{staz:x=>x.k,n:x=>x.n,vol:x=>x.vol,imp:x=>x.imp,ppl:ppl}).map(x=>`<tr><td class="kit-wrap">${esc(x.k)}</td>${nums(x)}</tr>`).join(''),0,'staz')+'</section>';
   // quando si fa rifornimento: giorno della settimana e fascia oraria (solo dove il CSV riporta l'orario)
   {const GG=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'],FASCE=['Notte (22–06)','Mattina (06–12)','Pomeriggio (12–18)','Sera (18–22)'];
     const dd=GG.map(()=>({n:0,vol:0,imp:0})),ff=FASCE.map(()=>({n:0,vol:0,imp:0}));let senza=0;
@@ -690,28 +684,28 @@ function renderRif(){
     }
     const nt=rows.length,ni=dd.reduce((a,x)=>a+x.imp,0),pc=(v,t)=>t>0?Math.round(v/t*100)+' %':'—';
     const we=dd[5].n+dd[6].n,weI=dd[5].imp+dd[6].imp,con=nt-senza,notte=ff[0].n;
-    const riga=(nome,x,t)=>`<tr><td>${nome}</td><td class="n c-xs">${x.n}</td><td class="n c-xs">${LIT.format(x.vol)}</td><td class="n"><b>${EUR.format(x.imp)}</b></td><td class="rf-q"><div class="rf-bar2" aria-hidden="true"><i style="width:${t>0?Math.round(x.imp/t*100):0}%"></i></div><span>${pc(x.imp,t)}</span></td></tr>`;
-    const cols=n=>[[n],['Rifornimenti','n c-xs'],['Litri','n c-xs'],['Spesa','n'],['Quota della spesa','rf-q']];
-    h+=`<section class="card box2"><h3>Quando si fa rifornimento</h3><p class="mute rf-note">Nel fine settimana: <b>${we}</b> rifornimenti su ${nt} (${pc(we,nt)}), ${EUR.format(weI)}.${con?` Di notte (22–06): <b>${notte}</b> su ${con} con orario (${pc(notte,con)}).`:''}${senza?` ${senza} rifornimenti non riportano l'orario e non sono nelle fasce.`:''} Dato indicativo: serve a notare abitudini insolite, non prova un uso improprio.</p>`+
-      tb(cols('Giorno'),dd.map((x,i)=>riga(GG[i],x,ni)).join('')+(con?`<tr class="rf-subh"><td>Fascia oraria</td><td class="n c-xs">Rifornimenti</td><td class="n c-xs">Litri</td><td class="n">Spesa</td><td class="rf-q">Quota della spesa</td></tr>`+ff.map((x,i)=>riga(FASCE[i],x,ff.reduce((a,y)=>a+y.imp,0))).join(''):''))+'</section>';}
+    const riga=(nome,x,t)=>`<tr><td>${nome}</td><td class="kit-num c-xs">${x.n}</td><td class="kit-num c-xs">${LIT.format(x.vol)}</td><td class="kit-num"><b>${EUR.format(x.imp)}</b></td><td class="rf-q"><div class="rf-bar2" aria-hidden="true"><i style="width:${t>0?Math.round(x.imp/t*100):0}%"></i></div><span>${pc(x.imp,t)}</span></td></tr>`;
+    const cols=n=>[[n],['Rifornimenti','kit-num c-xs'],['Litri','kit-num c-xs'],['Spesa','kit-num'],['Quota della spesa','rf-q']];
+    h+=`<section class="kit-card box2"><h3>Quando si fa rifornimento</h3><p class="mute rf-note">Nel fine settimana: <b>${we}</b> rifornimenti su ${nt} (${pc(we,nt)}), ${EUR.format(weI)}.${con?` Di notte (22–06): <b>${notte}</b> su ${con} con orario (${pc(notte,con)}).`:''}${senza?` ${senza} rifornimenti non riportano l'orario e non sono nelle fasce.`:''} Dato indicativo: serve a notare abitudini insolite, non prova un uso improprio.</p>`+
+      tb(cols('Giorno'),dd.map((x,i)=>riga(GG[i],x,ni)).join('')+(con?`<tr class="rf-subh"><td>Fascia oraria</td><td class="kit-num c-xs">Rifornimenti</td><td class="kit-num c-xs">Litri</td><td class="kit-num">Spesa</td><td class="rf-q">Quota della spesa</td></tr>`+ff.map((x,i)=>riga(FASCE[i],x,ff.reduce((a,y)=>a+y.imp,0))).join(''):''))+'</section>';}
   // rifornimenti segnalati dai controlli
   {const MAXC=100,propri=Object.keys(SOGLIE).filter(k=>k!=='*').length,g=sgGet(''),
     attivi=[g.onLitri&&`più di ${KMF.format(g.litri)} l per rifornimento`,g.onOre&&`meno di ${g.ore} ore tra due rifornimenti`,g.onCarb&&'carburante insolito (con almeno 4 rifornimenti)',g.onCarta&&'carta su targhe diverse',g.orari&&'notte e domenica'].filter(Boolean),
     nessuno=!attivi.length&&!propri;
     const lista=rfSort(segn.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),'ctrl',{data:r=>r.data+r.ora,tg:r=>vlab(r.targa),vol:r=>r.vol,imp:r=>r.importo});
-    h+=`<section class="card box2" id="rfCtrl"><div class="rf-head"><h3>Da controllare</h3><button class="btn" data-sogl="1">Soglie…</button></div><p class="mute rf-note">Indizi, non prove: un rifornimento segnalato può avere una spiegazione normale (un pieno più grande del solito, un viaggio, un mezzo in prestito). ${attivi.length?`Controlli generali attivi: ${attivi.join('; ')}.`:'Tutti i controlli generali sono disattivati.'}${propri?` ${propri} ${propri===1?'veicolo ha':'veicoli hanno'} impostazioni proprie.`:''} Si cambiano da <i>Soglie…</i>.</p>`+
-      (lista.length?tb([['Data','','data'],['Veicolo','','tg'],['Motivo'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['Fattura','c-num']],
-        lista.slice(0,MAXC).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}</td><td class="rf-w">${r.targa?vhtml(r.targa):'—'}</td><td><div class="rf-why">${rfFl.get(r).map(t=>`<span class="badge ri">${esc(t)}</span>`).join('')}</div></td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'ctrl')+
+    h+=`<section class="kit-card box2" id="rfCtrl"><div class="rf-head"><h3>Da controllare</h3><button class="kit-btn" data-sogl="1">Soglie…</button></div><p class="mute rf-note">Indizi, non prove: un rifornimento segnalato può avere una spiegazione normale (un pieno più grande del solito, un viaggio, un mezzo in prestito). ${attivi.length?`Controlli generali attivi: ${attivi.join('; ')}.`:'Tutti i controlli generali sono disattivati.'}${propri?` ${propri} ${propri===1?'veicolo ha':'veicoli hanno'} impostazioni proprie.`:''} Si cambiano da <i>Soglie…</i>.</p>`+
+      (lista.length?tb([['Data','','data'],['Veicolo','','tg'],['Motivo'],['Litri','kit-num c-xs','vol'],['Spesa','kit-num','imp'],['Fattura','c-num']],
+        lista.slice(0,MAXC).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}</td><td class="rf-w">${r.targa?vhtml(r.targa):'—'}</td><td><div class="rf-why">${rfFl.get(r).map(t=>`<span class="kit-badge kit-badge-warning">${esc(t)}</span>`).join('')}</div></td><td class="kit-num c-xs">${LIT.format(r.vol)}</td><td class="kit-num"><b>${EUR.format(r.importo)}</b></td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'ctrl')+
         (lista.length>MAXC?`<div class="more">Mostrati ${MAXC} di ${lista.length} rifornimenti segnalati, nell'ordine scelto: tutti sono nel CSV esportato (colonna <i>Da controllare</i>).</div>`:'')
       :`<p class="rf-note">${nessuno?'Nessun controllo attivo: attivali da Soglie…':'Nessun rifornimento da controllare con le impostazioni attuali.'}</p>`)+'</section>';}
   const lst=rfSort(rows.slice().sort((a,b)=>a.data+a.ora<b.data+b.ora?1:-1),'elenco',{data:r=>r.data+r.ora,tg:r=>vlab(r.targa),prod:r=>carb(r.prod),vol:r=>r.vol,imp:r=>r.importo,ppl:r=>r.vol>0?r.importo/r.vol:null,staz:r=>stazione(r),fn:r=>r.fn}),MAXL=300;
-  h+=`<section class="card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data','','data'],['Veicolo','','tg'],['Carburante','c-tipo','prod'],['Litri','n c-xs','vol'],['Spesa','n','imp'],['€/l','n','ppl'],['Stazione','c-ces','staz'],['Fattura','c-num','fn']],
-    lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm rf-w">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td class="rf-w">${r.targa?(ALIAS[r.targa]?`${esc(ALIAS[r.targa])}<div class="sub">${esc(r.targa)}</div>`:esc(r.targa)):'—'}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="n c-xs">${LIT.format(r.vol)}</td><td class="n"><b>${EUR.format(r.importo)}</b></td><td class="n">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="wrapc c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'elenco')+
+  h+=`<section class="kit-card box2"><h3>Elenco rifornimenti</h3><p class="mute rf-note">Clicca un rifornimento per vedere la sua fattura.</p>`+tb([['Data','','data'],['Veicolo','','tg'],['Carburante','c-tipo','prod'],['Litri','kit-num c-xs','vol'],['Spesa','kit-num','imp'],['€/l','kit-num','ppl'],['Stazione','c-ces','staz'],['Fattura','c-num','fn']],
+    lst.slice(0,MAXL).map(r=>`<tr data-fn="${esc(r.fn)}" title="Mostra la fattura ${esc(r.fn)}"><td>${fdate(r.data)}${r.ora?` <span class="mute">${esc(r.ora)}</span>`:''}<div class="sub only-sm rf-w">${esc(carb(r.prod))} · ${esc(stazione(r))}</div></td><td class="rf-w">${r.targa?(ALIAS[r.targa]?`${esc(ALIAS[r.targa])}<div class="sub">${esc(r.targa)}</div>`:esc(r.targa)):'—'}</td><td class="c-tipo">${esc(carb(r.prod))}</td><td class="kit-num c-xs">${LIT.format(r.vol)}</td><td class="kit-num"><b>${EUR.format(r.importo)}</b></td><td class="kit-num">${r.vol>0?PRZ.format(r.importo/r.vol):''}</td><td class="kit-wrap c-ces">${esc(stazione(r))}</td><td class="c-num mute">${esc(r.fn)}</td></tr>`).join(''),1,'elenco')+
     (lst.length>MAXL?`<div class="more">Mostrati i primi ${MAXL} di ${lst.length.toLocaleString('it-IT')} rifornimenti, nell'ordine scelto: tutti sono nel CSV esportato.</div>`:'')+'</section>';
   const forn=new Map();
   for(const d of ALL)if(d.car&&!(F.dup&&d.dup)){const x=forn.get(d.ced.piva)||{p:d.ced,n:0,r:0};x.n++;x.r+=d.car.rows.length;forn.set(d.ced.piva,x)}
-  h+=`<section class="card box2"><h3>Fornitori letti come carte carburante</h3>`+tb([['Fornitore'],['P.IVA','c-num'],['Fatture','n c-xs'],['Rifornimenti','n c-xs'],['']],
-    [...forn.values()].map(x=>`<tr><td class="wrapc">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="n c-xs">${x.n}</td><td class="n c-xs">${x.r}</td><td class="n"><button class="btn" data-carboff="${esc(x.p.piva)}">Non leggere più</button></td></tr>`).join(''))+
+  h+=`<section class="kit-card box2"><h3>Fornitori letti come carte carburante</h3>`+tb([['Fornitore'],['P.IVA','c-num'],['Fatture','kit-num c-xs'],['Rifornimenti','kit-num c-xs'],['']],
+    [...forn.values()].map(x=>`<tr><td class="kit-wrap">${esc(nm(x.p))}</td><td class="c-num mute">${esc(x.p.piva)}</td><td class="kit-num c-xs">${x.n}</td><td class="kit-num c-xs">${x.r}</td><td class="kit-num"><button class="kit-btn" data-carboff="${esc(x.p.piva)}">Non leggere più</button></td></tr>`).join(''))+
     `<p class="mute rf-note">Per leggere anche un altro fornitore (con CSV nello stesso formato di Q8) scegli uno dei fornitori qui sotto, oppure apri una sua fattura e usa «Leggi come carta carburante Q8» tra gli allegati.</p>${scelta(true)}</section>`;
   $id('content').innerHTML=`<div class="rf-wrap">${hi}${h}</div>`;
   drawRifChart();drawRifPrice();
@@ -732,7 +726,7 @@ async function applicaCarb(piva,on,quiet){
         }catch{falliti++}
         fatti++;
       }
-    }finally{$id('overlay').style.display='none'}
+    }finally{progressEnd()}
     const righe=docs.reduce((a,d)=>a+(d.car?d.car.rows.length:0),0);
     if(!righe&&!quiet){ // formato diverso: si torna come prima
       CARB_UTENTE=CARB_UTENTE.filter(x=>x!==piva);for(const d of docs)delete d.car;
@@ -740,11 +734,11 @@ async function applicaCarb(piva,on,quiet){
     }else if(righe&&!quiet)toast(`Letti ${righe.toLocaleString('it-IT')} rifornimenti da ${nome}`,3500);
   }else{for(const d of docs)delete d.car;if(!quiet)toast(`${nome} non viene più letto come carta carburante`,3500)}
   try{localStorage.setItem('fe_carb',JSON.stringify(CARB_UTENTE))}catch{}
-  syncRifTab();render();if(drawerIdx>=0&&$id('split').classList.contains('open'))loadDetail();
+  syncRifTab();render();if(drawerIdx>=0&&SP.isOpen())loadDetail();
 }
 function syncRifTab(){
   const has=ALL.length>0&&!single;
-  document.querySelector('.tab[data-t="rif"]').hidden=!has;if(!has&&tab==='rif')tab='fatt';
+  document.querySelector('.kit-tab[data-t="rif"]').hidden=!has;if(!has&&tab==='rif')tab='fatt';
 }
 function exportRifCsv(){
   const c=v=>{v=String(v??'');return/[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
@@ -758,15 +752,15 @@ function exportRifCsv(){
 
 /* ====================== Dettaglio fattura ====================== */
 let dMode='d';
-function kv(rows){return`<div class="kv">`+rows.filter(r=>r[1]!==''&&r[1]!=null).map(r=>`<span>${r[0]}</span><span>${r[1]}</span>`).join('')+'</div>'}
-function partyBox(title,p){return`<div class="card box2"><h3>${title}</h3><h4>${esc(nm(p))}</h4>${kv([['P.IVA',esc(p.piva)],['Cod. fiscale',esc(p.cf)],['Indirizzo',esc(p.ind)],['Regime fiscale',p.rf?esc(p.rf+' · '+(RF[p.rf]||'')):''],['REA',esc(p.rea.trim())],['Telefono',esc(p.tel)],['Email',esc(p.mail)]])}</div>`}
+function kv(rows){return`<div class="kit-kv">`+rows.filter(r=>r[1]!==''&&r[1]!=null).map(r=>`<span>${r[0]}</span><span>${r[1]}</span>`).join('')+'</div>'}
+function partyBox(title,p){return`<div class="kit-card box2"><h3>${title}</h3><h4>${esc(nm(p))}</h4>${kv([['P.IVA',esc(p.piva)],['Cod. fiscale',esc(p.cf)],['Indirizzo',esc(p.ind)],['Regime fiscale',p.rf?esc(p.rf+' · '+(RF[p.rf]||'')):''],['REA',esc(p.rea.trim())],['Telefono',esc(p.tel)],['Email',esc(p.mail)]])}</div>`}
 function openDrawer(i){
-  drawerIdx=i;$id('split').classList.add('open');$id('scrim').classList.add('on');loadDetail();
+  drawerIdx=i;SP.open();loadDetail();
 }
-function closeDrawer(){$id('split').classList.remove('open','full');$id('scrim').classList.remove('on');markSel(-1);drawerIdx=-1}
+function closeDrawer(){SP.close();markSel(-1);drawerIdx=-1}
 function markSel(i){
-  document.querySelectorAll('#tb tr.sel').forEach(r=>r.classList.remove('sel'));
-  const r=document.querySelector(`#tb tr[data-i="${i}"]`);if(r){r.classList.add('sel');
+  document.querySelectorAll('#tb tr.is-selected').forEach(r=>r.classList.remove('is-selected'));
+  const r=document.querySelector(`#tb tr[data-i="${i}"]`);if(r){r.classList.add('is-selected');
     const b=r.getBoundingClientRect(),c=$id('content').getBoundingClientRect();if(b.top<Math.max(60,c.top)||b.bottom>Math.min(innerHeight,c.bottom))r.scrollIntoView({block:'center'})}
 }
 function stepDrawer(n){const i=drawerIdx+n;if(i<0||i>=view.length)return;for(let g=0;i>=shown&&shown<view.length&&$id('tb')&&g<200;g++)appendRows();drawerIdx=i;loadDetail()}
@@ -777,7 +771,7 @@ async function loadDetail(){
   $id('dSub').textContent=`${fdate(d.data)} · ${nm(d.ced)}`+(single&&view.length>1?` · fattura ${drawerIdx+1} di ${view.length}`:'');
   $id('dPrev').style.display=$id('dNext').style.display=(single&&view.length<2)?'none':'';
   $id('dPrev').disabled=drawerIdx<=0;$id('dNext').disabled=drawerIdx>=view.length-1;
-  $id('dTabD').classList.toggle('on',dMode==='d');$id('dTabX').classList.toggle('on',dMode==='x');
+  $id('dTabD').classList.toggle('is-on',dMode==='d');$id('dTabX').classList.toggle('is-on',dMode==='x');
   $id('dbody').innerHTML='<p class="mute">Caricamento…</p>';
   let att=[],xml='';
   try{
@@ -789,10 +783,10 @@ async function loadDetail(){
   if(dMode==='x'){$id('dbody').innerHTML=`<p class="mute">${esc(d.path)}</p><pre class="xml">${esc(prettyXml(xml))}</pre>`;return}
   const cur=d.divisa;
   const mm=v=>money(v,cur);
-  const righe=d.righe.length?`<div class="card box2"><div class="tablewrap" style="max-height:none"><table><thead><tr><th>#</th><th>Descrizione</th><th class="n">Q.tà</th><th class="n">Prezzo unit.</th><th class="n">Totale</th><th class="n">IVA</th></tr></thead><tbody>${d.righe.map(r=>`<tr style="cursor:default"><td>${esc(r.n)}</td><td style="white-space:normal;min-width:240px">${esc(r.d)}${r.cod?`<div class="mute" style="font-size:12px">cod. ${esc(r.cod)}</div>`:''}${r.sc?`<div class="mute" style="font-size:12px">sconto/magg. ${esc(r.sc)}</div>`:''}</td><td class="n">${r.q?esc(String(num(r.q)))+' '+esc(r.um):''}</td><td class="n">${r.pu?mm(num(r.pu)):''}</td><td class="n">${mm(num(r.pt))}</td><td class="n">${r.iva?num(r.iva)+'%':''}${r.nat?` ${esc(r.nat)}`:''}</td></tr>`).join('')}</tbody></table></div></div>`:'';
-  const riep=`<div class="card box2"><h3>Riepilogo IVA</h3><table><thead><tr><th>Aliquota</th><th class="n">Imponibile</th><th class="n">Imposta</th><th>Esigibilità</th></tr></thead><tbody>${d.riep.map(r=>`<tr style="cursor:default"><td>${num(r.aliq)}%${r.nat?` · ${esc(r.nat)} ${esc(NAT[r.nat]||'')}`:''}</td><td class="n">${mm(r.imp)}</td><td class="n">${mm(r.iva)}</td><td>${esc(ESI[r.esi]||r.esi)}${r.rif?`<div class="mute" style="font-size:12px;white-space:normal">${esc(r.rif)}</div>`:''}</td></tr>`).join('')}</tbody></table>
+  const righe=d.righe.length?`<div class="kit-card box2"><div class="tablewrap" style="max-height:none"><table class="kit-table"><thead><tr><th>#</th><th>Descrizione</th><th class="kit-num">Q.tà</th><th class="kit-num">Prezzo unit.</th><th class="kit-num">Totale</th><th class="kit-num">IVA</th></tr></thead><tbody>${d.righe.map(r=>`<tr><td>${esc(r.n)}</td><td style="white-space:normal;min-width:240px">${esc(r.d)}${r.cod?`<div class="mute" style="font-size:12px">cod. ${esc(r.cod)}</div>`:''}${r.sc?`<div class="mute" style="font-size:12px">sconto/magg. ${esc(r.sc)}</div>`:''}</td><td class="kit-num">${r.q?esc(String(num(r.q)))+' '+esc(r.um):''}</td><td class="kit-num">${r.pu?mm(num(r.pu)):''}</td><td class="kit-num">${mm(num(r.pt))}</td><td class="kit-num">${r.iva?num(r.iva)+'%':''}${r.nat?` ${esc(r.nat)}`:''}</td></tr>`).join('')}</tbody></table></div></div>`:'';
+  const riep=`<div class="kit-card box2"><h3>Riepilogo IVA</h3><table class="kit-table"><thead><tr><th>Aliquota</th><th class="kit-num">Imponibile</th><th class="kit-num">Imposta</th><th>Esigibilità</th></tr></thead><tbody>${d.riep.map(r=>`<tr><td>${num(r.aliq)}%${r.nat?` · ${esc(r.nat)} ${esc(NAT[r.nat]||'')}`:''}</td><td class="kit-num">${mm(r.imp)}</td><td class="kit-num">${mm(r.iva)}</td><td>${esc(ESI[r.esi]||r.esi)}${r.rif?`<div class="mute" style="font-size:12px;white-space:normal">${esc(r.rif)}</div>`:''}</td></tr>`).join('')}</tbody></table>
     <p style="text-align:right;margin:8px 0 0">Imponibile <b>${money(d.imp,cur)}</b> · IVA <b>${money(d.iva,cur)}</b> · Totale documento <b style="font-size:16px">${money(d.tot,cur)}</b></p></div>`;
-  const pag=d.pag.length?`<div class="card box2"><h3>Pagamento</h3><table><thead><tr><th>Modalità</th><th>Scadenza</th><th class="n">Importo</th><th>IBAN / Istituto</th></tr></thead><tbody>${d.pag.map(p=>`<tr style="cursor:default"><td>${esc(MP[p.mod]||p.mod)}${p.cond?`<div class="mute" style="font-size:12px">${esc(COND[p.cond]||p.cond)}</div>`:''}</td><td>${fdate(p.scad)}</td><td class="n">${mm(p.imp)}</td><td>${esc(p.iban)} ${esc(p.ist)}</td></tr>`).join('')}</tbody></table></div>`:'';
+  const pag=d.pag.length?`<div class="kit-card box2"><h3>Pagamento</h3><table class="kit-table"><thead><tr><th>Modalità</th><th>Scadenza</th><th class="kit-num">Importo</th><th>IBAN / Istituto</th></tr></thead><tbody>${d.pag.map(p=>`<tr><td>${esc(MP[p.mod]||p.mod)}${p.cond?`<div class="mute" style="font-size:12px">${esc(COND[p.cond]||p.cond)}</div>`:''}</td><td>${fdate(p.scad)}</td><td class="kit-num">${mm(p.imp)}</td><td>${esc(p.iban)} ${esc(p.ist)}</td></tr>`).join('')}</tbody></table></div>`:'';
   const extra=[];
   if(d.caus.length)extra.push(['Causale',esc(d.caus.join(' '))]);
   if(d.bollo)extra.push(['Bollo',money(d.bollo,cur)]);
@@ -801,15 +795,15 @@ async function loadDetail(){
   d.rif.forEach(r=>extra.push(['Riferimento',esc(r)]));
   const csvAtt=att.some(a=>/\.(csv|zip)$/i.test(a.nome)||/^(csv|zip)$/i.test(a.fmt)),conRif=ALL.some(x=>x.car&&x.car.rows.length);
   let cb='';
-  if(isCarb(d.ced.piva))cb=`<div class="rf-cfg"><span>Letto come carta carburante Q8 · <b>${d.car?d.car.rows.length:0}</b> rifornimenti in questa fattura</span><span class="sp"></span>${!single&&conRif?'<button class="btn" data-carb="go">Vedi i rifornimenti</button>':''}${!single?'<button class="btn" data-carb="off">Non leggere più</button>':''}</div>`;
-  else if(csvAtt&&d.ced.piva&&!single)cb=`<div class="rf-cfg"><span>Questo fornitore allega file CSV. Se sono rifornimenti di una carta carburante nel formato Q8, puoi leggerli e vederli nella scheda Rifornimenti.</span><span class="sp"></span><button class="btn" data-carb="on">Leggi come carta carburante Q8</button></div>`;
-  const al=att.length?`<div class="card box2"><h3>Allegati (${att.length})</h3>${att.map((a,j)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg> ${esc(a.nome)} <span class="mute">${esc(a.fmt)} ${esc(a.descr)} · ${Math.round(a.b64.length*0.75/1024)} KB</span></span><button class="btn" data-att="${j}" data-act="open">Apri</button><button class="btn" data-att="${j}" data-act="dl">Scarica</button></div>`).join('')}${cb}</div>`:'';
+  if(isCarb(d.ced.piva))cb=`<div class="rf-cfg"><span>Letto come carta carburante Q8 · <b>${d.car?d.car.rows.length:0}</b> rifornimenti in questa fattura</span><span class="sp"></span>${!single&&conRif?'<button class="kit-btn" data-carb="go">Vedi i rifornimenti</button>':''}${!single?'<button class="kit-btn" data-carb="off">Non leggere più</button>':''}</div>`;
+  else if(csvAtt&&d.ced.piva&&!single)cb=`<div class="rf-cfg"><span>Questo fornitore allega file CSV. Se sono rifornimenti di una carta carburante nel formato Q8, puoi leggerli e vederli nella scheda Rifornimenti.</span><span class="sp"></span><button class="kit-btn" data-carb="on">Leggi come carta carburante Q8</button></div>`;
+  const al=att.length?`<div class="kit-card box2"><h3>Allegati (${att.length})</h3>${att.map((a,j)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1"><svg class="i" aria-hidden="true"><use href="#i-clip"/></svg> ${esc(a.nome)} <span class="mute">${esc(a.fmt)} ${esc(a.descr)} · ${Math.round(a.b64.length*0.75/1024)} KB</span></span><button class="kit-btn" data-att="${j}" data-act="open">Apri</button><button class="kit-btn" data-att="${j}" data-act="dl">Scarica</button></div>`).join('')}${cb}</div>`:'';
   const scad=d.pag.map(p=>p.scad).filter(Boolean).sort()[0];
-  const summ=`<div class="card summary"><div class="stat big"><small>Totale documento</small><b class="${sgn(d.sg)}">${money(d.totS,cur)}</b></div><div class="stat"><small>Imponibile</small><b>${money(d.impS,cur)}</b></div><div class="stat"><small>IVA</small><b>${money(d.ivaS,cur)}</b></div>${scad?`<div class="stat"><small>Scadenza</small><b>${fdate(scad)}</b></div>`:''}</div>`;
+  const summ=`<div class="kit-card summary"><div class="kit-stat big"><small>Totale documento</small><b class="${sgn(d.sg)}">${money(d.totS,cur)}</b></div><div class="kit-stat"><small>Imponibile</small><b>${money(d.impS,cur)}</b></div><div class="kit-stat"><small>IVA</small><b>${money(d.ivaS,cur)}</b></div>${scad?`<div class="kit-stat"><small>Scadenza</small><b>${fdate(scad)}</b></div>`:''}</div>`;
   $id('dbody').innerHTML=summ+`<div class="parties">${partyBox('Cedente / prestatore',d.ced)}${partyBox('Cessionario / committente',d.ces)}</div><div class="dcols"><div class="dc1">${righe}${riep}</div><div class="dc2">
-  ${extra.length?`<div class="card box2"><h3>Dati documento</h3>${kv([['Tipo',esc(d.td+' · '+(TD[d.td]||''))],...extra])}</div>`:''}
+  ${extra.length?`<div class="kit-card box2"><h3>Dati documento</h3>${kv([['Tipo',esc(d.td+' · '+(TD[d.td]||''))],...extra])}</div>`:''}
   ${pag}${al}
-  <div class="card box2"><h3>Trasmissione e file</h3>${kv([['File',esc(d.path)],['Progressivo invio',esc(d.sdi.progressivo)],['Cod. destinatario',esc(d.sdi.codDest)],['PEC destinatario',esc(d.sdi.pec)],['Trasmittente',esc(d.sdi.trasm)]])}</div></div></div>`;
+  <div class="kit-card box2"><h3>Trasmissione e file</h3>${kv([['File',esc(d.path)],['Progressivo invio',esc(d.sdi.progressivo)],['Cod. destinatario',esc(d.sdi.codDest)],['PEC destinatario',esc(d.sdi.pec)],['Trasmittente',esc(d.sdi.trasm)]])}</div></div></div>`;
   $id('dbody').scrollTop=0;
   $id('dbody').onclick=e=>{
     const cbn=e.target.closest('[data-carb]');
@@ -920,7 +914,7 @@ async function loadDemo(){
 /* ====================== Recenti (cartelle e fatture) ====================== */
 const WELCOME=$id('content').innerHTML;
 // la schermata iniziale si ricrea da WELCOME: il select va rifatto ogni volta
-function showWelcome(){$id('content').innerHTML=WELCOME;enhanceSelect($id('demoN'))}
+function showWelcome(){$id('content').innerHTML=WELCOME;Kit.select($id('demoN'))}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 let RECENTS=[],curKey='',single=false,snap=null;
 const recents={
@@ -940,7 +934,7 @@ function recItem(r){
 function renderRecents(){
   const has=RECENTS.length,html=RECENTS.map(recItem).join('');
   $id('bRecent').style.display=has?'':'none';
-  $id('recentMenu').innerHTML=has?`<div class="mh"><b>Aperti di recente</b><button class="btn ghost" data-clear>Svuota</button></div>${html}<p class="mf">Il browser non rivela il percorso completo: ricorda la cartella (o il file) insieme al permesso di accesso. Alla riapertura può chiederti di confermarlo.</p>`:'';
+  $id('recentMenu').innerHTML=has?`<div class="mh"><b>Aperti di recente</b><button class="kit-btn kit-btn-ghost" data-clear>Svuota</button></div>${html}<p class="mf">Il browser non rivela il percorso completo: ricorda la cartella (o il file) insieme al permesso di accesso. Alla riapertura può chiederti di confermarlo.</p>`:'';
   const rh=$id('recentHello');if(rh)rh.innerHTML=has?`<h3>Aperti di recente</h3><div class="recs">${html}</div>`:'';
 }
 async function openRecent(r){
@@ -965,13 +959,13 @@ document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.tar
 /* ====================== Fattura singola ====================== */
 function leaveSingle(){
   if(!single)return;single=false;document.body.classList.remove('single');
-  $id('split').classList.remove('open','full');$id('scrim').classList.remove('on');drawerIdx=-1;
+  SP.close();drawerIdx=-1;
 }
 function enterSingle(docs,label){
   if(!single)snap=ALL.length?{ALL,ERR,rootName,entriesCur,dirHandle,nFiles:(entriesCur||[]).length||ALL.length,myId}:null;
   single=true;ALL=docs;ERR=[];buildCanon();classify();view=docs.slice();
   document.body.classList.add('single');
-  $id('split').classList.add('open','full');$id('scrim').classList.remove('on');
+  SP.full();
   $id('status').textContent=label;$id('bRescan').disabled=true;
   dMode='d';drawerIdx=0;loadDetail();toTop();
 }
@@ -985,10 +979,10 @@ async function openSingleFile(file,name){
   try{
     progress('Lettura fattura…');
     const docs=(await parseFile(file)).map(d=>Object.assign({},d,{path:name,e:{path:name,getFile:async()=>file}}));
-    $id('overlay').style.display='none';
+    progressEnd();
     if(!docs.length){toast('Il file non è una fattura elettronica FatturaPA');return null}
     enterSingle(docs,name);return docs;
-  }catch(e){$id('overlay').style.display='none';toast('Impossibile leggere «'+name+'»: '+(e.message||e));return null}
+  }catch(e){progressEnd();toast('Impossibile leggere «'+name+'»: '+(e.message||e));return null}
 }
 const descOf=d=>`${d.td} n. ${d.numero} · ${nm(d.ced)}`;
 async function openFileHandles(hs){
@@ -1027,8 +1021,8 @@ addEventListener('drop',async e=>{
 });
 // stampa sempre in tema chiaro
 let _th='auto';
-addEventListener('beforeprint',()=>{try{_th=localStorage.getItem('fe_theme')||'auto'}catch{}document.documentElement.setAttribute('data-theme','light')});
-addEventListener('afterprint',()=>setTheme(_th));
+addEventListener('beforeprint',()=>{_th=Kit.theme.get();document.documentElement.setAttribute('data-theme','light')});
+addEventListener('afterprint',()=>Kit.theme.set(_th));
 
 /* ====================== Eventi ====================== */
 async function pick(handle){
@@ -1038,17 +1032,18 @@ async function pick(handle){
     const old=await recents.find(handle,'dir');curKey=old?old.id:uid();
     await scan();
     if(ALL.length)await recents.upsert(handle,'dir',{id:curKey,n:ALL.length});
-  }catch(e){if(e.name!=='AbortError'){$id('overlay').style.display='none';toast('Errore: '+(e.message||e))}}
+  }catch(e){if(e.name!=='AbortError'){progressEnd();toast('Errore: '+(e.message||e))}}
 }
 async function scan(){
   progress('Scansione cartelle…');const out=[];
   await walk(dirHandle,'',out);
-  if(!out.length){leaveSingle();$id('overlay').style.display='none';ALL=[];view=[];$id('toolbar').style.display='none';$id('tabs').style.display='none';$id('stats').style.display='none';$id('content').innerHTML='<div class="empty"><div class="ico">📭</div><h2>Nessun file .xml / .p7m trovato</h2><p>La cartella «'+esc(dirHandle.name)+'» non contiene fatture elettroniche.</p></div>';return}
+  if(!out.length){leaveSingle();progressEnd();ALL=[];view=[];$id('toolbar').style.display='none';$id('tabs').style.display='none';$id('stats').style.display='none';$id('content').innerHTML='<div class="empty"><div class="ico">📭</div><h2>Nessun file .xml / .p7m trovato</h2><p>La cartella «'+esc(dirHandle.name)+'» non contiene fatture elettroniche.</p></div>';return}
   await loadEntries(out,dirHandle.name,curKey);
 }
 $id('bPick').onclick=()=>{if('showDirectoryPicker' in window)pick();else toast('Usa Chrome o Edge, oppure il pulsante modalità compatibile')};
 $id('bRescan').onclick=async()=>{if(dirHandle)await pick(dirHandle);else if(entriesCur)await loadEntries(entriesCur,rootName)};
-if(!('showDirectoryPicker' in window)){$id('bFallback').style.display='';}
+/* senza showDirectoryPicker (Safari, Firefox) un solo pulsante: il selettore standard, al posto di quello che non potrebbe funzionare */
+if(!('showDirectoryPicker' in window)){$id('bPick').style.display='none';$id('bFallback').style.display=''}
 $id('fFallback').onchange=async e=>{
   const files=[...e.target.files].filter(f=>/\.(xml|p7m)$/i.test(f.name)&&!META.test(f.name));if(!files.length)return;
   const root=(files[0].webkitRelativePath||'').split('/')[0]||'cartella';dirHandle=null;
@@ -1080,7 +1075,7 @@ function sgCarica(t){
 }
 function apriSoglie(){
   $id('sgVei').innerHTML='<option value="*">Tutti i veicoli</option>'+rfVeic.map(t=>`<option value="${esc(t)}">${esc(ALIAS[t]?`${ALIAS[t]} (${t})`:t)}</option>`).join('');
-  $id('sgVei').value='*';SELS.forEach(f=>f());sgCarica('*');$id('sogliaDlg').showModal();
+  $id('sgVei').value='*';syncSels();sgCarica('*');$id('sogliaDlg').showModal();
 }
 $id('sgVei').addEventListener('change',()=>sgCarica($id('sgVei').value));
 $id('sgNo').onclick=()=>$id('sogliaDlg').close();
@@ -1093,19 +1088,20 @@ $id('sogliaForm').onsubmit=()=>{
 };
 // Impostazioni dell'app (alias, soglie e controlli, fornitori di carburante, tema, azienda): esportazione e importazione in un file JSON.
 // Il file è non fidato: ogni parte passa dagli stessi controlli di quando si leggono dal browser e nulla viene mostrato se non come numero o etichetta.
-const IMP_APP='fatture-elettroniche-explorer',IMP_MAX=1024*1024,TEMI={auto:'Automatico',light:'Chiaro',dark:'Scuro'};
+const IMP_APP='fatture-elettroniche-explorer',IMP_MAX=1024*1024,TEMI={auto:'Automatico',light:'Chiaro',dark:'Scuro'},TESTI={md:'Normale',lg:'Grande',xl:'Molto grande'},LARGH={boxed:'Centrata',fluid:'Tutta la pagina'};
+const impOk=(m,v)=>typeof v==='string'&&Object.hasOwn(m,v);
 let impPend=null;
-function impAttuali(){let tema='auto';try{tema=localStorage.getItem('fe_theme')||'auto'}catch{}
-  return{alias:Object.assign({},ALIAS),soglie:Object.assign({},SOGLIE),carburante:CARB_UTENTE.slice(),tema:TEMI[tema]?tema:'auto',miaAzienda:myId||''}}
+function impAttuali(){
+  return{alias:Object.assign({},ALIAS),soglie:Object.assign({},SOGLIE),carburante:CARB_UTENTE.slice(),tema:Kit.theme.get(),testo:Kit.fontSize.get(),larghezza:Kit.layout.get(),miaAzienda:myId||''}}
 function impRiassunto(o){
   const ns=Object.keys(o.soglie).filter(k=>k!=='*').length,r=[['Alias dei veicoli',Object.keys(o.alias).length],
     ['Soglie e controlli',o.soglie['*']||ns?[o.soglie['*']?'generali':'',ns?`${ns} ${ns===1?'veicolo':'veicoli'}`:''].filter(Boolean).join(' + '):'—'],
-    ['Fornitori di carburante',o.carburante.length],['Tema',o.tema?TEMI[o.tema]:'—'],['La mia azienda',o.miaAzienda?'impostata':'—']];
+    ['Fornitori di carburante',o.carburante.length],['Tema',o.tema?TEMI[o.tema]:'—'],['Dimensione del testo',o.testo?TESTI[o.testo]:'—'],['Larghezza della pagina',o.larghezza?LARGH[o.larghezza]:'—'],['La mia azienda',o.miaAzienda?'impostata':'—']];
   return r.map(x=>`<div><dt>${x[0]}</dt><dd>${esc(x[1])}</dd></div>`).join('');
 }
 function impMsg(t){const m=$id('impMsg');m.hidden=!t;m.textContent=t||''}
 function impReset(){impPend=null;$id('impPrev').hidden=true;$id('impApplica').hidden=$id('impAnnulla').hidden=true;impMsg('')}
-function apriImp(){impReset();$id('impSum').innerHTML=impRiassunto(impAttuali());$id('impDlg').showModal()}
+function apriImp(){const sp=$id('settingsPop');sp.hidden=true;$id('bSet').setAttribute('aria-expanded','false');closeNav();impReset();$id('impSum').innerHTML=impRiassunto(impAttuali());$id('impDlg').showModal()}
 function impEsporta(){
   const o=impAttuali(),out={app:IMP_APP,formato:1,esportato:new Date().toISOString(),impostazioni:o};
   const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
@@ -1119,8 +1115,8 @@ async function impLeggi(file){
     let j;try{j=JSON.parse(await file.text())}catch{throw new Error('Il file non è un JSON valido.')}
     if(!j||typeof j!=='object'||j.app!==IMP_APP||j.formato!==1||!j.impostazioni||typeof j.impostazioni!=='object')throw new Error('Non è un file di impostazioni di questa app (o è di una versione più recente).');
     const s=j.impostazioni,o={alias:normAlias(s.alias),soglie:normSoglie(s.soglie),carburante:normCarb(s.carburante),
-      tema:TEMI[s.tema]?s.tema:'',miaAzienda:typeof s.miaAzienda==='string'&&s.miaAzienda.length<=120?s.miaAzienda:''};
-    if(!Object.keys(o.alias).length&&!Object.keys(o.soglie).length&&!o.carburante.length&&!o.tema&&!o.miaAzienda)throw new Error('Il file non contiene impostazioni riconosciute.');
+      tema:impOk(TEMI,s.tema)?s.tema:'',testo:impOk(TESTI,s.testo)?s.testo:'',larghezza:impOk(LARGH,s.larghezza)?s.larghezza:'',miaAzienda:typeof s.miaAzienda==='string'&&s.miaAzienda.length<=120?s.miaAzienda:''};
+    if(!Object.keys(o.alias).length&&!Object.keys(o.soglie).length&&!o.carburante.length&&!o.tema&&!o.testo&&!o.larghezza&&!o.miaAzienda)throw new Error('Il file non contiene impostazioni riconosciute.');
     impPend=o;$id('impPrevSum').innerHTML=impRiassunto(o);$id('impPrev').hidden=false;$id('impApplica').hidden=$id('impAnnulla').hidden=false;
   }catch(err){impMsg(err.message||String(err))}
 }
@@ -1129,9 +1125,9 @@ async function impApplica(){
   if(sost){for(const k of Object.keys(ALIAS))delete ALIAS[k];for(const k of Object.keys(SOGLIE))delete SOGLIE[k]}
   Object.assign(ALIAS,o.alias);Object.assign(SOGLIE,o.soglie);
   try{localStorage.setItem('fe_alias',JSON.stringify(ALIAS));localStorage.setItem('fe_soglie',JSON.stringify(SOGLIE))}catch{toast('Impossibile salvare le impostazioni in questo browser',4000)}
-  if(o.tema)setTheme(o.tema);
+  if(o.tema)Kit.theme.set(o.tema);if(o.testo)Kit.fontSize.set(o.testo);if(o.larghezza)Kit.layout.set(o.larghezza);
   if(o.miaAzienda){myId=o.miaAzienda;try{localStorage.setItem('fe_my',myId)}catch{}
-    if(ALL.length&&[...$id('my').options].some(x=>x.value===myId)){$id('my').value=myId;SELS.forEach(f=>f());F.dir='';classify();apply()}}
+    if(ALL.length&&[...$id('my').options].some(x=>x.value===myId)){$id('my').value=myId;syncSels();F.dir='';classify();apply()}}
   // fornitori di carburante: dove i file sono caricati si rileggono gli allegati, altrimenti si salva soltanto la scelta
   const nuovi=sost?o.carburante:[...new Set([...CARB_UTENTE,...o.carburante])],agg=nuovi.filter(x=>!CARB_UTENTE.includes(x)),tol=CARB_UTENTE.filter(x=>!nuovi.includes(x));
   $id('impDlg').close();
@@ -1154,9 +1150,9 @@ $id('my').onchange=e=>{myId=e.target.value;localStorage.setItem('fe_my',myId);F.
 $id('bReset').onclick=resetAll;
 $id('fbtn').onclick=()=>$id('adv').classList.toggle('open');
 $id('dirSeg').onclick=e=>{const b=e.target.closest('button');if(b){F.dir=b.dataset.dir;apply()}};
-$id('years').onclick=e=>{const b=e.target.closest('.pill');if(b){F.anno=b.dataset.y;apply()}};
+$id('years').onclick=e=>{const b=e.target.closest('.kit-pill');if(b){F.anno=b.dataset.y;apply()}};
 $id('chips').onclick=e=>{const c=e.target.closest('[data-clr]');if(!c)return;const k=c.dataset.clr;if(k==='dup')$id('dup').checked=true;else $id(k).value='';readFilters()};
-$id('tabs').onclick=e=>{const t=e.target.closest('.tab');if(t){tab=t.dataset.t;render();toTop()}};
+$id('tabs').onclick=e=>{const t=e.target.closest('.kit-tab');if(t){tab=t.dataset.t;render();toTop()}};
 $id('bCsv').onclick=()=>{if(tab==='rif'){exportRifCsv();toast(`Esportati ${rfRows.length} rifornimenti in CSV`)}else{exportCsv();toast(`Esportate ${view.length} fatture in CSV`)}};
 $id('bErr').onclick=()=>{$id('errList').innerHTML=ERR.map(x=>`<div style="margin-bottom:6px"><b>${esc(x.path)}</b><br><span class="mute">${esc(x.msg)}</span></div>`).join('');$id('errDlg').showModal()};
 $id('content').addEventListener('keydown',e=>{const h=e.target.closest&&e.target.closest('th[data-rs]');if(h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();h.click()}});
@@ -1185,7 +1181,9 @@ $id('content').addEventListener('click',e=>{
 $id('dClose').onclick=()=>single?exitSingle():closeDrawer();
 $id('dPrint').onclick=printCourtesy;
 $id('dXml').onclick=exportXml;
-$id('dFull').onclick=()=>{const f=$id('split').classList.toggle('full');if(f)$id('scrim').classList.remove('on');else if(innerWidth<=1250)$id('scrim').classList.add('on')};$id('scrim').onclick=closeDrawer;
+$id('dFull').onclick=()=>SP.full(!SP.isFull());
+/* il velo dietro il pannello (quando copre la lista) è il ::after di #split: un click lì lo chiude */
+$id('split').addEventListener('click',e=>{if(e.target===e.currentTarget&&SP.isOpen()&&!SP.isFull()&&!single)closeDrawer()});
 $id('dPrev').onclick=()=>stepDrawer(-1);
 $id('dNext').onclick=()=>stepDrawer(1);
 $id('dTabD').onclick=()=>{dMode='d';loadDetail()};
@@ -1193,8 +1191,8 @@ $id('dTabX').onclick=()=>{dMode='x';loadDetail()};
 document.addEventListener('keydown',e=>{
   const typing=/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
   if(e.key==='/'&&!typing&&ALL.length&&!single){e.preventDefault();$id('q').focus();$id('q').select();return}
-  if(e.key==='Escape'){if(single)exitSingle();else if($id('split').classList.contains('full'))$id('dFull').click();else if($id('split').classList.contains('open'))closeDrawer();else if(typing)document.activeElement.blur();return}
-  if($id('split').classList.contains('open')&&!typing){if(e.key==='ArrowLeft'||e.key==='k')stepDrawer(-1);else if(e.key==='ArrowRight'||e.key==='j')stepDrawer(1)}
+  if(e.key==='Escape'){if(single)exitSingle();else if(SP.isFull())$id('dFull').click();else if(SP.isOpen())closeDrawer();else if(typing)document.activeElement.blur();return}
+  if(SP.isOpen()&&!typing){if(e.key==='ArrowLeft'||e.key==='k')stepDrawer(-1);else if(e.key==='ArrowRight'||e.key==='j')stepDrawer(1)}
 });
 
 /* ====================== PWA ====================== */
@@ -1208,7 +1206,7 @@ if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
 const topBar=$id('top');
 const closeNav=()=>{topBar.classList.remove('open');$id('bMenu').setAttribute('aria-expanded','false')};
 $id('bMenu').onclick=()=>{const o=topBar.classList.toggle('open');$id('bMenu').setAttribute('aria-expanded',String(o));hideMenu()};
-$id('hActions').addEventListener('click',e=>{const b=e.target.closest('.btn,.seg button');if(b&&b.id!=='bRecent'&&innerWidth<=1100)closeNav()});
+$id('hActions').addEventListener('click',e=>{const b=e.target.closest('.kit-btn,.kit-seg button');if(b&&b.id!=='bRecent'&&!b.closest('#settingsDd')&&innerWidth<=1100)closeNav()});
 document.addEventListener('click',e=>{if(!e.target.closest('#top')&&!e.target.closest('#recentMenu'))closeNav()});
 addEventListener('resize',()=>{hideMenu();if(innerWidth>1100)closeNav()});
 function toTop(){scrollTo({top:0});const c=$id('content');if(c)c.scrollTop=0}
@@ -1219,132 +1217,21 @@ function placeRecent(){
   m.style.top=Math.round(r.bottom+8)+'px';
   m.style.left=Math.round(Math.max(12,Math.min(r.right-w,innerWidth-w-12)))+'px';
 }
-$id('myBadge').onclick=()=>{$id('adv').classList.add('open');const b=$id('my').parentNode.querySelector('.sel-btn');if(b)b.focus()};
-var SELS=[];
+$id('myBadge').onclick=()=>{$id('adv').classList.add('open');const b=$id('my').parentNode.querySelector('.kit-select-btn');if(b)b.focus()};
+/* select del kit: dopo un .value da codice il bottone si aggiorna con sync() */
+function syncSels(){for(const i of['my','per','td','demoN','sgVei']){const e=$id(i);if(e)Kit.select(e).sync()}}
 function refreshUI(){
-  for(const f of SELS||[])f();
-  const o=$id('my').selectedOptions[0],name=myId&&o&&o.dataset.name,b=$id('myBadge');
+  syncSels();
+  const o=$id('my').selectedOptions[0],name=myId&&o&&o.textContent.trim(),b=$id('myBadge');
   b.hidden=!name;
   if(name){$id('myName').textContent=name;b.title='La mia azienda: '+name+' (clicca per cambiarla)'}
 }
-const ICO=n=>`<svg class="i" aria-hidden="true"><use href="#i-${n}"/></svg>`;
-function popPlace(wrap,pop){
-  pop.classList.remove('r');
-  const r=pop.getBoundingClientRect();
-  if(r.right>innerWidth-8)pop.classList.add('r');
-  pop.scrollIntoView({block:'nearest'});
-}
-let openPop=null;
-function closePop(){if(openPop){openPop();openPop=null}}
-document.addEventListener('mousedown',e=>{if(openPop&&!e.target.closest('.sel'))closePop()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&openPop){e.stopPropagation();closePop()}},true);
-function moveAct(pop,d){
-  const L=[...pop.querySelectorAll('.opt')];if(!L.length)return;
-  let i=L.findIndex(x=>x.classList.contains('act'));
-  if(i>=0)L[i].classList.remove('act');
-  i=i<0?(d>0?0:L.length-1):Math.max(0,Math.min(L.length-1,i+d));
-  L[i].classList.add('act');L[i].scrollIntoView({block:'nearest'});
-}
-/* select nativo -> menu personalizzato (il <select> resta la fonte dei dati ed emette 'change') */
-function enhanceSelect(sel){
-  const wrap=document.createElement('div');wrap.className='sel';
-  sel.parentNode.insertBefore(wrap,sel);wrap.appendChild(sel);
-  sel.classList.add('sr');sel.tabIndex=-1;sel.setAttribute('aria-hidden','true');
-  const btn=document.createElement('button');btn.type='button';btn.className='sel-btn';
-  btn.setAttribute('aria-haspopup','listbox');btn.setAttribute('aria-expanded','false');
-  btn.innerHTML='<span class="sel-v"></span>'+ICO('chev');
-  const pop=document.createElement('div');pop.className='pop';pop.hidden=true;
-  wrap.append(btn,pop);
-  const label=o=>o.dataset.name||o.textContent;
-  const sync=()=>{const o=sel.selectedOptions[0];btn.querySelector('.sel-v').textContent=o?label(o):''};
-  const items=()=>{
-    const out=[],one=o=>({v:o.value,t:label(o),s:o.dataset.sub||''});
-    for(const c of sel.children){if(c.tagName==='OPTGROUP'){out.push({g:c.label});for(const o of c.children)out.push(one(o))}else out.push(one(c))}
-    return out;
-  };
-  let q='';
-  const draw=()=>{
-    const all=items(),n=all.filter(x=>!x.g).length,qq=q.trim().toLowerCase();
-    let html='';
-    if(n>20)html+=`<div class="psearch">${ICO('search')}<input type="search" placeholder="Cerca…" autocomplete="off" value="${esc(q)}" aria-label="Cerca nell'elenco"></div>`;
-    let g='',shown=0,gh='';
-    html+='<div class="plist" role="listbox">';
-    for(const x of all){
-      if(x.g){gh=`<div class="pg">${esc(x.g)}</div>`;continue}
-      if(qq&&!(x.t+' '+x.s).toLowerCase().includes(qq))continue;
-      html+=gh;gh='';shown++;
-      html+=`<div class="opt${x.v===sel.value?' on':''}" role="option" data-v="${esc(x.v)}"><span class="ot"><b>${esc(x.t)}</b>${x.s?`<small>${esc(x.s)}</small>`:''}</span>${x.v===sel.value?ICO('check'):''}</div>`;
-    }
-    if(!shown)html+='<div class="pempty">Nessun risultato</div>';
-    html+='</div>';
-    pop.innerHTML=html;
-    const on=pop.querySelector('.opt.on')||pop.querySelector('.opt');if(on)on.classList.add('act');
-  };
-  const close=()=>{pop.hidden=true;btn.setAttribute('aria-expanded','false')};
-  const open=()=>{
-    closePop();q='';draw();pop.hidden=false;btn.setAttribute('aria-expanded','true');openPop=close;popPlace(wrap,pop);
-    const i=pop.querySelector('input');if(i)i.focus();else pop.focus();
-    const on=pop.querySelector('.opt.on');if(on)on.scrollIntoView({block:'nearest'});
-  };
-  const pick=v=>{close();openPop=null;sel.value=v;sync();btn.focus();sel.dispatchEvent(new Event('change',{bubbles:true}))};
-  pop.tabIndex=-1;
-  btn.onclick=()=>pop.hidden?open():close();
-  btn.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(pop.hidden)open()}});
-  sel.addEventListener('focus',()=>btn.focus());
-  pop.addEventListener('input',e=>{if(e.target.matches('input')){q=e.target.value;draw();const i=pop.querySelector('input');i.focus();i.setSelectionRange(q.length,q.length)}});
-  pop.addEventListener('click',e=>{const o=e.target.closest('.opt');if(o){e.preventDefault();pick(o.dataset.v)}});
-  pop.addEventListener('mousemove',e=>{const o=e.target.closest('.opt');if(o&&!o.classList.contains('act')){const a=pop.querySelector('.opt.act');if(a)a.classList.remove('act');o.classList.add('act')}});
-  pop.addEventListener('keydown',e=>{
-    if(e.key==='ArrowDown'){e.preventDefault();moveAct(pop,1)}
-    else if(e.key==='ArrowUp'){e.preventDefault();moveAct(pop,-1)}
-    else if(e.key==='Enter'){e.preventDefault();const a=pop.querySelector('.opt.act');if(a)pick(a.dataset.v)}
-    else if(e.key==='Tab')close();
-  });
-  SELS.push(sync);sync();
-}
-/* campo di testo con suggerimenti (cliente / fornitore) */
-function enhanceCombo(inp,getList){
-  const wrap=document.createElement('div');wrap.className='sel';
-  inp.parentNode.insertBefore(wrap,inp);wrap.appendChild(inp);
-  const chev=document.createElement('button');chev.type='button';chev.className='sel-chev';chev.tabIndex=-1;chev.setAttribute('aria-label','Mostra elenco');chev.innerHTML=ICO('chev');wrap.appendChild(chev);
-  const pop=document.createElement('div');pop.className='pop';pop.hidden=true;wrap.appendChild(pop);
-  const close=()=>{pop.hidden=true;inp.setAttribute('aria-expanded','false')};
-  const draw=()=>{
-    const qq=inp.value.toLowerCase().split(' — ')[0].trim(),all=getList();
-    const hit=(qq?all.filter(x=>x.toLowerCase().includes(qq)):all);
-    const part=hit.slice(0,60);
-    if(!part.length){close();return}
-    pop.innerHTML='<div class="plist" role="listbox">'+part.map(x=>{const i=x.lastIndexOf(' — ');const t=i>0?x.slice(0,i):x,s=i>0?x.slice(i+3):'';
-      return`<div class="opt" role="option" data-v="${esc(x)}"><span class="ot"><b>${esc(t)}</b>${s?`<small>${esc(s)}</small>`:''}</span></div>`}).join('')
-      +(hit.length>60?`<div class="pempty">Altri ${hit.length-60} risultati: continua a scrivere per restringere</div>`:'')+'</div>';
-    const f=pop.querySelector('.opt');if(f)f.classList.add('act');
-    if(pop.hidden){closePop();pop.hidden=false;inp.setAttribute('aria-expanded','true');openPop=close;popPlace(wrap,pop)}
-  };
-  chev.addEventListener('mousedown',e=>e.preventDefault());
-  chev.addEventListener('click',()=>{if(!pop.hidden){close();openPop=null}else{inp.focus();draw()}});
-  inp.addEventListener('input',draw);
-  inp.addEventListener('focus',draw);
-  inp.addEventListener('keydown',e=>{
-    if(pop.hidden){if(e.key==='ArrowDown')draw();return}
-    if(e.key==='ArrowDown'){e.preventDefault();moveAct(pop,1)}
-    else if(e.key==='ArrowUp'){e.preventDefault();moveAct(pop,-1)}
-    else if(e.key==='Enter'){const a=pop.querySelector('.opt.act');if(a){e.preventDefault();inp.value=a.dataset.v;close();openPop=null;inp.dispatchEvent(new Event('input',{bubbles:true}))}}
-    else if(e.key==='Tab')close();
-  });
-  pop.addEventListener('mousedown',e=>e.preventDefault());
-  pop.addEventListener('click',e=>{const o=e.target.closest('.opt');if(o){e.preventDefault();inp.value=o.dataset.v;close();openPop=null;inp.dispatchEvent(new Event('input',{bubbles:true}))}});
-  pop.addEventListener('mousemove',e=>{const o=e.target.closest('.opt');if(o&&!o.classList.contains('act')){const a=pop.querySelector('.opt.act');if(a)a.classList.remove('act');o.classList.add('act')}});
-}
-['my','per','td','demoN','sgVei'].forEach(i=>enhanceSelect($id(i)));
-enhanceCombo($id('cp'),()=>CP_OPTS);
-/* tema: un solo pulsante con menu */
-(()=>{
-  const btn=$id('bTheme'),menu=$id('themeMenu');
-  const close=()=>{menu.hidden=true;btn.setAttribute('aria-expanded','false')};
-  btn.onclick=()=>{if(!menu.hidden){close();openPop=null;return}closePop();menu.hidden=false;btn.setAttribute('aria-expanded','true');openPop=close};
-  menu.onclick=e=>{const o=e.target.closest('[data-th]');if(o){setTheme(o.dataset.th);close();openPop=null}};
-})();
+['my','per','td','demoN','sgVei'].forEach(i=>Kit.select($id(i)));
+/* campo «Cliente / fornitore»: Kit.combo. Le voci sono «Nome — P.IVA»; si cerca nel testo prima di « — » (così, scelta una voce, l'elenco resta quello) */
+Kit.combo($id('cp'),{filter:false,max:60,empty:'',autoActive:true,items:q=>{
+  const qq=q.split(' — ')[0].trim(),hit=qq?CP_OPTS.filter(x=>x.toLowerCase().includes(qq)):CP_OPTS;
+  return hit.map(x=>{const k=x.lastIndexOf(' — ');return k>0?{value:x,label:x.slice(0,k),hint:x.slice(k+3)}:{value:x,label:x}})}});
 /* il pannello dei filtri si chiude con un clic fuori */
 document.addEventListener('mousedown',e=>{
-  if(!e.target.closest('#adv,#fbtn,#myBadge,.chip'))$id('adv').classList.remove('open');
+  if(!e.target.closest('#adv,#fbtn,#myBadge,.kit-chip'))$id('adv').classList.remove('open');
 });
