@@ -4,6 +4,10 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+## [1.8.1] - 2026-11-17
+
+Correzione della finestra Impostazioni.
+
 ### Modificato
 - Corretto: nella finestra *Impostazioni* (esporta o importa) il contenuto lungo non scorreva e i pulsanti in fondo non si vedevano, per esempio dopo aver scelto un file da importare. Il corpo della finestra era dentro un `div` inutile che impediva al kit di farlo scorrere.
 
@@ -157,7 +161,8 @@ Prima versione pubblica.
 - Firefox e Safari usano la modalità compatibile, senza cartelle recenti né installazione come app.
 - Il foglio di stile Assosoftware non è incluso per via della sua licenza.
 
-[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.8.0...HEAD
+[Non rilasciato]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.8.1...HEAD
+[1.8.1]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/N1K1TAS95/fatture_elettroniche_explorer/compare/v1.5.0...v1.6.0
