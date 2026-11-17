@@ -4,6 +4,9 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+### Modificato
+- Dashboard Kit aggiornato dalla 0.7.0 alla 0.11.0 (`html/kit.css`, `html/kit.js`). Le classi usate dall'app non sono cambiate; l'interfaccia resta in italiano perché `<html lang="it">` è impostato. Il kit ora gestisce meglio i dialoghi con contenuto lungo e le tabelle che chiudono una scheda (spazio sotto l'ultima riga).
+
 ## [1.7.0] - 2026-11-11
 
 Impostazioni dell'aspetto (tema, testo, larghezza), font Inter e interfaccia basata su Dashboard Kit.
