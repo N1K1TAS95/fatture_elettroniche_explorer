@@ -4,6 +4,9 @@ Tutte le modifiche rilevanti del progetto sono annotate qui. Il formato segue [K
 
 ## [Non rilasciato]
 
+### Modificato
+- Corretto: nella finestra *Impostazioni* (esporta o importa) il contenuto lungo non scorreva e i pulsanti in fondo non si vedevano, per esempio dopo aver scelto un file da importare. Il corpo della finestra era dentro un `div` inutile che impediva al kit di farlo scorrere.
+
 ## [1.8.0] - 2026-11-17
 
 Aggiornamento di Dashboard Kit.
